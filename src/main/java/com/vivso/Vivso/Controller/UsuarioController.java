@@ -51,6 +51,7 @@ public class UsuarioController {
         }
     }
 
+    //METODO GET PARA VER TODOS LOS USUARIOS
     @GetMapping("/listar")
     public ResponseEntity<List<UsuarioRespuestaDTO>> listar() {
         return ResponseEntity.ok(usuarioService.listarTodos());
