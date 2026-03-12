@@ -32,7 +32,7 @@ public class UsuarioController {
             }
 
             // 2. Mapeo de DTO a Entidad y guardado
-            // Aquí el Service debería hashear la password antes de guardar
+            // Aquí el Service debería hashear la contraseña antes de guardar
             Usuario nuevoUsuario = usuarioService.registrarNuevoUsuario(registroDto);
 
             // 3. Retornar solo los datos permitidos
