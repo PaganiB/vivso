@@ -20,7 +20,7 @@ public class UsuarioService implements IUsuarioService{
     public List<UsuarioRespuestaDTO> listarTodos() {
         return usuarioRepo.findAll().stream()
                 .map(u -> new UsuarioRespuestaDTO(
-                        u.getId_usuario(),
+                        u.getId(),
                         u.getUsername(),
                         u.getEmail(),
                         u.getRol()))
@@ -31,7 +31,7 @@ public class UsuarioService implements IUsuarioService{
     public UsuarioRespuestaDTO buscarPorId(Integer id) {
         return usuarioRepo.findById(id)
                 .map(u -> new UsuarioRespuestaDTO(
-                        u.getId_usuario(),
+                        u.getId(),
                         u.getUsername(),
                         u.getEmail(),
                         u.getRol()))
@@ -55,7 +55,7 @@ public class UsuarioService implements IUsuarioService{
     public List<UsuarioRespuestaDTO> buscarPorRol(String rol) {
         return usuarioRepo.findByRol(rol).stream()
                 .map(u -> new UsuarioRespuestaDTO(
-                        u.getId_usuario(),
+                        u.getId(),
                         u.getUsername(),
                         u.getEmail(),
                         u.getRol()))
@@ -125,7 +125,7 @@ public class UsuarioService implements IUsuarioService{
         // 4. Guardamos y devolvemos el DTO
         Usuario actualizado = usuarioRepo.save(usuario);
         return new UsuarioRespuestaDTO(
-                actualizado.getId_usuario(),
+                actualizado.getId(),
                 actualizado.getUsername(),
                 actualizado.getEmail(),
                 actualizado.getRol());

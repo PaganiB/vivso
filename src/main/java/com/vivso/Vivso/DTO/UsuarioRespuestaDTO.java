@@ -9,6 +9,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+//DTO para retornar como respuesta
 public class UsuarioRespuestaDTO {
     private Integer id;
     private String username;

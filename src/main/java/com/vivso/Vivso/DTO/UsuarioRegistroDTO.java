@@ -8,6 +8,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
+//DTO para controlar el registro de Usuario
 public class UsuarioRegistroDTO {
 
     @NotBlank(message = "El nombre de usuario es obligatorio")
@@ -17,7 +18,7 @@ public class UsuarioRegistroDTO {
     @Size(min = 8, message = "La contraseña debe tener al menos 8 caracteres")
     private String password;
 
-    @Email(message = "El formato del email es inválido")
+    @Email(regexp = ".+@.+\\..+", message = "El formato del email debe ser válido (ejemplo@correo.com)")
     @NotBlank(message = "El email es obligatorio")
     private String email;
 

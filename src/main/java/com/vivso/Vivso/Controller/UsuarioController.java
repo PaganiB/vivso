@@ -26,7 +26,7 @@ public class UsuarioController {
             Usuario nuevoUsuario = usuarioService.registrarNuevoUsuario(registroDto);
 
             UsuarioRespuestaDTO respuesta = new UsuarioRespuestaDTO(
-                    nuevoUsuario.getId_usuario(),
+                    nuevoUsuario.getId(),
                     nuevoUsuario.getUsername(),
                     nuevoUsuario.getEmail(),
                     nuevoUsuario.getRol()
