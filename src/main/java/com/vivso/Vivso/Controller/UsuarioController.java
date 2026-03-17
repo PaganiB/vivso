@@ -1,5 +1,6 @@
 package com.vivso.Vivso.Controller;
 
+import com.vivso.Vivso.DTO.PasswordUpdateDTO;
 import com.vivso.Vivso.DTO.UsuarioRegistroDTO;
 import com.vivso.Vivso.DTO.UsuarioRespuestaDTO;
 import com.vivso.Vivso.Model.Usuario;
@@ -20,22 +21,10 @@ public class UsuarioController {
     private UsuarioService usuarioService;
 
     @PostMapping("/crear")
-    public ResponseEntity<?> crear(@Valid @RequestBody UsuarioRegistroDTO registroDto) {
-        try {
-            // 1. Validaciones de lógica de negocio (duplicados)
-            if (usuarioService.existePorEmail(registroDto.getEmail())) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body("El email ya está registrado.");
-            }
+    public ResponseEntity<UsuarioRespuestaDTO> crear(@Valid @RequestBody UsuarioRegistroDTO registroDto) {
 
-            if (usuarioService.existePorUsername(registroDto.getUsername())) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body("El nombre de usuario ya existe.");
-            }
-
-            // 2. Mapeo de DTO a Entidad y guardado
-            // Aquí el Service debería hashear la contraseña antes de guardar
             Usuario nuevoUsuario = usuarioService.registrarNuevoUsuario(registroDto);
 
-            // 3. Retornar solo los datos permitidos
             UsuarioRespuestaDTO respuesta = new UsuarioRespuestaDTO(
                     nuevoUsuario.getId_usuario(),
                     nuevoUsuario.getUsername(),
@@ -44,11 +33,6 @@ public class UsuarioController {
             );
 
             return new ResponseEntity<>(respuesta, HttpStatus.CREATED);
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error inesperado en el servidor.");
-        }
     }
 
     //METODO GET PARA VER TODOS LOS USUARIOS
@@ -58,22 +42,30 @@ public class UsuarioController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> buscar(@PathVariable("id") int id) {
-        try {
+    public ResponseEntity<UsuarioRespuestaDTO> buscar(@PathVariable("id") int id) {
             return ResponseEntity.ok(usuarioService.buscarPorId(id));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
     }
 
     @PatchMapping("/{id}/desactivar")
-    public ResponseEntity<?> desactivar(@PathVariable Integer id) {
-        try {
+    public ResponseEntity<String> desactivar(@PathVariable Integer id) {
             usuarioService.desactivar(id);
             return ResponseEntity.ok("Usuario desactivado");
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
     }
 
+    @PatchMapping("/{id}/activar")
+    public ResponseEntity<String> activar(@PathVariable Integer id) {
+        usuarioService.activar(id);
+        return ResponseEntity.ok("Usuario activado");
+    }
+
+    @PatchMapping("/{id}/cambiar-password")
+    public ResponseEntity<String> cambiarPassword(@PathVariable Integer id, @Valid @RequestBody PasswordUpdateDTO dto) {
+        usuarioService.actualizarPassword(id, dto);
+        return ResponseEntity.ok("Contraseña actualizada con éxito en el sistema.");
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<UsuarioRespuestaDTO> actualizar(@PathVariable Integer id, @Valid @RequestBody UsuarioRegistroDTO dto) {
+        return ResponseEntity.ok(usuarioService.actualizar(id, dto));
+    }
 }

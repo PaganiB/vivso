@@ -11,14 +11,13 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain filterChain (HttpSecurity httpSecurity) throws Exception {
-        return httpSecurity
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(csrf -> csrf.disable()) // Crucial: sin esto, los PATCH/POST/PUT fallan siempre
                 .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/usuario/noseguro").permitAll()
-                    .anyRequest().authenticated()
-                )
-                .formLogin(formLogin -> formLogin.permitAll()
-                )
-                .build();
+                        .anyRequest().permitAll() // Abrimos la puerta para probar tranquilos
+                );
+
+        return http.build();
     }
 }
