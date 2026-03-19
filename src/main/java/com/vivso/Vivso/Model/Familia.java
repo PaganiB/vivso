@@ -45,5 +45,4 @@ public class Familia {
     @Column(name = "coordenadasRancho", length = 150)
     private String coordenadasRancho;
 
-
 }
