@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class OrganizacionService implements IOrganizacionService{
+public class OrganizacionService implements IOrganizacionService {
 
     @Autowired
     private IOrganizacionRepository organizacionRepository;
@@ -21,7 +21,7 @@ public class OrganizacionService implements IOrganizacionService{
 
     @Override
     public Optional<Organizacion> buscarPorCuit(String cuit) {
-        if(!organizacionRepository.existsOrganizacionByCuit(cuit)){
+        if (!organizacionRepository.existsOrganizacionByCuit(cuit)) {
             throw new RuntimeException("No existe la organización con CUIT " + cuit);
         }
         return organizacionRepository.findOrganizacionByCuit(cuit);
@@ -34,7 +34,7 @@ public class OrganizacionService implements IOrganizacionService{
 
     @Override
     public void eliminar(String cuit) {
-        if(!organizacionRepository.existsOrganizacionByCuit(cuit)){
+        if (!organizacionRepository.existsOrganizacionByCuit(cuit)) {
             throw new RuntimeException("No existe la organización con CUIT " + cuit);
         }
         organizacionRepository.deleteByCuit(cuit);
@@ -47,7 +47,7 @@ public class OrganizacionService implements IOrganizacionService{
 
     @Override
     public Optional<Organizacion> buscarPorNombre(String nombre) {
-        if(!organizacionRepository.existsOrganizacionByCuit(nombre)){
+        if (!organizacionRepository.existsOrganizacionByCuit(nombre)) {
             throw new RuntimeException("No existe la organización con nombre " + nombre);
         }
         return organizacionRepository.findOrganizacionByNombre(nombre);

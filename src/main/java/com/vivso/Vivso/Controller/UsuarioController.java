@@ -23,16 +23,16 @@ public class UsuarioController {
     @PostMapping("/crear")
     public ResponseEntity<UsuarioRespuestaDTO> crear(@Valid @RequestBody UsuarioRegistroDTO registroDto) {
 
-            Usuario nuevoUsuario = usuarioService.registrarNuevoUsuario(registroDto);
+        Usuario nuevoUsuario = usuarioService.registrarNuevoUsuario(registroDto);
 
-            UsuarioRespuestaDTO respuesta = new UsuarioRespuestaDTO(
-                    nuevoUsuario.getId_usuario(),
-                    nuevoUsuario.getUsername(),
-                    nuevoUsuario.getEmail(),
-                    nuevoUsuario.getRol()
-            );
+        UsuarioRespuestaDTO respuesta = new UsuarioRespuestaDTO(
+                nuevoUsuario.getId_usuario(),
+                nuevoUsuario.getUsername(),
+                nuevoUsuario.getEmail(),
+                nuevoUsuario.getRol()
+        );
 
-            return new ResponseEntity<>(respuesta, HttpStatus.CREATED);
+        return new ResponseEntity<>(respuesta, HttpStatus.CREATED);
     }
 
     //METODO GET PARA VER TODOS LOS USUARIOS
@@ -43,13 +43,13 @@ public class UsuarioController {
 
     @GetMapping("/{id}")
     public ResponseEntity<UsuarioRespuestaDTO> buscar(@PathVariable("id") int id) {
-            return ResponseEntity.ok(usuarioService.buscarPorId(id));
+        return ResponseEntity.ok(usuarioService.buscarPorId(id));
     }
 
     @PatchMapping("/{id}/desactivar")
     public ResponseEntity<String> desactivar(@PathVariable Integer id) {
-            usuarioService.desactivar(id);
-            return ResponseEntity.ok("Usuario desactivado");
+        usuarioService.desactivar(id);
+        return ResponseEntity.ok("Usuario desactivado");
     }
 
     @PatchMapping("/{id}/activar")

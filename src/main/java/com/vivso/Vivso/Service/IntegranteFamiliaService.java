@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class IntegranteFamiliaService implements IFamiliaIntegranteService{
+public class IntegranteFamiliaService implements IFamiliaIntegranteService {
 
     @Autowired
     private IFamiliaIntegranteRepository integranteRepository;
@@ -32,7 +32,7 @@ public class IntegranteFamiliaService implements IFamiliaIntegranteService{
 
     @Override
     public void eliminar(Integer id) {
-        if(!integranteRepository.existsById(id)){
+        if (!integranteRepository.existsById(id)) {
             throw new RuntimeException("No existe integrante de la familia con el ID: " + id);
         }
 

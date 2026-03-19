@@ -7,8 +7,11 @@ import java.util.Optional;
 
 public interface IFamiliaIntegranteService {
     List<IntegranteFamilia> listarTodos();
+
     IntegranteFamilia buscarPorId(Integer id);
+
     IntegranteFamilia guardar(IntegranteFamilia integrante);
+
     void eliminar(Integer id);
 
     // Búsqueda por DNI (según estructura SQL)

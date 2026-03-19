@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class SolicitudService implements ISolicitudService{
+public class SolicitudService implements ISolicitudService {
 
     @Autowired
     private ISolicitudRepository solicitudRepo;
@@ -33,8 +33,8 @@ public class SolicitudService implements ISolicitudService{
 
     @Override
     public void eliminar(Integer id) {
-        if(!solicitudRepo.existsById(id)){
-            throw new RuntimeException("No existe solicitud con el ID: "+ id);
+        if (!solicitudRepo.existsById(id)) {
+            throw new RuntimeException("No existe solicitud con el ID: " + id);
         }
         solicitudRepo.deleteById(id);
     }
