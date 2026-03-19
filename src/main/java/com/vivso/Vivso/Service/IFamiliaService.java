@@ -1,17 +1,20 @@
 package com.vivso.Vivso.Service;
 
+import com.vivso.Vivso.DTO.FamiliaDTO;
 import com.vivso.Vivso.Model.Familia;
 
 import java.util.List;
 
 public interface IFamiliaService {
 
-    public List<Familia> getFamilias();
+    public List<FamiliaDTO> getFamilias();
 
-    public Familia saveFamilia(Familia familia);
+    public FamiliaDTO saveFamilia(FamiliaDTO familiaDto);
+
+    public FamiliaDTO updateFamilia(Integer idFamilia, FamiliaDTO familiaDto);
 
     public void deleteFamilia(Integer id);
 
-    public Familia findFamilia(Integer id);
+    public FamiliaDTO findFamilia(Integer id);
 
 }

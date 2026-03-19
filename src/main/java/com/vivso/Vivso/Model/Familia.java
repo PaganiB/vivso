@@ -1,11 +1,13 @@
 package com.vivso.Vivso.Model;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 @Entity
 @Table(name = "familia", schema = "vivso3")
 public class Familia {

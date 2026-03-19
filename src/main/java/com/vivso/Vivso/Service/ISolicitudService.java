@@ -8,8 +8,11 @@ import java.util.Optional;
 
 public interface ISolicitudService {
     List<Solicitud> listarTodas();
+
     Solicitud buscarPorId(Integer id);
+
     Solicitud guardar(Solicitud solicitud);
+
     void eliminar(Integer id);
 
     // Buscar por estado (Pendiente, Aprobada, Rechazada, Adjudicada)

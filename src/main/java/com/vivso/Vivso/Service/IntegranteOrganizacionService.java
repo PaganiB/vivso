@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.List;
 
 @Service
-public class IntegranteOrganizacionService implements IOrganizacionIntegranteService{
+public class IntegranteOrganizacionService implements IOrganizacionIntegranteService {
 
     @Autowired
     private IOrganizacionIntegranteRepository integranteRepository;

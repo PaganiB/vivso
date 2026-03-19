@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class ViviendaService implements IViviendaService{
+public class ViviendaService implements IViviendaService {
 
     @Autowired
     private IViviendaRepository viviendaRepo;
@@ -22,7 +22,7 @@ public class ViviendaService implements IViviendaService{
 
     @Override
     public Vivienda buscarPorExpediente(String numExp) {
-        if(numExp == null || numExp.trim().isEmpty()){
+        if (numExp == null || numExp.trim().isEmpty()) {
             throw new IllegalArgumentException("El numero de expediente no puede estar vacío");
         }
         return viviendaRepo.findViviendaByNumExp(numExp).orElseThrow(() -> new RuntimeException("Expediente con el número " + numExp + " no encontrado."));
@@ -35,10 +35,10 @@ public class ViviendaService implements IViviendaService{
 
     @Override
     public void eliminar(String numExp) {
-            if(!viviendaRepo.existsByNumExp(numExp)){
-                throw new RuntimeException("No existe expediente con el número de expediente " + numExp);
-            }
-            viviendaRepo.deleteViviendaByNumExp(numExp);
+        if (!viviendaRepo.existsByNumExp(numExp)) {
+            throw new RuntimeException("No existe expediente con el número de expediente " + numExp);
+        }
+        viviendaRepo.deleteViviendaByNumExp(numExp);
     }
 
     @Override

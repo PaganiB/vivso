@@ -9,5 +9,6 @@ import java.util.List;
 @Repository
 public interface IOrganizacionIntegranteRepository extends JpaRepository<IntegranteOrganizacion, Integer> {
     List<IntegranteOrganizacion> findByOrganizacion_Cuit(String cuitOrg);
+
     List<IntegranteOrganizacion> findByActivoTrue();
 }

@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-public class UsuarioService implements IUsuarioService{
+public class UsuarioService implements IUsuarioService {
 
     @Autowired
     private IUsuarioRepository usuarioRepo;
@@ -35,7 +35,7 @@ public class UsuarioService implements IUsuarioService{
                         u.getUsername(),
                         u.getEmail(),
                         u.getRol()))
-                .orElseThrow(()-> new RuntimeException("Usuario no encontrado con ID " + id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID " + id)
                 );
     }
 
@@ -94,9 +94,9 @@ public class UsuarioService implements IUsuarioService{
 
     @Override
     public void desactivar(Integer id) {
-       Usuario usuario = usuarioRepo.findById(id).orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID " + id));
-       usuario.setActivo(false);
-       usuarioRepo.save(usuario);
+        Usuario usuario = usuarioRepo.findById(id).orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID " + id));
+        usuario.setActivo(false);
+        usuarioRepo.save(usuario);
     }
 
     @Override

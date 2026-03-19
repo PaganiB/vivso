@@ -9,7 +9,10 @@ import java.util.Optional;
 @Repository
 public interface IOrganizacionRepository extends JpaRepository<Organizacion, String> {
     Optional<Organizacion> findOrganizacionByCuit(String cuit);
+
     boolean existsOrganizacionByCuit(String cuit);
+
     void deleteByCuit(String cuit);
+
     Optional<Organizacion> findOrganizacionByNombre(String nombre);
 }

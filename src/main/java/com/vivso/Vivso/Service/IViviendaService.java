@@ -8,8 +8,11 @@ import java.util.Optional;
 
 public interface IViviendaService {
     List<Vivienda> listarTodas();
+
     Vivienda buscarPorExpediente(String numExp);
+
     Vivienda guardar(Vivienda vivienda);
+
     void eliminar(String numExp);
 
     // Filtrar por estado (Iniciada, Avanzada, Finalizada)
