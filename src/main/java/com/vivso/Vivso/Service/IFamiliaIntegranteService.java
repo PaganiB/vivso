@@ -1,22 +1,23 @@
 package com.vivso.Vivso.Service;
 
+import com.vivso.Vivso.DTO.IntegranteFamiliaDTO;
 import com.vivso.Vivso.Model.IntegranteFamilia;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface IFamiliaIntegranteService {
-    List<IntegranteFamilia> listarTodos();
+    List<IntegranteFamiliaDTO> listarTodos();
 
-    IntegranteFamilia buscarPorId(Integer id);
+    IntegranteFamiliaDTO buscarPorId(Integer id);
 
-    IntegranteFamilia guardar(IntegranteFamilia integrante);
+    IntegranteFamiliaDTO guardar(IntegranteFamiliaDTO integrante);
 
     void eliminar(Integer id);
 
     // Búsqueda por DNI (según estructura SQL)
-    Optional<IntegranteFamilia> buscarPorDni(String dni);
+    Optional<IntegranteFamiliaDTO> buscarPorDni(String dni);
 
     // Recuperar integrantes de una familia específica
-    //List<IntegranteFamilia> buscarPorFamilia(Integer id_familia);
+    List<IntegranteFamiliaDTO> buscarPorFamilia(Integer id_familia);
 }

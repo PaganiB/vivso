@@ -1,12 +1,14 @@
 package com.vivso.Vivso.Model;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
 @Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "integrantefamilia", schema = "vivso3")
 public class IntegranteFamilia {
     @Id
@@ -23,8 +25,11 @@ public class IntegranteFamilia {
     @Column(name = "apellido", length = 100)
     private String apellido;
 
-    @Column(name = "condicion_especial", length = 100)
-    private String condicion_especial;
+    // 1. Esto asegura que en Java nunca sea null al usar Builder
+    @Builder.Default
+    // 2. Esto asegura que en la DB la columna tenga el valor por defecto
+    @Column(name = "condicion_especial", length = 100, nullable = false, columnDefinition = "varchar(255) default 'No posee discapacidad'")
+    private String condicion_especial = "No posee discapacidad";
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "id_familia", nullable = false)

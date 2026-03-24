@@ -1,6 +1,7 @@
 package com.vivso.Vivso.Model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 @Getter
@@ -46,5 +47,4 @@ public class Familia {
 
     @Column(name = "coordenadasRancho", length = 150)
     private String coordenadasRancho;
-
 }

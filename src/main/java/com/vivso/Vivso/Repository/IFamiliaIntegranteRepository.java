@@ -10,5 +10,5 @@ import java.util.Optional;
 @Repository
 public interface IFamiliaIntegranteRepository extends JpaRepository<IntegranteFamilia, Integer> {
     Optional<IntegranteFamilia> findByDni(String dni);
-    //List<IntegranteFamilia> findByFamilia_Id_familia(Integer id_familia);
+    List<IntegranteFamilia> findByFamilia_Id_familia(Integer id_familia);
 }
