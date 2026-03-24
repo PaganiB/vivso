@@ -31,6 +31,7 @@ public class Mapper {
 
         return IntegranteFamiliaDTO.builder()
                 .id(iF.getId_integranteFamilia())
+                .dni(iF.getDni())
                 .nombre(iF.getNombre())
                 .apellido(iF.getApellido())
                 .condicion_especial(iF.getCondicion_especial() != null ?

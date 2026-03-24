@@ -1,11 +1,9 @@
 package com.vivso.Vivso.Service;
 
-import com.vivso.Vivso.DTO.FamiliaDTO;
 import com.vivso.Vivso.DTO.IntegranteFamiliaDTO;
 import com.vivso.Vivso.Mapper.Mapper;
 import com.vivso.Vivso.Model.Familia;
 import com.vivso.Vivso.Model.IntegranteFamilia;
-import com.vivso.Vivso.Model.Organizacion;
 import com.vivso.Vivso.Model.Usuario;
 import com.vivso.Vivso.Repository.IFamiliaIntegranteRepository;
 import com.vivso.Vivso.Repository.IFamiliaRepository;
@@ -92,7 +90,7 @@ public class IntegranteFamiliaService implements IFamiliaIntegranteService {
         }
 
         // 2. Buscamos por el ID de la relación, convertimos a Stream, mapeamos a DTO y listamos
-        return integranteRepository.findByFamilia_Id_familia(id_familia).stream()
+        return integranteRepository.findByFamiliaId_familia(id_familia).stream()
                 .map(Mapper::toDTO)
                 .toList();
     }
