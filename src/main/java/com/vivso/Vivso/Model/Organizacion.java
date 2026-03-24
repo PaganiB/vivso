@@ -4,11 +4,12 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
-@Getter
-@Setter
+@Getter @Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 @Entity
 @Table(name = "organizacion", schema = "vivso3")
 public class Organizacion {
@@ -54,6 +55,5 @@ public class Organizacion {
 
     @Column(name = "alta_afip_url")
     private String alta_afip_url;
-
 
 }

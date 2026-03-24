@@ -40,7 +40,8 @@ public class FamiliaService implements IFamiliaService {
     @Override
     public FamiliaDTO saveFamilia(FamiliaDTO familiaDto) {
         //Validaciones
-        if (familiaDto == null) throw new RuntimeException("familiaDTO es null");
+        // no anda
+        // if (familiaDto == null) throw new RuntimeException("familiaDTO es null");
         if (familiaDto.getCuitOrg() == null) throw new RuntimeException("Debe indicar el cuit");
         //Buscar la organización
         Organizacion org= orgRepo.findById(familiaDto.getCuitOrg()).orElse(null);

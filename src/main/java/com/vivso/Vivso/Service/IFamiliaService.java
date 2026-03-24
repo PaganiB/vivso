@@ -7,14 +7,14 @@ import java.util.List;
 
 public interface IFamiliaService {
 
-    public List<FamiliaDTO> getFamilias();
+    List<FamiliaDTO> getFamilias();
 
-    public FamiliaDTO saveFamilia(FamiliaDTO familiaDto);
+    FamiliaDTO saveFamilia(FamiliaDTO familiaDto);
 
-    public FamiliaDTO updateFamilia(Integer idFamilia, FamiliaDTO familiaDto);
+    FamiliaDTO updateFamilia(Integer idFamilia, FamiliaDTO familiaDto);
 
-    public void deleteFamilia(Integer id);
+    void deleteFamilia(Integer id);
 
-    public FamiliaDTO findFamilia(Integer id);
+    FamiliaDTO findFamilia(Integer id);
 
 }
