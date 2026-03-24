@@ -1,29 +1,28 @@
 package com.vivso.Vivso.Service;
 
-import com.vivso.Vivso.Model.Organizacion;
+import com.vivso.Vivso.DTO.OrganizacionDTO;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface IOrganizacionService {
 
-    // Recupera todas las organizaciones registradas
-    List<Organizacion> listarTodas();
+    // CRUD/ABML
+    List<OrganizacionDTO> getOrganizacion();
 
-    // Busca una organización por su CUIT (Llave primaria)
-    Optional<Organizacion> buscarPorCuit(String cuit);
+    OrganizacionDTO saveOrganizacion(OrganizacionDTO organizacionDto);
 
-    // Guarda una nueva organización o actualiza una existente
-    Organizacion guardar(Organizacion organizacion);
+    OrganizacionDTO updateOrganizacion(String cuit, OrganizacionDTO organizacionDto);
 
-    // Elimina una organización por su CUIT
-    void eliminar(String cuit);
+    void deleteOrganizacion(String cuit);
 
     // --- Métodos de búsqueda personalizados ---
 
+    // Busca una organización por su CUIT (Llave primaria)
+    OrganizacionDTO buscarPorCuit(String cuit);
+
     // Permite filtrar organizaciones por tipo (ej. 'ONG', 'Municipal')
-    List<Organizacion> buscarPorTipo(String tipo);
+    List<OrganizacionDTO> buscarPorTipo(String tipo);
 
     // Busca organizaciones que coincidan con un nombre o parte de él
-    Optional<Organizacion> buscarPorNombre(String nombre);
+    List<OrganizacionDTO> buscarPorNombre(String nombre);
 }
