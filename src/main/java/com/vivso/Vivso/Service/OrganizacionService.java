@@ -33,6 +33,7 @@ public class OrganizacionService implements IOrganizacionService {
     @Override
     public OrganizacionDTO saveOrganizacion(OrganizacionDTO organizacionDto) {
 
+        if (orgRepo.existsOrganizacionByCuit(organizacionDto.getCuit()) == true) throw new RuntimeException("Ese cuit ya existe");
         //Construir nuestro objeto organizacion
         var org = Organizacion.builder()
                 .cuit(organizacionDto.getCuit())
@@ -128,8 +129,10 @@ public class OrganizacionService implements IOrganizacionService {
     @Override
     public List<OrganizacionDTO> buscarPorTipo(String tipo) {
         //Buscamos las organizaciones pertenecientes al tipo elegido
-        List<Organizacion> o = orgRepo.findOrganizacionByTipo(tipo).orElse(null);
-        if (o == null) throw new RuntimeException("Ninguna organizacion pertenece a este tipo");
+        List<Organizacion> o = orgRepo.findOrganizacionByTipo(tipo);
+        if (o.isEmpty()) {
+            throw new RuntimeException("Ninguna organizacion pertenece a este tipo");
+        }
         //Creamos una lista para guardar los dto
         List<OrganizacionDTO> organizacionesDto = new ArrayList<>();
         for (Organizacion organizacion : o) {
@@ -141,8 +144,10 @@ public class OrganizacionService implements IOrganizacionService {
     @Override
     public List<OrganizacionDTO> buscarPorNombre(String nombre) {
         //Buscamos las organizaciones que contengan el nombre indicado
-        List<Organizacion> o = orgRepo.findByNombreContaining(nombre).orElse(null);
-        if (o == null) throw new RuntimeException("Ninguna organizacion tiene o contiene ese nombre");
+        List<Organizacion> o = orgRepo.findByNombreContainingIgnoreCase(nombre);
+        if (o.isEmpty()) {
+            throw new RuntimeException("Ninguna organizacion tiene o contiene ese nombre");
+        }
         //Creamos una lista para guardar los dto
         List<OrganizacionDTO> organizacionesDto = new ArrayList<>();
         for (Organizacion organizacion : o) {

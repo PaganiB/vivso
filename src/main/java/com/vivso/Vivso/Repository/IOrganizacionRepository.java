@@ -15,8 +15,8 @@ public interface IOrganizacionRepository extends JpaRepository<Organizacion, Str
 
     void deleteByCuit(String cuit);
 
-    Optional<List<Organizacion>> findByNombreContaining(String nombre);
+    List<Organizacion> findByNombreContainingIgnoreCase(String nombre);
 
-    Optional<List<Organizacion>> findOrganizacionByTipo(String tipo);
+    List<Organizacion> findOrganizacionByTipo(String tipo);
 
 }
