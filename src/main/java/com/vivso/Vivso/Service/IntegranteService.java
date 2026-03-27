@@ -1,7 +1,7 @@
 package com.vivso.Vivso.Service;
 
-import com.vivso.Vivso.Model.IntegranteOrganizacion;
-import com.vivso.Vivso.Repository.IOrganizacionIntegranteRepository;
+import com.vivso.Vivso.Model.Integrante;
+import com.vivso.Vivso.Repository.IIntegranteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -9,18 +9,18 @@ import java.util.Collections;
 import java.util.List;
 
 @Service
-public class IntegranteOrganizacionService implements IOrganizacionIntegranteService {
+public class IntegranteService implements IIntegranteService {
 
     @Autowired
-    private IOrganizacionIntegranteRepository integranteRepository;
+    private IIntegranteRepository integranteRepository;
 
     @Override
-    public List<IntegranteOrganizacion> listarTodos() {
+    public List<Integrante> listarTodos() {
         return integranteRepository.findAll();
     }
 
     @Override
-    public IntegranteOrganizacion guardar(IntegranteOrganizacion integrante) {
+    public Integrante guardar(Integrante integrante) {
         return integranteRepository.save(integrante);
     }
 
@@ -35,7 +35,7 @@ public class IntegranteOrganizacionService implements IOrganizacionIntegranteSer
     }
 
     @Override
-    public List<IntegranteOrganizacion> listarPorOrganizacion(String cuitOrg) {
+    public List<Integrante> listarPorOrganizacion(String cuitOrg) {
         // Validamos que el CUIT tenga el formato esperado o al menos no sea nulo
         if (cuitOrg == null || cuitOrg.trim().isEmpty()) {
             return Collections.emptyList();
@@ -46,7 +46,7 @@ public class IntegranteOrganizacionService implements IOrganizacionIntegranteSer
     }
 
     @Override
-    public List<IntegranteOrganizacion> buscarActivos() {
+    public List<Integrante> buscarActivos() {
         return integranteRepository.findByActivoTrue();
     }
 }
