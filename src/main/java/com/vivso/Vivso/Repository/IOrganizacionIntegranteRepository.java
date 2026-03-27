@@ -7,8 +7,8 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface IIntegranteRepository extends JpaRepository<Integrante, Integer> {
-    List<Integrante> findByOrganizacion_Cuit(String cuitOrg);
+public interface IOrganizacionIntegranteRepository extends JpaRepository<Integrante, Integer> {
+    List<Integrante> findByCuitOrg(String cuitOrg);
 
     List<Integrante> findByActivoTrue();
 }

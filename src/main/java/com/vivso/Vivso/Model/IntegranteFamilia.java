@@ -10,7 +10,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "integrantefamilia", schema = "vivso3")
-public class Familiar {
+public class IntegranteFamilia {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_integranteFamilia", nullable = false)
@@ -38,5 +38,6 @@ public class Familiar {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_usuario")
     private Usuario usuario;
+
 
 }

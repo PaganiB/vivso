@@ -1,21 +1,24 @@
 package com.vivso.Vivso.Service;
 
-import com.vivso.Vivso.Model.Integrante;
+import com.vivso.Vivso.DTO.IntegranteDTO;
 
 import java.util.List;
 
 public interface IIntegranteService {
 
-    List<Integrante> listarTodos();
+    //CRUD/ABML
+    List<IntegranteDTO> getIntegrantes();
 
-    Integrante guardar(Integrante integrante);
+    IntegranteDTO saveIntegrantes(IntegranteDTO integranteDto);
 
-    void eliminar(Integer id);
+    IntegranteDTO updateIntegrantes(Integer idIntegrante, IntegranteDTO integranteDto);
+
+    void deleteIntegrantes(Integer idIntegrante);
 
     // Filtrar por organización (CUIT)
-    List<Integrante> listarPorOrganizacion(String cuitOrg);
+    List<IntegranteDTO> listarPorOrganizacion(String cuitOrg);
 
     // Buscar integrantes activos o por función
-    List<Integrante> buscarActivos();
+    List<IntegranteDTO> buscarActivos();
 
 }

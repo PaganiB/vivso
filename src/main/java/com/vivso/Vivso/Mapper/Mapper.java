@@ -1,10 +1,12 @@
 package com.vivso.Vivso.Mapper;
 
 import com.vivso.Vivso.DTO.FamiliaDTO;
-import com.vivso.Vivso.DTO.FamiliarDTO;
+import com.vivso.Vivso.DTO.IntegranteFamiliaDTO;
+import com.vivso.Vivso.DTO.IntegranteDTO;
 import com.vivso.Vivso.DTO.OrganizacionDTO;
 import com.vivso.Vivso.Model.Familia;
-import com.vivso.Vivso.Model.Familiar;
+import com.vivso.Vivso.Model.IntegranteFamilia;
+import com.vivso.Vivso.Model.Integrante;
 import com.vivso.Vivso.Model.Organizacion;
 
 public class Mapper {
@@ -28,17 +30,16 @@ public class Mapper {
                 .build();
     }
     //Mapeo de IntegranteFamilia a DTO
-    public static FamiliarDTO toDTO(Familiar iF){
+    public static IntegranteFamiliaDTO toDTO(IntegranteFamilia iF){
         if (iF == null) return null;
 
-        return FamiliarDTO.builder()
+        return IntegranteFamiliaDTO.builder()
                 .id(iF.getId_integranteFamilia())
-                .dni(iF.getDni())
                 .nombre(iF.getNombre())
                 .apellido(iF.getApellido())
                 .condicion_especial(iF.getCondicion_especial() != null ?
                         iF.getCondicion_especial() : "No posee discapacidad")
-                .familia(iF.getFamilia().getId_familia())
+                .familia(iF.getFamilia().getNombreRepresentante())
                 .usuario(iF.getUsuario() != null ? iF.getUsuario().getUsername() : "Sin usuario")
                 .build();
     }
@@ -62,6 +63,23 @@ public class Mapper {
                 .certificado_residencia_url(o.getCertificado_residencia_url())
                 .cuenta_bancaria_url(o.getCuenta_bancaria_url())
                 .alta_afip_url(o.getAlta_afip_url())
+                .build();
+    }
+
+    //Mapeo de Integrante a DTO
+    public static IntegranteDTO toDTO(Integrante iO){
+        if (iO == null) return null;
+
+        return IntegranteDTO.builder()
+                .idIntegrante(iO.getId_integranteOrganizacion())
+                .nombre(iO.getNombre())
+                .apellido(iO.getApellido())
+                .telefono(iO.getTelefono())
+                .funcion(iO.getFuncion())
+                .domicilio(iO.getDomicilio())
+                .activo(iO.getActivo())
+                .cuitOrg(iO.getOrganizacion().getCuit())
+                .usuario(iO.getUsuario() != null ? iO.getUsuario().getUsername() : "Sin usuario")
                 .build();
     }
 

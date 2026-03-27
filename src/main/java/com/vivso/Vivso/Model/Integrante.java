@@ -1,11 +1,12 @@
 package com.vivso.Vivso.Model;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
-@Getter
-@Setter
+@Getter @Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 @Entity
 @Table(name = "integranteorganizacion", schema = "vivso3")
 public class Integrante {

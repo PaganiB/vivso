@@ -3,9 +3,11 @@ package com.vivso.Vivso.Controller;
 import com.vivso.Vivso.DTO.OrganizacionDTO;
 import com.vivso.Vivso.Service.IOrganizacionService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -17,7 +19,8 @@ public class OrganizacionController {
 
     @GetMapping("/listar")
     public ResponseEntity<List<OrganizacionDTO>> listar(){
-        return ResponseEntity.ok(orgService.getOrganizacion());
+        List<OrganizacionDTO> dtos = new ArrayList<>();
+        return new ResponseEntity<>(dtos, HttpStatus.OK);
     }
 
     @PostMapping
@@ -28,27 +31,32 @@ public class OrganizacionController {
 
     @PutMapping("/{cuit}")
     public ResponseEntity<OrganizacionDTO> actualizar(@PathVariable String cuit, @RequestBody OrganizacionDTO dto){
-        return ResponseEntity.ok(orgService.updateOrganizacion(cuit, dto));
+        OrganizacionDTO dtoActualizado = orgService.updateOrganizacion(cuit, dto);
+        return new ResponseEntity<>(dtoActualizado, HttpStatus.OK);
     }
 
     @DeleteMapping("/{cuit}")
-    public void eliminar (@PathVariable String cuit){
+    public String eliminar (@PathVariable String cuit){
         orgService.deleteOrganizacion(cuit);
+        return "Organizacion eliminada";
     }
 
      @GetMapping("/buscarCuit/{cuit}")
     public ResponseEntity<OrganizacionDTO> buscarCuit(@PathVariable String cuit){
-        return ResponseEntity.ok(orgService.buscarPorCuit(cuit));
+        OrganizacionDTO org = orgService.buscarPorCuit(cuit);
+        return new ResponseEntity<> (org, HttpStatus.OK);
     }
 
     @GetMapping("/buscarTipo/{tipo}")
     public  ResponseEntity<List<OrganizacionDTO>> buscarTipo(@PathVariable String tipo){
-        return ResponseEntity.ok(orgService.buscarPorTipo(tipo));
+        List<OrganizacionDTO> dtos = orgService.buscarPorTipo(tipo);
+        return new  ResponseEntity<>(dtos, HttpStatus.OK);
     }
 
     @GetMapping("/buscarNombre/{nombre}")
     public ResponseEntity<List<OrganizacionDTO>> buscarNombre(@PathVariable String nombre){
-        return ResponseEntity.ok(orgService.buscarPorNombre(nombre));
+        List<OrganizacionDTO> dtos = orgService.buscarPorNombre(nombre);
+        return new  ResponseEntity<>(dtos, HttpStatus.OK);
     }
 
 }

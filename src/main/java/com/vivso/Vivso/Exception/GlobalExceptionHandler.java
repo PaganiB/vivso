@@ -14,20 +14,21 @@ public class GlobalExceptionHandler {
 
     // 1. MANEJO DE EXCEPCIONES DE LÓGICA (RuntimeException)
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<Map<String, String>> manejarRuntime(RuntimeException ex) {
+    public ResponseEntity<String> manejarRuntime(RuntimeException ex) {
         String mensaje = ex.getMessage().toLowerCase();
-        Map<String, String> respuesta = new HashMap<>();
-        respuesta.put("error", ex.getMessage()); // Mantenemos el mensaje original aquí
 
-        HttpStatus status = HttpStatus.BAD_REQUEST; // Por defecto 400
-
+        // Si en el Service pusiste "no encontrado"
         if (mensaje.contains("no encontrado")) {
-            status = HttpStatus.NOT_FOUND; // 404
-        } else if (mensaje.contains("ya existe") || mensaje.contains("registrado")) {
-            status = HttpStatus.CONFLICT; // 409
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
         }
 
-        return ResponseEntity.status(status).body(respuesta);
+        // Si en el Service pusiste "ya existe" o "ya está registrado"
+        if (mensaje.contains("ya existe") || mensaje.contains("registrado")) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+        }
+
+        // Para cualquier otro error de lógica de negocio
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 
     // 2. MANEJO DE VALIDACIONES DE DTO (@Valid)
