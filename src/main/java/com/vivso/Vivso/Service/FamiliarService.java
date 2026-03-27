@@ -18,7 +18,7 @@ import java.util.List;
 public class FamiliarService implements IFamiliarService {
 
     @Autowired
-    private IFamiliarRepository integranteRepository;
+    private IFamiliarRepository familiarRepository;
     @Autowired
     private IFamiliaRepository familiaRepo;
     @Autowired
@@ -26,14 +26,14 @@ public class FamiliarService implements IFamiliarService {
 
     @Override
     public List<FamiliarDTO> listarTodos() {
-        return integranteRepository.findAll().stream()
+        return familiarRepository.findAll().stream()
                 .map(Mapper::toDTO)
                 .toList();
     }
 
     @Override
     public FamiliarDTO buscarPorId(Integer id) {
-        return integranteRepository.findById(id)
+        return familiarRepository.findById(id)
                 .map(Mapper::toDTO)
                 .orElseThrow(() -> new RuntimeException("Familiar no encontrado con el ID: " + id));
     }
@@ -61,16 +61,16 @@ public class FamiliarService implements IFamiliarService {
                 .usuario(user)
                 .build();
 
-        return Mapper.toDTO(integranteRepository.save(iF));
+        return Mapper.toDTO(familiarRepository.save(iF));
     }
 
     @Override
     public void eliminar(Integer id) {
-        if (!integranteRepository.existsById(id)) {
+        if (!familiarRepository.existsById(id)) {
             throw new RuntimeException("No existe integrante de la familia con el ID: " + id);
         }
 
-        integranteRepository.deleteById(id);
+        familiarRepository.deleteById(id);
     }
 
     @Override
@@ -83,7 +83,7 @@ public class FamiliarService implements IFamiliarService {
         // 2. Buscamos en el repo.
         // Si lo encuentra, lo mapea.
         // Si NO lo encuentra, lanza la excepción que atrapará el GEH.
-        return integranteRepository.findByDni(dni)
+        return familiarRepository.findByDni(dni)
                 .map(Mapper::toDTO)
                 .orElseThrow(() -> new RuntimeException("No se encontró ningún familiar con el DNI: " + dni));
     }
@@ -96,7 +96,7 @@ public class FamiliarService implements IFamiliarService {
         }
 
         // 2. Buscamos por el ID de la relación, convertimos a Stream, mapeamos a DTO y listamos
-        return integranteRepository.findByFamiliaId_familia(id_familia).stream()
+        return familiarRepository.findByFamiliaId_familia(id_familia).stream()
                 .map(Mapper::toDTO)
                 .toList();
     }
@@ -104,7 +104,7 @@ public class FamiliarService implements IFamiliarService {
     @Override
     public FamiliarDTO actualizar(Integer id, FamiliarDTO dto) {
         // Buscamos el integrante existente o lanzamos error si no está
-        Familiar familiar = integranteRepository.findById(id)
+        Familiar familiar = familiarRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("No se puede editar: familiar no encontrado con ID " + id));
 
         //  Actualizamos los campos
@@ -128,6 +128,6 @@ public class FamiliarService implements IFamiliarService {
         familiar.setUsuario(user);
 
         // Guardamos y devolvemos el DTO actualizado
-        return Mapper.toDTO(integranteRepository.save(familiar));
+        return Mapper.toDTO(familiarRepository.save(familiar));
     }
 }
