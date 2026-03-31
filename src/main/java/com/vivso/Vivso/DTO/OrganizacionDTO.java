@@ -12,7 +12,7 @@ import lombok.*;
 public class OrganizacionDTO {
 
     @NotBlank(message = "El CUIT es obligatorio")
-    @Pattern(regexp = "\"^\\d{2}-\\d{8}-\\d{1}$\"", message = "El CUIT debe tener el formato XX-XXXXXXXX-X")
+    @Pattern(regexp = "^\\d{2}-\\d{8}-\\d{1}$", message = "El CUIT debe tener el formato XX-XXXXXXXX-X")
     private String cuit;
 
     @NotBlank(message = "El nombre de la organización es obligatorio")
