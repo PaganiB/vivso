@@ -2,6 +2,7 @@ package com.vivso.Vivso.Controller;
 
 import com.vivso.Vivso.DTO.FamiliaDTO;
 import com.vivso.Vivso.Service.IFamiliaService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,13 +22,13 @@ public class FamiliaController {
     }
 
     @PostMapping
-    public ResponseEntity<FamiliaDTO> crear(@RequestBody FamiliaDTO familiaDTO){
+    public ResponseEntity<FamiliaDTO> crear(@Valid @RequestBody FamiliaDTO familiaDTO){
         FamiliaDTO created = familiaService.saveFamilia(familiaDTO);
         return ResponseEntity.created(URI.create("/familia" + created.getIdFamilia())).body(created);
     }
 
     @PutMapping("/{idFamilia}")
-    public ResponseEntity<FamiliaDTO> actualizar(@PathVariable Integer idFamilia, @RequestBody FamiliaDTO familiaDTO){
+    public ResponseEntity<FamiliaDTO> actualizar(@PathVariable Integer idFamilia, @Valid @RequestBody FamiliaDTO familiaDTO){
         return ResponseEntity.ok(familiaService.updateFamilia(idFamilia, familiaDTO));
     }
 

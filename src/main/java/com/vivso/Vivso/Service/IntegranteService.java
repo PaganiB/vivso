@@ -1,13 +1,11 @@
 package com.vivso.Vivso.Service;
 
-import com.vivso.Vivso.DTO.FamiliaDTO;
 import com.vivso.Vivso.DTO.IntegranteDTO;
 import com.vivso.Vivso.Mapper.Mapper;
-import com.vivso.Vivso.Model.Familia;
 import com.vivso.Vivso.Model.Integrante;
 import com.vivso.Vivso.Model.Organizacion;
 import com.vivso.Vivso.Model.Usuario;
-import com.vivso.Vivso.Repository.IOrganizacionIntegranteRepository;
+import com.vivso.Vivso.Repository.IIntegranteRepository;
 import com.vivso.Vivso.Repository.IOrganizacionRepository;
 import com.vivso.Vivso.Repository.IUsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +18,7 @@ import java.util.List;
 public class IntegranteService implements IIntegranteService {
 
     @Autowired
-    private IOrganizacionIntegranteRepository integranteRepo;
+    private IIntegranteRepository integranteRepo;
     @Autowired
     private IOrganizacionRepository orgRepo;
     @Autowired
@@ -52,7 +50,7 @@ public class IntegranteService implements IIntegranteService {
                 .orElse(null);
 
 
-        //Construir nuestro objeto integranteOrganizacion
+        //Construir nuestro objeto integrante
         var i = Integrante.builder()
                 .dni(integranteDto.getDni())
                 .nombre(integranteDto.getNombre())
@@ -67,8 +65,8 @@ public class IntegranteService implements IIntegranteService {
         //Guardamos en la BD
         integranteRepo.save(i);
         //Mapeo de salida
-        IntegranteDTO integranteOrgSalida = Mapper.toDTO(i);
-        return integranteOrgSalida;
+        IntegranteDTO integranteSalida = Mapper.toDTO(i);
+        return integranteSalida;
     }
 
     @Override
@@ -127,7 +125,7 @@ public class IntegranteService implements IIntegranteService {
     @Override
     public List<IntegranteDTO> listarPorOrganizacion(String cuitOrg) {
         //Primero creamos una lista que contenga a los integrantes de una misma org
-        List<Integrante> integrantes = integranteRepo.findByCuitOrg(cuitOrg);
+        List<Integrante> integrantes = integranteRepo.findByOrganizacion_Cuit(cuitOrg);
         //Creamos lista vacia para los dto
         List<IntegranteDTO> integrantesDto = new ArrayList<>();
         //Recorremos el for integrante por integrante y agregamos a la lista dto los integrantes
