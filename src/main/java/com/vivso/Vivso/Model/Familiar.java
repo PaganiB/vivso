@@ -10,11 +10,11 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "integrantefamilia", schema = "vivso3")
-public class IntegranteFamilia {
+public class Familiar {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_integranteFamilia", nullable = false)
-    private Integer id_integranteFamilia;
+    private Integer idIntegranteFamilia;
 
     @Column(name = "DNI", length = 50)
     private String dni;
