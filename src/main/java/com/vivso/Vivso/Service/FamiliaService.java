@@ -3,7 +3,6 @@ package com.vivso.Vivso.Service;
 import com.vivso.Vivso.DTO.FamiliaDTO;
 import com.vivso.Vivso.Mapper.Mapper;
 import com.vivso.Vivso.Model.Familia;
-import com.vivso.Vivso.Model.IntegranteFamilia;
 import com.vivso.Vivso.Model.Organizacion;
 import com.vivso.Vivso.Repository.IFamiliaRepository;
 import com.vivso.Vivso.Repository.IOrganizacionRepository;
@@ -12,7 +11,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class FamiliaService implements IFamiliaService {
@@ -40,7 +38,6 @@ public class FamiliaService implements IFamiliaService {
     @Override
     public FamiliaDTO saveFamilia(FamiliaDTO familiaDto) {
         //Validaciones
-        if (familiaDto == null) throw new RuntimeException("familiaDTO es null");
         if (familiaDto.getCuitOrg() == null) throw new RuntimeException("Debe indicar el cuit");
         //Buscar la organización
         Organizacion org= orgRepo.findById(familiaDto.getCuitOrg()).orElse(null);
