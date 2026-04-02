@@ -118,7 +118,7 @@ public class IntegranteService implements IIntegranteService {
     @Override
     public void deleteIntegrantes(Integer idIntegrante) {
         Integrante i = integranteRepo.findById(idIntegrante).orElse(null);
-        if (i == null) throw new RuntimeException("Integrante no encontrada");
+        if (i == null) throw new RuntimeException("Integrante no encontrado");
         integranteRepo.delete(i);
     }
 
