@@ -1,10 +1,7 @@
 package com.vivso.Vivso.Mapper;
 
 import com.vivso.Vivso.DTO.*;
-import com.vivso.Vivso.Model.Familia;
-import com.vivso.Vivso.Model.Familiar;
-import com.vivso.Vivso.Model.Integrante;
-import com.vivso.Vivso.Model.Organizacion;
+import com.vivso.Vivso.Model.*;
 
 public class Mapper {
 
@@ -70,6 +67,7 @@ public class Mapper {
 
         return IntegranteDTO.builder()
                 .idIntegrante(iO.getId_integranteOrganizacion())
+                .dni(iO.getDni())
                 .nombre(iO.getNombre())
                 .apellido(iO.getApellido())
                 .telefono(iO.getTelefono())
@@ -81,4 +79,22 @@ public class Mapper {
                 .build();
     }
 
+    //Mapeo de Vivienda a DTO
+    public static ViviendaDTO toDTO(Vivienda v){
+        if (v == null) return null;
+
+        return com.vivso.Vivso.DTO.ViviendaDTO.builder()
+                .numExp(v.getNumExp()).
+                departamento(v.getDepartamento()).
+                localidad(v.getLocalidad()).
+                direccion(v.getDireccion()).
+                superficie(v.getSuperficie()).
+                fechaInic(v.getFechaInic()).
+                fechaFin(v.getFechaFin()).
+                estado(v.getEstado()).
+                observacion(v.getObservacion()).
+                id_familia(v.getFamilia() != null ? v.getFamilia().getId_familia() : null).
+                representante(v.getFamilia() != null ? v.getFamilia().getNombreRepresentante() : "Sin asignar").
+                build();
+    }
 }

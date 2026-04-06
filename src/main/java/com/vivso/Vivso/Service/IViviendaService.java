@@ -1,23 +1,25 @@
 package com.vivso.Vivso.Service;
 
+import com.vivso.Vivso.DTO.ViviendaDTO;
 import com.vivso.Vivso.Model.EstadoVivienda;
-import com.vivso.Vivso.Model.Vivienda;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface IViviendaService {
-    List<Vivienda> listarTodas();
+    List<ViviendaDTO> listarTodas();
 
-    Vivienda buscarPorExpediente(String numExp);
+    ViviendaDTO buscarPorExpediente(String numExp);
 
-    Vivienda guardar(Vivienda vivienda);
+    ViviendaDTO guardar(ViviendaDTO viviendaDTO);
 
     void eliminar(String numExp);
 
     // Filtrar por estado (Iniciada, Avanzada, Finalizada)
-    List<Vivienda> buscarPorEstado(EstadoVivienda estado);
+    List<ViviendaDTO> buscarPorEstado(EstadoVivienda estado);
 
     // Buscar la vivienda adjudicada a una familia
-    Optional<Vivienda> buscarPorFamilia(Integer idFamilia);
+    Optional<ViviendaDTO> buscarPorFamilia(Integer idFamilia);
+
+    ViviendaDTO actualizar(String numExp, ViviendaDTO viviendaDTO);
 }
