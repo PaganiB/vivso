@@ -98,6 +98,23 @@ public class Mapper {
 
 
 
-    //empiezo
+    // Mapeo de Solicitud a DTO
+    public static SolicitudDTO toDTO(Solicitud s){
+        if (s == null) return null;
+
+        return SolicitudDTO.builder()
+                .idSolicitud(s.getId_solicitud())
+                .GDE(s.getGDE())
+                .fechaSolicitud(s.getFechaSolicitud())
+                .cuitOrg(s.getCuitOrg().getCuit())
+                .numExp(
+                        s.getNumExp() != null
+                                ? s.getNumExp().getNumExp()
+                                : null
+                )
+                .estado(s.getEstado())
+                .observacion(s.getObservacion())
+                .build();
+    }
 
 }

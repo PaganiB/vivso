@@ -1,13 +1,15 @@
 package com.vivso.Vivso.Model;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDate;
 
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 @Entity
 @Table(name = "solicitud", schema = "vivso3")
 public class Solicitud {
@@ -24,7 +26,7 @@ public class Solicitud {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "CUIT_org", nullable = false)
-    private Organizacion CUIT_org;
+    private Organizacion cuitOrg;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "numExp")

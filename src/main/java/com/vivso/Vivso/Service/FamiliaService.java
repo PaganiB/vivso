@@ -123,7 +123,6 @@ public class FamiliaService implements IFamiliaService {
         if (f == null) throw new RuntimeException("Familia no encontrada");
         //Convertivos familia a Dto
         return Mapper.toDTO(f);
-
     }
 
 }

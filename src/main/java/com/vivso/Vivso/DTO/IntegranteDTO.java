@@ -1,6 +1,7 @@
 package com.vivso.Vivso.DTO;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.*;
@@ -34,7 +35,7 @@ public class IntegranteDTO {
     @NotBlank(message = "El domicilio es obligatorio")
     private String domicilio;
 
-    @NotBlank(message = "Se debe indicar si el integrante se encuentra activo o no")
+    @NotNull(message = "Se debe indicar si el integrante se encuentra activo o no")
     private Boolean activo;
 
     @Size(max = 50, message = "El nombre de usuario no puede superar los 50 caracteres")
