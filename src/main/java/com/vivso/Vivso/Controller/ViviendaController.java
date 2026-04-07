@@ -57,4 +57,10 @@ public class ViviendaController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @PutMapping("/{numExp}")
+    public ResponseEntity<ViviendaDTO> actualizar(@PathVariable String numExp, @Valid @RequestBody ViviendaDTO dto) {
+        ViviendaDTO actualizado = viviendaService.actualizar(numExp, dto);
+        return ResponseEntity.ok(actualizado);
+    }
 }

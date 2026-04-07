@@ -86,6 +86,7 @@ public class ViviendaService implements IViviendaService {
     }
 
     @Override
+    @Transactional
     public ViviendaDTO actualizar(String numExp, ViviendaDTO viviendaDTO) {
         Vivienda vivienda = viviendaRepo.findById(numExp).orElseThrow(
                 () -> new  RuntimeException("Vivienda no encontrada con ID: " + numExp)
@@ -99,10 +100,8 @@ public class ViviendaService implements IViviendaService {
         vivienda.setEstado(viviendaDTO.getEstado());
         vivienda.setObservacion(viviendaDTO.getObservacion());
 
-        Familia fam = familiaRepo.findById(viviendaDTO.getId_familia()).orElseThrow(
-                () -> new RuntimeException("Debe haber una familia asociada")
-        );
-        vivienda.setFamilia(fam);
+        vivienda.setFamilia(familiaRepo.findById(viviendaDTO.getId_familia())
+                .orElseThrow(() -> new RuntimeException("Familia no encontrada")));
 
         return Mapper.toDTO(viviendaRepo.saveAndFlush(vivienda));
     }
