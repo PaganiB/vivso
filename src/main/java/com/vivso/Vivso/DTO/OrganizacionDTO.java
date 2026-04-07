@@ -64,5 +64,4 @@ public class OrganizacionDTO {
     @NotBlank(message = "La constancia de alta en AFIP es obligatoria")
     @Pattern(regexp = "(?i).*\\.(pdf|jpg|png|jpeg)$", message = "El alta de AFIP debe ser PDF, JPG o PNG")
     private String alta_afip_url;
-
 }
