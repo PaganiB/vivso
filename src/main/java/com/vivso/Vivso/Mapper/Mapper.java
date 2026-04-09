@@ -79,24 +79,24 @@ public class Mapper {
                 .build();
     }
 
+    //Mapeo de Vivienda a DTO
+    public static ViviendaDTO toDTO(Vivienda v){
+        if (v == null) return null;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        return com.vivso.Vivso.DTO.ViviendaDTO.builder()
+                .numExp(v.getNumExp()).
+                departamento(v.getDepartamento()).
+                localidad(v.getLocalidad()).
+                direccion(v.getDireccion()).
+                superficie(v.getSuperficie()).
+                fechaInic(v.getFechaInic()).
+                fechaFin(v.getFechaFin()).
+                estado(v.getEstado()).
+                observacion(v.getObservacion()).
+                id_familia(v.getFamilia() != null ? v.getFamilia().getId_familia() : null).
+                representante(v.getFamilia() != null ? v.getFamilia().getNombreRepresentante() : "Sin asignar").
+                build();
+    }
 
     // Mapeo de Solicitud a DTO
     public static SolicitudDTO toDTO(Solicitud s){

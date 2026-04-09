@@ -1,17 +1,19 @@
 package com.vivso.Vivso.Model;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Getter
 @Setter
+@Builder
 @Entity
+@AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "vivienda", schema = "vivso3")
-public class Vivienda {
+public class Vivienda{
     @Id
     @Column(name = "numExp", nullable = false, length = 50)
     private String numExp;
@@ -42,4 +44,7 @@ public class Vivienda {
     @Column(name = "observacion", length = 200)
     private String observacion;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_familia", nullable = false)
+    private Familia familia;
 }

@@ -8,6 +8,7 @@ import com.vivso.Vivso.Model.Usuario;
 import com.vivso.Vivso.Repository.IFamiliarRepository;
 import com.vivso.Vivso.Repository.IFamiliaRepository;
 import com.vivso.Vivso.Repository.IUsuarioRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -97,6 +98,7 @@ public class FamiliarService implements IFamiliarService {
     }
 
     @Override
+    @Transactional
     public void eliminar(Integer id) {
         if (!familiarRepository.existsById(id)) {
             throw new RuntimeException("No existe integrante de la familia con el ID: " + id);
