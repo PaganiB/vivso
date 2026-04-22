@@ -1,5 +1,6 @@
 package com.vivso.Vivso.Repository;
 
+import com.vivso.Vivso.Model.Familia;
 import com.vivso.Vivso.Model.Familiar;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

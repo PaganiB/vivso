@@ -3,6 +3,7 @@ package com.vivso.Vivso.Service;
 import com.vivso.Vivso.DTO.PasswordUpdateDTO;
 import com.vivso.Vivso.DTO.UsuarioRegistroDTO;
 import com.vivso.Vivso.DTO.UsuarioRespuestaDTO;
+import com.vivso.Vivso.Mapper.Mapper;
 import com.vivso.Vivso.Model.Usuario;
 import com.vivso.Vivso.Repository.IUsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,24 +20,15 @@ public class UsuarioService implements IUsuarioService {
     @Override
     public List<UsuarioRespuestaDTO> listarTodos() {
         return usuarioRepo.findAll().stream()
-                .map(u -> new UsuarioRespuestaDTO(
-                        u.getId(),
-                        u.getUsername(),
-                        u.getEmail(),
-                        u.getRol()))
+                .map(Mapper::toRespuestaDTO)
                 .toList();
     }
 
     @Override
     public UsuarioRespuestaDTO buscarPorId(Integer id) {
         return usuarioRepo.findById(id)
-                .map(u -> new UsuarioRespuestaDTO(
-                        u.getId(),
-                        u.getUsername(),
-                        u.getEmail(),
-                        u.getRol()))
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID " + id)
-                );
+                .map(Mapper::toRespuestaDTO) // Usamos tu Mapper acá
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID " + id));
     }
 
     @Override
@@ -54,11 +46,7 @@ public class UsuarioService implements IUsuarioService {
     @Override
     public List<UsuarioRespuestaDTO> buscarPorRol(String rol) {
         return usuarioRepo.findByRol(rol).stream()
-                .map(u -> new UsuarioRespuestaDTO(
-                        u.getId(),
-                        u.getUsername(),
-                        u.getEmail(),
-                        u.getRol()))
+                .map(Mapper::toRespuestaDTO)
                 .toList();
     }
 
@@ -124,11 +112,7 @@ public class UsuarioService implements IUsuarioService {
 
         // 4. Guardamos y devolvemos el DTO
         Usuario actualizado = usuarioRepo.save(usuario);
-        return new UsuarioRespuestaDTO(
-                actualizado.getId(),
-                actualizado.getUsername(),
-                actualizado.getEmail(),
-                actualizado.getRol());
+        return Mapper.toRespuestaDTO(actualizado);
     }
 
     @Override

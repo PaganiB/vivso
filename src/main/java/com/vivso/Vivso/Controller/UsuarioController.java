@@ -3,6 +3,7 @@ package com.vivso.Vivso.Controller;
 import com.vivso.Vivso.DTO.PasswordUpdateDTO;
 import com.vivso.Vivso.DTO.UsuarioRegistroDTO;
 import com.vivso.Vivso.DTO.UsuarioRespuestaDTO;
+import com.vivso.Vivso.Mapper.Mapper;
 import com.vivso.Vivso.Model.Usuario;
 import com.vivso.Vivso.Service.UsuarioService;
 import jakarta.validation.Valid;
@@ -22,17 +23,8 @@ public class UsuarioController {
 
     @PostMapping("/crear")
     public ResponseEntity<UsuarioRespuestaDTO> crear(@Valid @RequestBody UsuarioRegistroDTO registroDto) {
-
-            Usuario nuevoUsuario = usuarioService.registrarNuevoUsuario(registroDto);
-
-            UsuarioRespuestaDTO respuesta = new UsuarioRespuestaDTO(
-                    nuevoUsuario.getId(),
-                    nuevoUsuario.getUsername(),
-                    nuevoUsuario.getEmail(),
-                    nuevoUsuario.getRol()
-            );
-
-            return new ResponseEntity<>(respuesta, HttpStatus.CREATED);
+        Usuario nuevoUsuario = usuarioService.registrarNuevoUsuario(registroDto);
+        return new ResponseEntity<>(Mapper.toRespuestaDTO(nuevoUsuario), HttpStatus.CREATED);
     }
 
     //METODO GET PARA VER TODOS LOS USUARIOS

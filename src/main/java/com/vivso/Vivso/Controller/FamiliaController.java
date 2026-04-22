@@ -24,7 +24,7 @@ public class FamiliaController {
     @PostMapping
     public ResponseEntity<FamiliaDTO> crear(@Valid @RequestBody FamiliaDTO familiaDTO){
         FamiliaDTO created = familiaService.saveFamilia(familiaDTO);
-        return ResponseEntity.created(URI.create("/familia" + created.getIdFamilia())).body(created);
+        return ResponseEntity.created(URI.create("/familia/" + created.getIdFamilia())).body(created);
     }
 
     @PutMapping("/{idFamilia}")
