@@ -8,7 +8,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -26,7 +25,7 @@ public class OrganizacionController {
     @PostMapping
     public ResponseEntity<OrganizacionDTO> crear(@Valid @RequestBody OrganizacionDTO dto){
         OrganizacionDTO created = orgService.saveOrganizacion(dto);
-        return ResponseEntity.created(URI.create("/controller" + created.getCuit())).body(created);
+        return ResponseEntity.created(URI.create("/organizacion/" + created.getCuit())).body(created);
     }
 
     @PutMapping("/{cuit}")

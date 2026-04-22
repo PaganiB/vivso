@@ -43,7 +43,7 @@ public class IntegranteService implements IIntegranteService {
     public IntegranteDTO saveIntegrantes(IntegranteDTO integranteDto) {
 
         // 1. Buscamos los objetos reales en la base de datos usando los nombres/IDs del DTO
-        Organizacion org = orgRepo.findOrganizacionByCuit(integranteDto.getCuitOrg())
+        Organizacion org = orgRepo.findById(integranteDto.getCuitOrg())
                 .orElseThrow(() -> new RuntimeException("Organizacion no encontrada"));
 
         Usuario user = usuarioRepo.findByUsername(integranteDto.getUsuario())

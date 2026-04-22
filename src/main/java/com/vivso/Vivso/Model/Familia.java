@@ -27,21 +27,6 @@ public class Familia {
     @JoinColumn(name = "CUIT_org", nullable = false)
     private Organizacion cuitOrg;
 
-    @Column(name = "acta_compromiso_url")
-    private String actaCompromisoUrl;
-
-    @Column(name = "certificado_residencia_url")
-    private String certificadoResidenciaUrl;
-
-    @Column(name = "escritura_url")
-    private String escrituraUrl;
-
-    @Column(name = "declaracion_jurada_url")
-    private String declaracionJuradaUrl;
-
-    @Column(name = "foto_vivienda_url")
-    private String fotoViviendaUrl;
-
     @Column(name = "antiguedadRancho", columnDefinition = "int CHECK (antiguedadRancho >= 5)")
     private Integer antiguedadRancho;
 

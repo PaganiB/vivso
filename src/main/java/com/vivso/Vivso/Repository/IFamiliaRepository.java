@@ -4,9 +4,11 @@ import com.vivso.Vivso.Model.Familia;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface IFamiliaRepository extends JpaRepository<Familia, Integer> {
     Optional<Familia> findByNombreRepresentante(String familia);
+    List<Familia> findByNombreRepresentanteContainingIgnoreCase(String nombre);
 }

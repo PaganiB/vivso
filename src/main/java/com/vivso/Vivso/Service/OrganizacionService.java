@@ -33,7 +33,7 @@ public class OrganizacionService implements IOrganizacionService {
     @Override
     public OrganizacionDTO saveOrganizacion(OrganizacionDTO organizacionDto) {
 
-        if (orgRepo.existsOrganizacionByCuit(organizacionDto.getCuit()) == true) throw new RuntimeException("Ese cuit ya existe");
+        if (orgRepo.existsById(organizacionDto.getCuit())) throw new RuntimeException("Ese cuit ya existe");
         //Construir nuestro objeto organizacion
         var org = Organizacion.builder()
                 .cuit(organizacionDto.getCuit())
@@ -42,14 +42,6 @@ public class OrganizacionService implements IOrganizacionService {
                 .dom_legal(organizacionDto.getDom_legal())
                 .contacto(organizacionDto.getContacto())
                 .cpe(organizacionDto.getCpe())
-                .nota_solicitud_url(organizacionDto.getNota_solicitud_url())
-                .vigencia_url(organizacionDto.getVigencia_url())
-                .acta_compromiso_url(organizacionDto.getActa_compromiso_url())
-                .acta_asamblea_url(organizacionDto.getActa_asamblea_url())
-                .dni_autoridades_url(organizacionDto.getDni_autoridades_url())
-                .certificado_residencia_url(organizacionDto.getCertificado_residencia_url())
-                .cuenta_bancaria_url(organizacionDto.getCuenta_bancaria_url())
-                .alta_afip_url(organizacionDto.getAlta_afip_url())
                 .build();
         //Guardamos en la BD
         orgRepo.save(org);
@@ -79,30 +71,6 @@ public class OrganizacionService implements IOrganizacionService {
         if (organizacionDto.getCpe()!=null) {
             o.setCpe(organizacionDto.getCpe());
         }
-        if (organizacionDto.getNota_solicitud_url()!=null) {
-            o.setNota_solicitud_url(organizacionDto.getNota_solicitud_url());
-        }
-        if (organizacionDto.getVigencia_url()!=null) {
-            o.setVigencia_url(organizacionDto.getVigencia_url());
-        }
-        if (organizacionDto.getActa_compromiso_url()!=null) {
-            o.setActa_compromiso_url(organizacionDto.getActa_compromiso_url());
-        }
-        if (organizacionDto.getActa_asamblea_url()!=null) {
-            o.setActa_asamblea_url(organizacionDto.getActa_asamblea_url());
-        }
-        if (organizacionDto.getDni_autoridades_url()!=null) {
-            o.setDni_autoridades_url(organizacionDto.getDni_autoridades_url());
-        }
-        if (organizacionDto.getCertificado_residencia_url()!=null) {
-            o.setCertificado_residencia_url(organizacionDto.getCertificado_residencia_url());
-        }
-        if (organizacionDto.getCuenta_bancaria_url()!=null) {
-            o.setCuenta_bancaria_url(organizacionDto.getCuenta_bancaria_url());
-        }
-        if (organizacionDto.getAlta_afip_url()!=null) {
-            o.setAlta_afip_url(organizacionDto.getAlta_afip_url());
-        }
         //Guardamos en la BD la organizacion actualizada
         orgRepo.save(o);
         //Mapeo de la salida
@@ -120,7 +88,7 @@ public class OrganizacionService implements IOrganizacionService {
     @Override
     public OrganizacionDTO buscarPorCuit(String cuit) {
         //Buscamos la organizacion
-        Organizacion o = orgRepo.findOrganizacionByCuit(cuit).orElse(null);
+        Organizacion o = orgRepo.findById(cuit).orElse(null);
         if (o == null) throw new RuntimeException("organizacion no encontrada");
         //Convertivos organizacion a Dto
         return Mapper.toDTO(o);

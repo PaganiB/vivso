@@ -24,8 +24,6 @@ public class SolicitudService implements ISolicitudService {
     private IOrganizacionRepository orgRepo;
     @Autowired
     private IViviendaRepository viviendaRepo;
-    @Autowired
-    private IOrganizacionRepository Organizacion;
 
     @Override
     public List<SolicitudDTO> getSolicitudes() {
