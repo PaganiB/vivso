@@ -9,14 +9,6 @@ import java.util.Optional;
 
 @Repository
 public interface IOrganizacionRepository extends JpaRepository<Organizacion, String> {
-    Optional<Organizacion> findOrganizacionByCuit(String cuit);
-
-    boolean existsOrganizacionByCuit(String cuit);
-
-    void deleteByCuit(String cuit);
-
     List<Organizacion> findByNombreContainingIgnoreCase(String nombre);
-
     List<Organizacion> findOrganizacionByTipo(String tipo);
-
 }

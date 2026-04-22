@@ -20,7 +20,7 @@ public class SolicitudDTO {
     private String GDE;
 
     @NotNull(message = "Fecha de solicitud obligatoria")
-    @JsonFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(pattern = "dd-MM-yyyy")
     private LocalDate fechaSolicitud;
 
     @NotBlank(message = "El cuit es obligatorio")

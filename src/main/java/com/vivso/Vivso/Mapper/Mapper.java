@@ -16,11 +16,6 @@ public class Mapper {
                 .antiguedadRancho(f.getAntiguedadRancho())
                 .coordenadasRancho(f.getCoordenadasRancho())
                 .cuitOrg(f.getCuitOrg().getCuit())
-                .actaCompromisoUrl(f.getActaCompromisoUrl())
-                .certificadoResidenciaUrl(f.getCertificadoResidenciaUrl())
-                .escrituraUrl(f.getEscrituraUrl())
-                .declaracionJuradaUrl(f.getDeclaracionJuradaUrl())
-                .fotoViviendaUrl(f.getFotoViviendaUrl())
                 .build();
     }
     //Mapeo de Familiar a DTO
@@ -50,14 +45,6 @@ public class Mapper {
                 .dom_legal(o.getDom_legal())
                 .contacto(o.getContacto())
                 .cpe(o.getCpe())
-                .nota_solicitud_url(o.getNota_solicitud_url())
-                .vigencia_url(o.getVigencia_url())
-                .acta_compromiso_url(o.getActa_compromiso_url())
-                .acta_asamblea_url(o.getActa_asamblea_url())
-                .dni_autoridades_url(o.getDni_autoridades_url())
-                .certificado_residencia_url(o.getCertificado_residencia_url())
-                .cuenta_bancaria_url(o.getCuenta_bancaria_url())
-                .alta_afip_url(o.getAlta_afip_url())
                 .build();
     }
 
@@ -117,4 +104,47 @@ public class Mapper {
                 .build();
     }
 
+    //Mapeo de Documento a DTO
+    public static DocumentoDTO toDTO(Documento d){
+        if (d == null) return null;
+
+        return DocumentoDTO.builder()
+                .idDocumento(d.getId())
+                .nombre(d.getNombreOriginal())
+                .url(d.getUrlPath())
+                .tipo(d.getTipo())
+                .estado(d.getEstado())
+                .motivoRechazo(d.getMotivoRechazo())
+                .fechaSubida(d.getFechaSubida())
+                .fechaRevision(d.getFechaRevision())
+                .id_familia(d.getFamilia() != null ? d.getFamilia().getId_familia() : null)
+                .cuitOrg(d.getOrganizacion() != null ? d.getOrganizacion().getCuit() : null)
+                .idUsuarioRevisor(d.getRevisor() !=null ? d.getRevisor().getId() : null)
+                .nombreRevisor(d.getRevisor() != null ? d.getRevisor().getUsername() : "Sin asignar")
+                .build();
+    }
+
+    // Mapeo de Usuario a RespuestaDTO
+    public static UsuarioRespuestaDTO toRespuestaDTO(Usuario u) {
+        if (u == null) return null;
+
+        return UsuarioRespuestaDTO.builder()
+                .id(u.getId())
+                .username(u.getUsername())
+                .email(u.getEmail())
+                .rol(u.getRol() != null ? u.getRol() : "SIN_ROL")
+                .build();
+    }
+
+    //Mapeo de Usuario a RegistroDTO
+    public static UsuarioRegistroDTO toRegistroDTO(Usuario u) {
+        if (u == null) return null;
+
+        return UsuarioRegistroDTO.builder()
+                .username(u.getUsername())
+                .password(u.getPassword_hash())
+                .email(u.getEmail())
+                .rol(u.getRol() != null ? u.getRol() : "SIN_ROL")
+                .build();
+    }
 }

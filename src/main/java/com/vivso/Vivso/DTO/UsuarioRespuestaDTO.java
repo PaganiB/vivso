@@ -1,14 +1,12 @@
 package com.vivso.Vivso.DTO;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 //DTO para retornar como respuesta
 public class UsuarioRespuestaDTO {
     private Integer id;

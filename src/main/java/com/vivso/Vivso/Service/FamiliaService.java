@@ -49,11 +49,6 @@ public class FamiliaService implements IFamiliaService {
                 .nombreRepresentante(familiaDto.getNombreRepresentante())
                 .contacto(familiaDto.getContacto())
                 .cuitOrg(org)
-                .actaCompromisoUrl(familiaDto.getActaCompromisoUrl())
-                .certificadoResidenciaUrl(familiaDto.getCertificadoResidenciaUrl())
-                .escrituraUrl(familiaDto.getEscrituraUrl())
-                .declaracionJuradaUrl(familiaDto.getDeclaracionJuradaUrl())
-                .fotoViviendaUrl(familiaDto.getFotoViviendaUrl())
                 .antiguedadRancho(familiaDto.getAntiguedadRancho())
                 .coordenadasRancho(familiaDto.getCoordenadasRancho())
                 .build();
@@ -86,21 +81,6 @@ public class FamiliaService implements IFamiliaService {
             Organizacion org = orgRepo.findById(familiaDto.getCuitOrg()).orElse(null);
             if (org == null) throw new RuntimeException("Organizacion no encontrada");
             f.setCuitOrg(org);
-        }
-        if (familiaDto.getActaCompromisoUrl()!=null) {
-            f.setActaCompromisoUrl(familiaDto.getActaCompromisoUrl());
-        }
-        if (familiaDto.getCertificadoResidenciaUrl()!=null) {
-            f.setCertificadoResidenciaUrl(familiaDto.getCertificadoResidenciaUrl());
-        }
-        if (familiaDto.getEscrituraUrl()!=null) {
-            f.setEscrituraUrl(familiaDto.getEscrituraUrl());
-        }
-        if (familiaDto.getDeclaracionJuradaUrl()!=null) {
-            f.setDeclaracionJuradaUrl(familiaDto.getDeclaracionJuradaUrl());
-        }
-        if (familiaDto.getFotoViviendaUrl()!=null) {
-            f.setFotoViviendaUrl(familiaDto.getFotoViviendaUrl());
         }
         //Guardamos en la BD la familia actualizada
         familiaRepo.save(f);
