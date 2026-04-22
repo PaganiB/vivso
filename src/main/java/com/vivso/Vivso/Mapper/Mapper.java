@@ -16,11 +16,6 @@ public class Mapper {
                 .antiguedadRancho(f.getAntiguedadRancho())
                 .coordenadasRancho(f.getCoordenadasRancho())
                 .cuitOrg(f.getCuitOrg().getCuit())
-                /*.actaCompromisoUrl(f.getActaCompromisoUrl())
-                .certificadoResidenciaUrl(f.getCertificadoResidenciaUrl())
-                .escrituraUrl(f.getEscrituraUrl())
-                .declaracionJuradaUrl(f.getDeclaracionJuradaUrl())
-                .fotoViviendaUrl(f.getFotoViviendaUrl())*/
                 .build();
     }
     //Mapeo de Familiar a DTO
@@ -50,14 +45,6 @@ public class Mapper {
                 .dom_legal(o.getDom_legal())
                 .contacto(o.getContacto())
                 .cpe(o.getCpe())
-                /*.nota_solicitud_url(o.getNota_solicitud_url())
-                .vigencia_url(o.getVigencia_url())
-                .acta_compromiso_url(o.getActa_compromiso_url())
-                .acta_asamblea_url(o.getActa_asamblea_url())
-                .dni_autoridades_url(o.getDni_autoridades_url())
-                .certificado_residencia_url(o.getCertificado_residencia_url())
-                .cuenta_bancaria_url(o.getCuenta_bancaria_url())
-                .alta_afip_url(o.getAlta_afip_url())*/
                 .build();
     }
 
