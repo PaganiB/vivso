@@ -80,6 +80,7 @@ public class Mapper {
                 fechaFin(v.getFechaFin()).
                 estado(v.getEstado()).
                 observacion(v.getObservacion()).
+                coordenadas(v.getCoordenadas()).
                 id_familia(v.getFamilia() != null ? v.getFamilia().getId_familia() : null).
                 representante(v.getFamilia() != null ? v.getFamilia().getNombreRepresentante() : "Sin asignar").
                 build();

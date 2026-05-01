@@ -2,10 +2,7 @@ package com.vivso.Vivso.DTO;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.vivso.Vivso.Model.EstadoVivienda;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -47,6 +44,10 @@ public class ViviendaDTO {
 
     @NotNull(message = "Debe ingresar la familia asociada")
     private Integer id_familia;
+
+    @Pattern(regexp = "^[-+]?\\d{1,2}(\\.\\d+)?\\s*,\\s*[-+]?\\d{1,3}(\\.\\d+)?$",
+            message = "Las coordenadas deben tener el formato 'Latitud, Longitud' (ej: -27.7833, -64.2667)")
+    private String coordenadas;
 
     private String representante;
 }

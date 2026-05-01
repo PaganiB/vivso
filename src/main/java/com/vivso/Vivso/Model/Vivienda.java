@@ -36,6 +36,9 @@ public class Vivienda{
     @Column(name = "fechaFin")
     private LocalDate fechaFin;
 
+    @Column(name = "coordenadas")
+    private String coordenadas;
+
     @Lob
     @Column(name = "estado")
     @Enumerated(EnumType.STRING)
@@ -47,4 +50,17 @@ public class Vivienda{
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_familia", nullable = false)
     private Familia familia;
+
+    @Column(name = "avance_obra")
+    private Integer avanceObra = 0; // Valor por defecto 0
+
+    @Enumerated(EnumType.STRING)
+    private ClasificacionVivienda clasificacion;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipoVivienda")
+    private TipoVivienda tipoVivienda;
+
+    @Column(name = "cant_dormitorios")
+    private Integer cantDormitorios;
 }

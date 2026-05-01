@@ -105,4 +105,22 @@ public class ViviendaService implements IViviendaService {
 
         return Mapper.toDTO(viviendaRepo.saveAndFlush(vivienda));
     }
+
+    @Override
+    public List<ViviendaDTO> filtrarPorLocalidad(String localidad) {
+        return viviendaRepo.findByLocalidadContainingIgnoreCase(localidad)
+                .stream().map(Mapper::toDTO).toList();
+    }
+
+    @Override
+    public List<ViviendaDTO> filtrarPorAnioInicio(int anio) {
+        return viviendaRepo.findByAnioInicio(anio)
+                .stream().map(Mapper::toDTO).toList();
+    }
+
+    @Override
+    public List<ViviendaDTO> filtrarPorAnioFin(int anio) {
+        return viviendaRepo.findByAnioFin(anio)
+                .stream().map(Mapper::toDTO).toList();
+    }
 }
