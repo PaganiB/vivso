@@ -40,5 +40,6 @@ public class Solicitud {
     @Column(name = "observacion", length = 200)
     private String observacion;
 
-
+    @Column(name = "fechaActivacion")
+    private LocalDate fechaActivacion;
 }

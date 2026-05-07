@@ -22,4 +22,10 @@ public interface IViviendaService {
     Optional<ViviendaDTO> buscarPorFamilia(Integer idFamilia);
 
     ViviendaDTO actualizar(String numExp, ViviendaDTO viviendaDTO);
+
+    List<ViviendaDTO> filtrarPorLocalidad(String localidad);
+
+    List<ViviendaDTO> filtrarPorAnioFin(int anio);
+
+    List<ViviendaDTO> filtrarPorAnioInicio(int anio);
 }

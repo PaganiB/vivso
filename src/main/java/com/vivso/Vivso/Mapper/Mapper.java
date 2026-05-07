@@ -75,11 +75,18 @@ public class Mapper {
                 departamento(v.getDepartamento()).
                 localidad(v.getLocalidad()).
                 direccion(v.getDireccion()).
+                barrio(v.getBarrio()).
                 superficie(v.getSuperficie()).
                 fechaInic(v.getFechaInic()).
                 fechaFin(v.getFechaFin()).
                 estado(v.getEstado()).
                 observacion(v.getObservacion()).
+                avanceObra(v.getAvanceObra()). // Nuevo
+                clasificacion(v.getClasificacion()) .// Nuevo
+                tipoVivienda(v.getTipoVivienda()). // Nuevo
+                cantDormitorios(v.getCantDormitorios()).// Nuevo
+                lng(v.getLng()).
+                lat(v.getLat()).
                 id_familia(v.getFamilia() != null ? v.getFamilia().getId_familia() : null).
                 representante(v.getFamilia() != null ? v.getFamilia().getNombreRepresentante() : "Sin asignar").
                 build();
