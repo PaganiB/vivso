@@ -27,6 +27,9 @@ public class Vivienda{
     @Column(name = "direccion", length = 100)
     private String direccion;
 
+    @Column(name = "barrio ", length = 100)
+    private String barrio;
+
     @Column(name = "superficie", precision = 10, scale = 2)
     private BigDecimal superficie;
 
@@ -36,8 +39,10 @@ public class Vivienda{
     @Column(name = "fechaFin")
     private LocalDate fechaFin;
 
-    @Column(name = "coordenadas")
-    private String coordenadas;
+    @Column(name = "latitud")
+    private Double lat;
+    @Column(name = "longitud")
+    private Double lng;
 
     @Lob
     @Column(name = "estado")

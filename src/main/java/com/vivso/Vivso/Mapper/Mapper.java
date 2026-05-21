@@ -58,10 +58,10 @@ public class Mapper {
                 .nombre(iO.getNombre())
                 .apellido(iO.getApellido())
                 .telefono(iO.getTelefono())
-                .funcion(iO.getFuncion())
+                .cargo(iO.getCargo())
                 .domicilio(iO.getDomicilio())
                 .activo(iO.getActivo())
-                .cuitOrg(iO.getOrganizacion().getCuit())
+                .cuitOrg(iO.getOrganizacion() != null ? iO.getOrganizacion().getCuit() : null)
                 .usuario(iO.getUsuario() != null ? iO.getUsuario().getUsername() : "Sin usuario")
                 .build();
     }
@@ -75,12 +75,18 @@ public class Mapper {
                 departamento(v.getDepartamento()).
                 localidad(v.getLocalidad()).
                 direccion(v.getDireccion()).
+                barrio(v.getBarrio()).
                 superficie(v.getSuperficie()).
                 fechaInic(v.getFechaInic()).
                 fechaFin(v.getFechaFin()).
                 estado(v.getEstado()).
                 observacion(v.getObservacion()).
-                coordenadas(v.getCoordenadas()).
+                avanceObra(v.getAvanceObra()). // Nuevo
+                clasificacion(v.getClasificacion()) .// Nuevo
+                tipoVivienda(v.getTipoVivienda()). // Nuevo
+                cantDormitorios(v.getCantDormitorios()).// Nuevo
+                lng(v.getLng()).
+                lat(v.getLat()).
                 id_familia(v.getFamilia() != null ? v.getFamilia().getId_familia() : null).
                 representante(v.getFamilia() != null ? v.getFamilia().getNombreRepresentante() : "Sin asignar").
                 build();
