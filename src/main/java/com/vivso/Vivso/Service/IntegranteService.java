@@ -11,6 +11,7 @@ import com.vivso.Vivso.Repository.IUsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,7 +57,8 @@ public class IntegranteService implements IIntegranteService {
                 .nombre(integranteDto.getNombre())
                 .apellido(integranteDto.getApellido())
                 .telefono(integranteDto.getTelefono())
-                .funcion(integranteDto.getFuncion())
+                .cargo(integranteDto.getCargo())
+                .fechaAltaCargo(integranteDto.getFechaAltaCargo())
                 .domicilio(integranteDto.getDomicilio())
                 .activo(integranteDto.getActivo())
                 .organizacion(org)
@@ -88,8 +90,11 @@ public class IntegranteService implements IIntegranteService {
         if (integranteDto.getTelefono()!=null) {
             i.setTelefono(integranteDto.getTelefono());
         }
-        if (integranteDto.getFuncion()!=null) {
-            i.setFuncion(integranteDto.getFuncion());
+        if (integranteDto.getCargo()!=null) {
+            i.setCargo(integranteDto.getCargo());
+        }
+        if(integranteDto.getFechaAltaCargo()!=null) {
+            i.setFechaAltaCargo(integranteDto.getFechaAltaCargo());
         }
         if (integranteDto.getDomicilio()!=null) {
             i.setDomicilio(integranteDto.getDomicilio());
@@ -148,4 +153,23 @@ public class IntegranteService implements IIntegranteService {
         return integrantesDto;
     }
 
+    @Override
+    public void validarVigenciaOng(Organizacion ong) {
+        LocalDate hoy = LocalDate.now();
+        LocalDate limiteCancelacion = ong.getFechaVencimientoVigencia().minusMonths(3);
+
+        if (hoy.isAfter(limiteCancelacion)) {
+            throw new RuntimeException("La ONG " + ong.getNombre() +
+                    " no está habilitada. Su constancia de vigencia vence en menos de 3 meses o ya está vencida.");
+        }
+    }
+
+    private void validarExclusividadMiembro(String dni, String cuitOrg) {
+        boolean yaPerteneceAOtraOng = integranteRepo.existsByDniAndActivoTrueAndOrganizacion_CuitOrgNot(dni, cuitOrg);
+
+        if (yaPerteneceAOtraOng) {
+            throw new RuntimeException("Error: El ciudadano con DNI " + dni +
+                    " ya es integrante activo de otra organización social registrada.");
+        }
+    }
 }

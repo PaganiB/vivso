@@ -69,16 +69,23 @@ public class ViviendaService implements IViviendaService {
 
         // 2. Construimos la ENTIDAD (Mapeo manual de DTO a Entidad)
         Vivienda v = Vivienda.builder()
-                .numExp(dto.getNumExp()) // Recordá que este ID lo mandamos nosotros
+                .numExp(dto.getNumExp())
                 .departamento(dto.getDepartamento())
                 .localidad(dto.getLocalidad())
+                .barrio(dto.getBarrio())
                 .direccion(dto.getDireccion())
+                .lat(dto.getLat())
+                .lng(dto.getLng())
                 .superficie(dto.getSuperficie())
                 .fechaInic(dto.getFechaInic())
                 .fechaFin(dto.getFechaFin())
                 .estado(dto.getEstado())
+                .avanceObra(dto.getAvanceObra() != null ? dto.getAvanceObra() : 0) // Nuevo
+                .clasificacion(dto.getClasificacion()) // Nuevo
+                .tipoVivienda(dto.getTipoVivienda()) // Nuevo
+                .cantDormitorios(dto.getCantDormitorios()) // Nuevo
                 .observacion(dto.getObservacion())
-                .familia(fam) // Seteamos el objeto completo
+                .familia(fam)
                 .build();
 
         // 3. Guardamos y devolvemos el DTO (usando saveAndFlush para asegurar el ID)
@@ -87,22 +94,45 @@ public class ViviendaService implements IViviendaService {
 
     @Override
     @Transactional
-    public ViviendaDTO actualizar(String numExp, ViviendaDTO viviendaDTO) {
-        Vivienda vivienda = viviendaRepo.findById(numExp).orElseThrow(
-                () -> new  RuntimeException("Vivienda no encontrada con ID: " + numExp)
+    public ViviendaDTO actualizar(String numExp, ViviendaDTO dto) {
+        Vivienda v = viviendaRepo.findById(numExp).orElseThrow(
+                () -> new RuntimeException("Vivienda no encontrada")
         );
 
-        vivienda.setDepartamento(viviendaDTO.getDepartamento());
-        vivienda.setLocalidad(viviendaDTO.getLocalidad());
-        vivienda.setDireccion(viviendaDTO.getDireccion());
-        vivienda.setFechaInic(viviendaDTO.getFechaInic());
-        vivienda.setFechaFin(viviendaDTO.getFechaFin());
-        vivienda.setEstado(viviendaDTO.getEstado());
-        vivienda.setObservacion(viviendaDTO.getObservacion());
+        v.setDepartamento(dto.getDepartamento());
+        v.setLocalidad(dto.getLocalidad());
+        v.setBarrio(dto.getBarrio());
+        v.setDireccion(dto.getDireccion());
+        v.setLat(dto.getLat());
+        v.setLng(dto.getLng());
+        v.setEstado(dto.getEstado());
+        v.setAvanceObra(dto.getAvanceObra()); // Nuevo
+        v.setClasificacion(dto.getClasificacion()); // Nuevo
+        v.setTipoVivienda(dto.getTipoVivienda()); // Nuevo
+        v.setCantDormitorios(dto.getCantDormitorios()); // Nuevo
+        v.setObservacion(dto.getObservacion());
 
-        vivienda.setFamilia(familiaRepo.findById(viviendaDTO.getId_familia())
+        v.setFamilia(familiaRepo.findById(dto.getId_familia())
                 .orElseThrow(() -> new RuntimeException("Familia no encontrada")));
 
-        return Mapper.toDTO(viviendaRepo.saveAndFlush(vivienda));
+        return Mapper.toDTO(viviendaRepo.saveAndFlush(v));
+    }
+
+    @Override
+    public List<ViviendaDTO> filtrarPorLocalidad(String localidad) {
+        return viviendaRepo.findByLocalidadContainingIgnoreCase(localidad)
+                .stream().map(Mapper::toDTO).toList();
+    }
+
+    @Override
+    public List<ViviendaDTO> filtrarPorAnioInicio(int anio) {
+        return viviendaRepo.findByAnioInicio(anio)
+                .stream().map(Mapper::toDTO).toList();
+    }
+
+    @Override
+    public List<ViviendaDTO> filtrarPorAnioFin(int anio) {
+        return viviendaRepo.findByAnioFin(anio)
+                .stream().map(Mapper::toDTO).toList();
     }
 }

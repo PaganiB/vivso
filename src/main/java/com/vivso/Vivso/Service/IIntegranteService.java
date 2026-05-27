@@ -1,6 +1,7 @@
 package com.vivso.Vivso.Service;
 
 import com.vivso.Vivso.DTO.IntegranteDTO;
+import com.vivso.Vivso.Model.Organizacion;
 
 import java.util.List;
 
@@ -21,4 +22,5 @@ public interface IIntegranteService {
     // Buscar integrantes activos o por función
     List<IntegranteDTO> buscarActivos();
 
+    void validarVigenciaOng(Organizacion ong);
 }

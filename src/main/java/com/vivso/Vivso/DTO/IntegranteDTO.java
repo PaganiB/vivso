@@ -1,10 +1,14 @@
 package com.vivso.Vivso.DTO;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.vivso.Vivso.Model.TipoCargo;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.*;
+
+import java.time.LocalDate;
 
 @Getter @Setter
 @AllArgsConstructor
@@ -29,8 +33,12 @@ public class IntegranteDTO {
     @NotBlank(message = "Debe proporcionar un telefono de contacto")
     private String telefono;
 
-    @NotBlank(message = "La funcion es obligatoria")
-    private String funcion;
+    @NotNull(message = "El cargo en la institución es obligatorio")
+    private TipoCargo cargo;
+
+    @NotNull(message = "La fecha de alta del cargo es obligatoria")
+    @JsonFormat(pattern = "dd-MM-yyyy")
+    private LocalDate fechaAltaCargo;
 
     @NotBlank(message = "El domicilio es obligatorio")
     private String domicilio;

@@ -11,4 +11,8 @@ public interface IIntegranteRepository extends JpaRepository<Integrante, Integer
     List<Integrante> findByOrganizacion_Cuit(String cuitOrg);
 
     List<Integrante> findByActivoTrue();
+
+    boolean existsByDniAndOrganizacionIdNot(String dni, Long organizacionId);
+
+    boolean existsByDniAndActivoTrueAndOrganizacion_CuitOrgNot(String dni, String cuitOrg);
 }
