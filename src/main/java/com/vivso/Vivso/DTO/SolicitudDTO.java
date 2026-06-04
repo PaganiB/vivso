@@ -23,7 +23,7 @@ public class SolicitudDTO {
     @JsonFormat(pattern = "dd-MM-yyyy")
     private LocalDate fechaSolicitud;
 
-    @NotBlank(message = "El cuit es obligatorio")
+    @NotBlank(message = "El CUIT de la organización es obligatorio")
     private String cuitOrg;
 
     private String numExp;
@@ -34,4 +34,6 @@ public class SolicitudDTO {
     @Size(max = 200, message = "Los caracteres máximos son 200")
     private String observacion;
 
+    @NotNull(message = "Debe indicar el ID de la familia solicitante")
+    private Integer idFamilia;
 }

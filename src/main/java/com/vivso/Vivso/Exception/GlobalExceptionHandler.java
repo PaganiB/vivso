@@ -45,12 +45,12 @@ public class GlobalExceptionHandler {
     }
 
     // 3. ERROR GENÉRICO (El "Safe Net")
-    /*@ExceptionHandler(Exception.class)
+    @ExceptionHandler(Exception.class)
     public ResponseEntity<String> manejarErrorGlobal(Exception ex) {
         // Log para que tú veas qué pasó en la consola
         System.out.println("LOG VIVSO - Error Inesperado: " + ex.getMessage());
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Ocurrió un error inesperado en el sistema VIVSO. Por favor, contacte al administrador.");
-    }*/
+    }
 }

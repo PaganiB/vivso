@@ -3,7 +3,7 @@ package com.vivso.Vivso.Service;
 import com.vivso.Vivso.DTO.PasswordUpdateDTO;
 import com.vivso.Vivso.DTO.UsuarioRegistroDTO;
 import com.vivso.Vivso.DTO.UsuarioRespuestaDTO;
-import com.vivso.Vivso.Mapper.Mapper;
+import com.vivso.Vivso.Mapper.VivsoMapper;
 import com.vivso.Vivso.Model.Usuario;
 import com.vivso.Vivso.Repository.IUsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,39 +14,35 @@ import java.util.List;
 @Service
 public class UsuarioService implements IUsuarioService {
 
-    @Autowired
-    private IUsuarioRepository usuarioRepo;
+    @Autowired private IUsuarioRepository usuarioRepo;
+    @Autowired private VivsoMapper mapper;
 
     @Override
     public List<UsuarioRespuestaDTO> listarTodos() {
         return usuarioRepo.findAll().stream()
-                .map(Mapper::toRespuestaDTO)
+                .map(mapper::toRespuestaDTO)
                 .toList();
     }
 
     @Override
     public UsuarioRespuestaDTO buscarPorId(Integer id) {
         return usuarioRepo.findById(id)
-                .map(Mapper::toRespuestaDTO) // Usamos tu Mapper acá
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID " + id));
+                .map(mapper::toRespuestaDTO)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + id));
     }
 
     @Override
     public Usuario buscarPorUsername(String username) {
-        // 1. Validación de entrada para evitar consultas innecesarias
-        if (username == null || username.trim().isEmpty()) {
+        if (username == null || username.trim().isEmpty())
             throw new IllegalArgumentException("El nombre de usuario no puede estar vacío");
-        }
-
-        // 2. Buscamos y manejamos la ausencia de datos en una sola línea
         return usuarioRepo.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con el nombre: " + username));
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + username));
     }
 
     @Override
     public List<UsuarioRespuestaDTO> buscarPorRol(String rol) {
         return usuarioRepo.findByRol(rol).stream()
-                .map(Mapper::toRespuestaDTO)
+                .map(mapper::toRespuestaDTO)
                 .toList();
     }
 
@@ -61,74 +57,63 @@ public class UsuarioService implements IUsuarioService {
     }
 
     @Override
-    public Usuario registrarNuevoUsuario(UsuarioRegistroDTO registroDto) {
-        if (this.existePorEmail(registroDto.getEmail())) {
+    public Usuario registrarNuevoUsuario(UsuarioRegistroDTO dto) {
+        if (existePorEmail(dto.getEmail()))
             throw new RuntimeException("El email ya está registrado.");
-        }
-        if (this.existePorUsername(registroDto.getUsername())) {
+        if (existePorUsername(dto.getUsername()))
             throw new RuntimeException("El nombre de usuario ya existe.");
-        }
+
         Usuario usuario = new Usuario();
-
-        usuario.setUsername(registroDto.getUsername());
-        usuario.setEmail(registroDto.getEmail());
-        usuario.setRol(registroDto.getRol());
+        usuario.setUsername(dto.getUsername());
+        usuario.setEmail(dto.getEmail());
+        usuario.setRol(dto.getRol());
         usuario.setActivo(true);
-
-        usuario.setPassword_hash(registroDto.getPassword());
+        usuario.setPassword_hash(dto.getPassword()); // TODO: reemplazar por BCrypt al implementar JWT
 
         return usuarioRepo.save(usuario);
     }
 
     @Override
     public void desactivar(Integer id) {
-        Usuario usuario = usuarioRepo.findById(id).orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID " + id));
-        usuario.setActivo(false);
-        usuarioRepo.save(usuario);
+        Usuario u = usuarioRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + id));
+        u.setActivo(false);
+        usuarioRepo.save(u);
     }
 
     @Override
     public void activar(Integer id) {
-        Usuario usuario = usuarioRepo.findById(id).orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID " + id));
-        usuario.setActivo(true);
-        usuarioRepo.save(usuario);
+        Usuario u = usuarioRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + id));
+        u.setActivo(true);
+        usuarioRepo.save(u);
     }
 
     @Override
     public UsuarioRespuestaDTO actualizar(Integer id, UsuarioRegistroDTO dto) {
-        // 1. Buscamos el usuario existente
-        Usuario usuario = usuarioRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID " + id));
+        Usuario u = usuarioRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + id));
 
-        // 2. Validamos si el nuevo email ya lo tiene OTRO usuario
-        if (!usuario.getEmail().equals(dto.getEmail()) && usuarioRepo.existsByEmail(dto.getEmail())) {
+        if (!u.getEmail().equals(dto.getEmail()) && usuarioRepo.existsByEmail(dto.getEmail()))
             throw new RuntimeException("El nuevo email ya está registrado por otro usuario.");
-        }
 
-        // 3. Actualizamos los campos
-        usuario.setUsername(dto.getUsername());
-        usuario.setEmail(dto.getEmail());
-        usuario.setRol(dto.getRol());
+        u.setUsername(dto.getUsername());
+        u.setEmail(dto.getEmail());
+        u.setRol(dto.getRol());
 
-        // 4. Guardamos y devolvemos el DTO
-        Usuario actualizado = usuarioRepo.save(usuario);
-        return Mapper.toRespuestaDTO(actualizado);
+        return mapper.toRespuestaDTO(usuarioRepo.save(u));
     }
 
     @Override
     public void actualizarPassword(Integer id, PasswordUpdateDTO dto) {
-        Usuario usuario = usuarioRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID " + id));
+        Usuario u = usuarioRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + id));
 
-        // VALIDACIÓN DE SEGURIDAD
-        // Comparamos la contraseña enviada con la que está en la base de datos
-        // Nota: Si usas BCrypt, aquí usarías passwordEncoder.matches()
-        if (!usuario.getPassword_hash().equals(dto.getPasswordActual())) {
+        // TODO: reemplazar por BCrypt cuando se implemente JWT
+        if (!u.getPassword_hash().equals(dto.getPasswordActual()))
             throw new RuntimeException("La contraseña actual es incorrecta");
-        }
 
-        // Actualizamos con la nueva
-        usuario.setPassword_hash(dto.getPasswordNueva());
-        usuarioRepo.save(usuario);
+        u.setPassword_hash(dto.getPasswordNueva());
+        usuarioRepo.save(u);
     }
 }

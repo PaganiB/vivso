@@ -13,6 +13,6 @@ import java.util.Optional;
 @Repository
 public interface IFamiliarRepository extends JpaRepository<Familiar, Integer> {
     Optional<Familiar> findByDni(String dni);
-    @Query("SELECT i FROM Familiar i WHERE i.familia.id_familia = :id_familia")
-    List<Familiar> findByFamiliaId_familia(@Param("id_familia") Integer id_familia);
+    @Query("SELECT i FROM Familiar i WHERE i.familia.idFamilia = :idFamilia")
+    List<Familiar> findByFamilia_IdFamilia(@Param("idFamilia") Integer idFamilia);
 }

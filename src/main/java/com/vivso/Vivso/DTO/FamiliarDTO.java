@@ -13,7 +13,7 @@ import lombok.*;
 @Builder
 public class FamiliarDTO {
 
-    private Integer idIntegranteFamilia;
+    private Integer id_familiar;
 
     @NotBlank(message = "El DNI es obligatorio")
     @Pattern(regexp = "^\\d{7,8}$", message = "El DNI debe tener entre 7 y 8 números, sin puntos ni espacios")

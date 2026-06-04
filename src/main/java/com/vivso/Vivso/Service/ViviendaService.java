@@ -1,7 +1,7 @@
 package com.vivso.Vivso.Service;
 
 import com.vivso.Vivso.DTO.ViviendaDTO;
-import com.vivso.Vivso.Mapper.Mapper;
+import com.vivso.Vivso.Mapper.VivsoMapper;
 import com.vivso.Vivso.Model.EstadoVivienda;
 import com.vivso.Vivso.Model.Familia;
 import com.vivso.Vivso.Model.Vivienda;
@@ -17,122 +17,92 @@ import java.util.Optional;
 @Service
 public class ViviendaService implements IViviendaService {
 
-    @Autowired
-    private IViviendaRepository viviendaRepo;
-
-    @Autowired
-    private IFamiliaRepository familiaRepo;
+    @Autowired private IViviendaRepository viviendaRepo;
+    @Autowired private IFamiliaRepository familiaRepo;
+    @Autowired private VivsoMapper mapper;
 
     @Override
     public List<ViviendaDTO> listarTodas() {
         return viviendaRepo.findAll().stream()
-                .map(Mapper::toDTO)
+                .map(mapper::toDTO)
                 .toList();
     }
 
     @Override
     public ViviendaDTO buscarPorExpediente(String numExp) {
         return viviendaRepo.findViviendaByNumExp(numExp)
-                .map(Mapper::toDTO)
-                .orElseThrow(() -> new RuntimeException("Vivienda no encontrada con numero de expediente: " + numExp ));
+                .map(mapper::toDTO)
+                .orElseThrow(() -> new RuntimeException("Vivienda no encontrada: " + numExp));
     }
 
     @Override
     @Transactional
     public void eliminar(String numExp) {
-        // Verificamos si existe antes de borrar para que no tire un error feo
-        if (!viviendaRepo.existsById(numExp)) {
+        if (!viviendaRepo.existsById(numExp))
             throw new RuntimeException("No se puede eliminar: la vivienda " + numExp + " no existe.");
-        }
         viviendaRepo.deleteById(numExp);
     }
 
     @Override
     public List<ViviendaDTO> buscarPorEstado(EstadoVivienda estado) {
         return viviendaRepo.findViviendaByEstado(estado).stream()
-                .map(Mapper::toDTO)
+                .map(mapper::toDTO)
                 .toList();
     }
 
     @Override
     public Optional<ViviendaDTO> buscarPorFamilia(Integer idFamilia) {
-        return viviendaRepo.findByFamiliaId_familia(idFamilia)
-                .map(Mapper::toDTO);
+        return viviendaRepo.findByFamilia_IdFamilia(idFamilia)
+                .map(mapper::toDTO);
     }
 
     @Override
     @Transactional
     public ViviendaDTO guardar(ViviendaDTO dto) {
-        // 1. Buscamos la familia para asegurar la relación (Obligatoria)
-        Familia fam = familiaRepo.findById(dto.getId_familia())
-                .orElseThrow(() -> new RuntimeException("Familia no encontrada con ID: " + dto.getId_familia()));
+        Familia fam = familiaRepo.findById(dto.getIdFamilia())
+                .orElseThrow(() -> new RuntimeException("Familia no encontrada: " + dto.getIdFamilia()));
 
-        // 2. Construimos la ENTIDAD (Mapeo manual de DTO a Entidad)
-        Vivienda v = Vivienda.builder()
-                .numExp(dto.getNumExp())
-                .departamento(dto.getDepartamento())
-                .localidad(dto.getLocalidad())
-                .barrio(dto.getBarrio())
-                .direccion(dto.getDireccion())
-                .lat(dto.getLat())
-                .lng(dto.getLng())
-                .superficie(dto.getSuperficie())
-                .fechaInic(dto.getFechaInic())
-                .fechaFin(dto.getFechaFin())
-                .estado(dto.getEstado())
-                .avanceObra(dto.getAvanceObra() != null ? dto.getAvanceObra() : 0) // Nuevo
-                .clasificacion(dto.getClasificacion()) // Nuevo
-                .tipoVivienda(dto.getTipoVivienda()) // Nuevo
-                .cantDormitorios(dto.getCantDormitorios()) // Nuevo
-                .observacion(dto.getObservacion())
-                .familia(fam)
-                .build();
+        Vivienda v = mapper.toEntity(dto);
+        v.setFamilia(fam);
+        if (v.getAvanceObra() == null) v.setAvanceObra(0);
 
-        // 3. Guardamos y devolvemos el DTO (usando saveAndFlush para asegurar el ID)
-        return Mapper.toDTO(viviendaRepo.saveAndFlush(v));
+        return mapper.toDTO(viviendaRepo.saveAndFlush(v));
     }
 
     @Override
     @Transactional
     public ViviendaDTO actualizar(String numExp, ViviendaDTO dto) {
-        Vivienda v = viviendaRepo.findById(numExp).orElseThrow(
-                () -> new RuntimeException("Vivienda no encontrada")
-        );
+        Vivienda v = viviendaRepo.findById(numExp)
+                .orElseThrow(() -> new RuntimeException("Vivienda no encontrada: " + numExp));
 
-        v.setDepartamento(dto.getDepartamento());
-        v.setLocalidad(dto.getLocalidad());
-        v.setBarrio(dto.getBarrio());
-        v.setDireccion(dto.getDireccion());
-        v.setLat(dto.getLat());
-        v.setLng(dto.getLng());
-        v.setEstado(dto.getEstado());
-        v.setAvanceObra(dto.getAvanceObra()); // Nuevo
-        v.setClasificacion(dto.getClasificacion()); // Nuevo
-        v.setTipoVivienda(dto.getTipoVivienda()); // Nuevo
-        v.setCantDormitorios(dto.getCantDormitorios()); // Nuevo
-        v.setObservacion(dto.getObservacion());
+        mapper.updateFromDto(dto, v);
 
-        v.setFamilia(familiaRepo.findById(dto.getId_familia())
-                .orElseThrow(() -> new RuntimeException("Familia no encontrada")));
+        if (dto.getIdFamilia() != null) {
+            v.setFamilia(familiaRepo.findById(dto.getIdFamilia())
+                    .orElseThrow(() -> new RuntimeException("Familia no encontrada: " + dto.getIdFamilia())));
+        }
 
-        return Mapper.toDTO(viviendaRepo.saveAndFlush(v));
+        return mapper.toDTO(viviendaRepo.saveAndFlush(v));
     }
 
     @Override
     public List<ViviendaDTO> filtrarPorLocalidad(String localidad) {
-        return viviendaRepo.findByLocalidadContainingIgnoreCase(localidad)
-                .stream().map(Mapper::toDTO).toList();
+        return viviendaRepo.findByLocalidadContainingIgnoreCase(localidad).stream()
+                .map(mapper::toDTO)
+                .toList();
     }
 
     @Override
     public List<ViviendaDTO> filtrarPorAnioInicio(int anio) {
-        return viviendaRepo.findByAnioInicio(anio)
-                .stream().map(Mapper::toDTO).toList();
+        return viviendaRepo.findByAnioInicio(anio).stream()
+                .map(mapper::toDTO)
+                .toList();
     }
 
     @Override
     public List<ViviendaDTO> filtrarPorAnioFin(int anio) {
-        return viviendaRepo.findByAnioFin(anio)
-                .stream().map(Mapper::toDTO).toList();
+        return viviendaRepo.findByAnioFin(anio).stream()
+                .map(mapper::toDTO)
+                .toList();
     }
 }

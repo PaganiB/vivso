@@ -1,9 +1,12 @@
 package com.vivso.Vivso.DTO;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.*;
+
+import java.time.LocalDate;
 
 @Getter @Setter
 @AllArgsConstructor
@@ -30,4 +33,9 @@ public class OrganizacionDTO {
 
     @NotBlank(message = "El Código Postal (CPE) es obligatorio")
     private String cpe;
+
+    @NotNull(message = "La fecha de vencimiento es obligatoria")
+    private LocalDate fechaVencimientoVigencia;
+
+    private LocalDate fechaUltimaAsamblea;
 }
