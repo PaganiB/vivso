@@ -15,7 +15,7 @@ public class Integrante {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_integranteOrganizacion", nullable = false)
-    private Integer id_integranteOrganizacion;
+    private Integer idIntegrante;
 
     @Column(name = "DNI", length = 50)
     private String dni;
@@ -29,6 +29,7 @@ public class Integrante {
     @Column(name = "telefono", length = 20)
     private String telefono;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "cargo", length = 50)
     private TipoCargo cargo;
 

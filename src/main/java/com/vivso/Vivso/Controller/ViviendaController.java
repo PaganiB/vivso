@@ -22,7 +22,7 @@ public class ViviendaController {
     @PostMapping
     public ResponseEntity<ViviendaDTO> crear(@Valid @RequestBody ViviendaDTO dto) {
         ViviendaDTO created = viviendaService.guardar(dto);
-        return ResponseEntity.created(URI.create("/vivienda" + created.getNumExp())).build();
+        return ResponseEntity.created(URI.create("/vivienda" + created.getNumExp())).body(created);
     }
 
     // GET /vivienda -> LISTAR TODAS

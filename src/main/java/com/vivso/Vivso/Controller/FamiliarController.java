@@ -1,7 +1,6 @@
 package com.vivso.Vivso.Controller;
 
 import com.vivso.Vivso.DTO.FamiliarDTO;
-import com.vivso.Vivso.DTO.OrganizacionDTO;
 import com.vivso.Vivso.Service.FamiliarService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +41,7 @@ public class FamiliarController {
     @PostMapping("/crear")
     public ResponseEntity<FamiliarDTO> crear(@Valid @RequestBody FamiliarDTO dto) {
         FamiliarDTO created = familiarService.guardar(dto);
-        return ResponseEntity.created(URI.create("/familiar/crear" + created.getIdIntegranteFamilia())).body(created);
+        return ResponseEntity.created(URI.create("/familiar/crear" + created.getId_familiar())).body(created);
     }
 
     // BUSCAR INTEGRANTES DE UNA FAMILIA

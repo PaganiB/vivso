@@ -16,7 +16,7 @@ public class Solicitud {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_solicitud", nullable = false)
-    private Integer id_solicitud;
+    private Integer idSolicitud;
 
     @Column(name = "GDE", length = 50)
     private String GDE;
@@ -42,4 +42,8 @@ public class Solicitud {
 
     @Column(name = "fechaActivacion")
     private LocalDate fechaActivacion;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "id_familia", nullable = false)
+    private Familia familiaBeneficiaria;
 }

@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,8 +17,8 @@ public interface IViviendaRepository extends JpaRepository<Vivienda, String> {
 
     List<Vivienda> findViviendaByEstado(EstadoVivienda estado);
 
-    @Query("SELECT v FROM Vivienda v WHERE v.familia.id_familia = :id")
-    Optional<Vivienda> findByFamiliaId_familia(Integer idFamilia);
+    @Query("SELECT v FROM Vivienda v WHERE v.familia.idFamilia = :id")
+    Optional<Vivienda> findByFamilia_IdFamilia(Integer idFamilia);
 
     // Filtro por Localidad (busqueda parcial e ignora mayúsculas)
     List<Vivienda> findByLocalidadContainingIgnoreCase(String localidad);
@@ -29,4 +30,10 @@ public interface IViviendaRepository extends JpaRepository<Vivienda, String> {
     // Filtro por Año de finalizacion de obra
     @Query("SELECT v FROM Vivienda v WHERE YEAR(v.fechaFin) = :anio")
     List<Vivienda> findByAnioFin(@Param("anio") int anio);
+
+    //
+    @Query("SELECT CASE WHEN COUNT(v) > 0 THEN true ELSE false END " +
+            "FROM Vivienda v JOIN v.familia f JOIN f.familiares fam " +
+            "WHERE fam.dni = :dni AND v.estado = 'FINALIZADA' AND v.fechaFin >= :fechaLimite")
+    boolean existeViviendaEntregadaEnUltimos5Anios(@Param("dni") String dni, @Param("fechaLimite") LocalDate fechaLimite);
 }

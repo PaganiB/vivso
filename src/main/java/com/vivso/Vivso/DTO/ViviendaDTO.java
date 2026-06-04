@@ -34,7 +34,6 @@ public class ViviendaDTO {
     @DecimalMin(value = "0.1", message = "La superficie debe ser un valor positivo")
     private BigDecimal superficie;
 
-    @NotNull(message = "Debe ingresar la fecha de inicio ")
     @JsonFormat(pattern = "dd-MM-yyyy")
     private LocalDate fechaInic;
 
@@ -47,7 +46,7 @@ public class ViviendaDTO {
     private String observacion;
 
     @NotNull(message = "Debe ingresar la familia asociada")
-    private Integer id_familia;
+    private Integer idFamilia;
 
     @NotNull(message = "La latitud es obligatoria")
     @DecimalMin(value = "-90.0", message = "La latitud debe ser mayor o igual a -90")

@@ -13,7 +13,7 @@ import java.util.List;
 @Repository
 public interface IDocumentoRepository extends JpaRepository<Documento, Integer> {
     // Busca por el ID de la entidad Familia que está dentro de Documento
-    @Query("SELECT d FROM Documento d WHERE d.familia.id_familia = :idFamilia")
+    @Query("SELECT d FROM Documento d WHERE d.familia.idFamilia = :idFamilia")
     List<Documento> findByFamilia_IdFamilia(Integer idFamilia);
 
     // Busca por el CUIT de la entidad Organizacion que está dentro de Documento

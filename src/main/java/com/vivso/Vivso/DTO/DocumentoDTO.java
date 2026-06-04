@@ -38,7 +38,7 @@ public class DocumentoDTO {
     // --- Referencias por ID ---
     // Usamos IDs para que el JSON sea liviano
 
-    private Integer id_familia;
+    private Integer idFamilia;
 
     private String cuitOrg;
 

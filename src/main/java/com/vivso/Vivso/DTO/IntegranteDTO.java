@@ -52,4 +52,5 @@ public class IntegranteDTO {
     @NotBlank(message = "Es cuit de la organizacion a la que pertenece es obligatorio")
     private String cuitOrg;
 
+    private String nombreOrganizacion; // Solo para lectura en el front
 }
