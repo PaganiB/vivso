@@ -133,4 +133,20 @@ public interface VivsoMapper {
     @Mapping(target = "tecnico", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateFromDto(VisitaObraDTO dto, @MappingTarget VisitaObra visitaObra);
+
+    // ======================== VISITA INICIAL ========================
+
+    @Mapping(source = "solicitud.idSolicitud", target = "idSolicitud") // Extraemos el ID del objeto
+    @Mapping(source = "tecnico.id",            target = "idTecnico")
+    VisitaInicialDTO toDTO(VisitaInicial visitaInicial);
+
+    @Mapping(target = "solicitud", ignore = true) // Se busca y setea en el Service
+    @Mapping(target = "tecnico",   ignore = true) // Se busca y setea en el Service
+    VisitaInicial toEntity(VisitaInicialDTO dto);
+
+    @Mapping(target = "id",        ignore = true) // PK intocable
+    @Mapping(target = "solicitud", ignore = true) // No modificamos la relación desde acá
+    @Mapping(target = "tecnico",   ignore = true) // No modificamos la relación desde acá
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void updateFromDto(VisitaInicialDTO dto, @MappingTarget VisitaInicial visitaInicial);
 }
