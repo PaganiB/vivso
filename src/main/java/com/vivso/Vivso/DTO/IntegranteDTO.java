@@ -2,10 +2,7 @@ package com.vivso.Vivso.DTO;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.vivso.Vivso.Model.TipoCargo;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -33,6 +30,10 @@ public class IntegranteDTO {
     @NotBlank(message = "Debe proporcionar un telefono de contacto")
     private String telefono;
 
+    @NotBlank(message = "El correo es obligatorio")
+    @Email(message = "Debe ingresar un formato de correo válido (ejemplo@dominio.com)")
+    private String correo;
+
     @NotNull(message = "El cargo en la institución es obligatorio")
     private TipoCargo cargo;
 
@@ -53,4 +54,6 @@ public class IntegranteDTO {
     private String cuitOrg;
 
     private String nombreOrganizacion; // Solo para lectura en el front
+
+
 }

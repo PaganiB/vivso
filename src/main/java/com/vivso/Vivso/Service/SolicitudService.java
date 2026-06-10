@@ -1,14 +1,13 @@
 package com.vivso.Vivso.Service;
 
+import com.vivso.Vivso.DTO.SolicitudCompletaDTO;
 import com.vivso.Vivso.DTO.SolicitudDTO;
 import com.vivso.Vivso.Mapper.VivsoMapper;
 import com.vivso.Vivso.Model.*;
-import com.vivso.Vivso.Repository.IFamiliaRepository;
-import com.vivso.Vivso.Repository.IOrganizacionRepository;
-import com.vivso.Vivso.Repository.ISolicitudRepository;
-import com.vivso.Vivso.Repository.IViviendaRepository;
+import com.vivso.Vivso.Repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -18,6 +17,7 @@ public class SolicitudService implements ISolicitudService {
 
     @Autowired private ISolicitudRepository solicitudRepo;
     @Autowired private IOrganizacionRepository orgRepo;
+    @Autowired private IIntegranteRepository integranteRepo;
     @Autowired private IViviendaRepository viviendaRepo;
     @Autowired private IFamiliaRepository familiaRepo;
     @Autowired private VivsoMapper mapper;
@@ -117,5 +117,36 @@ public class SolicitudService implements ISolicitudService {
         List<Solicitud> result = solicitudRepo.findByCuitOrg_Cuit(cuitOrg);
         if (result.isEmpty()) throw new RuntimeException("No hay solicitudes para el CUIT: " + cuitOrg);
         return result.stream().map(mapper::toDTO).toList();
+    }
+
+    @Transactional
+    public SolicitudDTO crearSolicitudCompleta(SolicitudCompletaDTO megaDto) {
+        // 1. Guardar la Organización
+        Organizacion org = mapper.toEntity(megaDto.getOrganizacion());
+        org = orgRepo.save(org);
+
+        // 2. Guardar Presidente y vincular a ONG
+        Integrante presidente = mapper.toEntity(megaDto.getPresidente());
+        presidente.setOrganizacion(org);
+        integranteRepo.save(presidente);
+
+        // 3. Guardar Tesorero y vincular a ONG
+        Integrante tesorero = mapper.toEntity(megaDto.getTesorero());
+        tesorero.setOrganizacion(org);
+        integranteRepo.save(tesorero);
+
+        // 4. Guardar Familia
+        Familia familia = mapper.toEntity(megaDto.getFamilia());
+        familia = familiaRepo.save(familia);
+
+        // 5. Guardar Solicitud vinculando
+        Solicitud solicitud = mapper.toEntity(megaDto.getSolicitud());
+        solicitud.setCuitOrg(org);
+        solicitud.setFamiliaBeneficiaria(familia);
+        // El GDE llega como null o vacío, se actualizará más adelante
+        solicitud = solicitudRepo.save(solicitud);
+
+        // Devolvemos el DTO con el ID autogenerado para que el Front pueda enviar los archivos
+        return mapper.toDTO(solicitud);
     }
 }

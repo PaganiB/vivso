@@ -16,11 +16,10 @@ public class SolicitudDTO {
 
     private Integer idSolicitud;
 
-    @NotBlank(message = "El Codigo del GDE es obligatorio")
+    //@NotBlank(message = "El Codigo del GDE es obligatorio")
     private String GDE;
 
     @NotNull(message = "Fecha de solicitud obligatoria")
-    @JsonFormat(pattern = "dd-MM-yyyy")
     private LocalDate fechaSolicitud;
 
     @NotBlank(message = "El CUIT de la organización es obligatorio")

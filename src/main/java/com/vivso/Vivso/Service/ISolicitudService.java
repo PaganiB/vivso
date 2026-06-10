@@ -1,5 +1,6 @@
 package com.vivso.Vivso.Service;
 
+import com.vivso.Vivso.DTO.SolicitudCompletaDTO;
 import com.vivso.Vivso.DTO.SolicitudDTO;
 import com.vivso.Vivso.Model.EstadoSolicitud;
 import com.vivso.Vivso.Model.Solicitud;
@@ -22,5 +23,7 @@ public interface ISolicitudService {
 
     // Buscar solicitudes asociadas a una organización específica
     List<SolicitudDTO> buscarPorOrganizacion(String cuitOrg);
+
+    SolicitudDTO crearSolicitudCompleta(SolicitudCompletaDTO megaDto);
 }
 

@@ -1,10 +1,12 @@
 package com.vivso.Vivso.Controller;
 
+import com.vivso.Vivso.DTO.SolicitudCompletaDTO;
 import com.vivso.Vivso.DTO.SolicitudDTO;
 import com.vivso.Vivso.Model.EstadoSolicitud;
 import com.vivso.Vivso.Service.ISolicitudService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.net.URI;
@@ -22,10 +24,12 @@ public class SolicitudController {
         return ResponseEntity.ok(solicitudService.getSolicitudes());
     }
 
-    @PostMapping
-    public ResponseEntity<SolicitudDTO> saveSolicitud(@Valid @RequestBody SolicitudDTO solicitudDto){
-        SolicitudDTO created =  solicitudService.saveSolicitud(solicitudDto);
-        return ResponseEntity.created(URI.create("/solicitud" + created.getIdSolicitud())).body(created);
+    @PostMapping()
+    public ResponseEntity<SolicitudDTO> registrarSolicitudCompleta(@Valid @RequestBody SolicitudCompletaDTO megaDto) {
+        SolicitudDTO solicitudCreada = solicitudService.crearSolicitudCompleta( megaDto);
+
+        // Retorna el 201 Created junto con la solicitud generada (que incluye idSolicitud)
+        return ResponseEntity.status(HttpStatus.CREATED).body(solicitudCreada);
     }
 
     @PutMapping("/{id}")

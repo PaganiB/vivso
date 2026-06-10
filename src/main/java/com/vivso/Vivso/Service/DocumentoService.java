@@ -20,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,6 +34,8 @@ public class DocumentoService implements IDocumentoService {
     @Autowired private VivsoMapper mapper;
 
     private final String rootFolder = "uploads/documentos";
+    private static final long MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+    private static final List<String> EXTENSIONES_PERMITIDAS = List.of("pdf", "jpg", "jpeg", "png");
 
     @Override
     @Transactional
@@ -107,5 +110,31 @@ public class DocumentoService implements IDocumentoService {
     @Override
     public void eliminar(Integer id) {
         docRepo.deleteById(id);
+    }
+
+    private void validarArchivo(MultipartFile archivo, String nombreCampo) {
+        if (archivo == null || archivo.isEmpty()) return;
+
+        // Validar tamaño
+        if (archivo.getSize() > MAX_SIZE_BYTES) {
+            throw new RuntimeException(
+                    "El archivo '" + nombreCampo + "' supera el máximo de 5MB " +
+                            "(peso actual: " + archivo.getSize() / (1024 * 1024) + "MB)"
+            );
+        }
+
+        // Validar extensión
+        String nombreOriginal = archivo.getOriginalFilename();
+        if (nombreOriginal == null || !nombreOriginal.contains(".")) {
+            throw new RuntimeException("El archivo '" + nombreCampo + "' no tiene una extensión válida");
+        }
+
+        String extension = nombreOriginal.substring(nombreOriginal.lastIndexOf('.') + 1).toLowerCase();
+        if (!EXTENSIONES_PERMITIDAS.contains(extension)) {
+            throw new RuntimeException(
+                    "El archivo '" + nombreCampo + "' tiene extensión no permitida (." + extension + "). " +
+                            "Solo se aceptan: PDF, JPG, PNG"
+            );
+        }
     }
 }
