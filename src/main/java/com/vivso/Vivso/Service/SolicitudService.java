@@ -8,9 +8,14 @@ import com.vivso.Vivso.Repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class SolicitudService implements ISolicitudService {
@@ -20,7 +25,13 @@ public class SolicitudService implements ISolicitudService {
     @Autowired private IIntegranteRepository integranteRepo;
     @Autowired private IViviendaRepository viviendaRepo;
     @Autowired private IFamiliaRepository familiaRepo;
+    @Autowired private IDocumentoRepository docRepo;
     @Autowired private VivsoMapper mapper;
+
+    // Constantes para los archivos físicos
+    private static final String CARPETA_UPLOADS = "uploads/documentos/";
+    private static final long MAX_SIZE = 5 * 1024 * 1024; // 5 MB
+    private static final List<String> EXTENSIONES = List.of("pdf", "jpg", "jpeg", "png");
 
     @Override
     public List<SolicitudDTO> getSolicitudes() {
@@ -121,32 +132,119 @@ public class SolicitudService implements ISolicitudService {
 
     @Transactional
     public SolicitudDTO crearSolicitudCompleta(SolicitudCompletaDTO megaDto) {
-        // 1. Guardar la Organización
-        Organizacion org = mapper.toEntity(megaDto.getOrganizacion());
-        org = orgRepo.save(org);
 
-        // 2. Guardar Presidente y vincular a ONG
+        // 1. === GUARDAR EL TEXTO Y ARMAR RELACIONES ===
+
+        // Validación de CUIT para evitar errores de duplicado en la BD
+        if (orgRepo.existsById(megaDto.getOrganizacion().getCuit())) {
+            throw new RuntimeException("El CUIT ya está registrado: " + megaDto.getOrganizacion().getCuit());
+        }
+        Organizacion org = orgRepo.save(mapper.toEntity(megaDto.getOrganizacion()));
+
         Integrante presidente = mapper.toEntity(megaDto.getPresidente());
         presidente.setOrganizacion(org);
         integranteRepo.save(presidente);
 
-        // 3. Guardar Tesorero y vincular a ONG
-        Integrante tesorero = mapper.toEntity(megaDto.getTesorero());
-        tesorero.setOrganizacion(org);
-        integranteRepo.save(tesorero);
+        if (megaDto.getTesorero() != null) {
+            Integrante tesorero = mapper.toEntity(megaDto.getTesorero());
+            tesorero.setOrganizacion(org);
+            integranteRepo.save(tesorero);
+        }
 
-        // 4. Guardar Familia
-        Familia familia = mapper.toEntity(megaDto.getFamilia());
-        familia = familiaRepo.save(familia);
+        Familia familia = familiaRepo.save(mapper.toEntity(megaDto.getFamilia()));
 
-        // 5. Guardar Solicitud vinculando
         Solicitud solicitud = mapper.toEntity(megaDto.getSolicitud());
         solicitud.setCuitOrg(org);
         solicitud.setFamiliaBeneficiaria(familia);
-        // El GDE llega como null o vacío, se actualizará más adelante
-        solicitud = solicitudRepo.save(solicitud);
+        if (solicitud.getFechaSolicitud() == null) {
+            solicitud.setFechaSolicitud(LocalDate.now()); // Asegura fecha de hoy si no viene
+        }
+        solicitud = solicitudRepo.save(solicitud); // Genera el idSolicitud
 
-        // Devolvemos el DTO con el ID autogenerado para que el Front pueda enviar los archivos
+        // 2. === GUARDAR LOS ARCHIVOS VINCULADOS ===
+
+        // Documentos de la Organización
+        guardarSiPresente(megaDto.getNotaSolicitud(), TipoDocumento.NOTA_SOLICITUD, org, familia);
+        guardarSiPresente(megaDto.getActaAsamblea(), TipoDocumento.ACTA_DE_ASAMBLEA_ACTUAL_HCD, org, familia);
+        guardarSiPresente(megaDto.getConstanciaCuentaBancaria(), TipoDocumento.CONSTANCIA_CUENTA_BANCARIA, org, familia);
+        guardarSiPresente(megaDto.getAltaAfip(), TipoDocumento.ALTA_AFIP, org, familia);
+        guardarSiPresente(megaDto.getDniPresidente(), TipoDocumento.DNI, org, familia);
+        guardarSiPresente(megaDto.getDniTesorero(), TipoDocumento.DNI, org, familia);
+
+        // Documentos de la Familia
+        guardarSiPresente(megaDto.getCertificadoResidencia(), TipoDocumento.CERTIFICADO_RESIDENCIA, org, familia);
+        guardarSiPresente(megaDto.getActaCompromiso(), TipoDocumento.ACTA_COMPROMISO, org, familia);
+        guardarSiPresente(megaDto.getCertificadoDiscapacidad(), TipoDocumento.CERTIFICADO_DISCAPACIDAD, org, familia);
+        guardarSiPresente(megaDto.getEscrituraPropiedad(), TipoDocumento.ESCRITURA_PROPIEDAD, org, familia);
+        guardarSiPresente(megaDto.getDeclaracionJurada(), TipoDocumento.DECLARACION_JURADA_POSEEDOR, org, familia);
+
+        // Listas de Archivos
+        if (megaDto.getDniFamiliares() != null) {
+            for (MultipartFile dni : megaDto.getDniFamiliares()) {
+                guardarSiPresente(dni, TipoDocumento.DNI, org, familia);
+            }
+        }
+        if (megaDto.getFotosTerreno() != null) {
+            for (MultipartFile foto : megaDto.getFotosTerreno()) {
+                guardarSiPresente(foto, TipoDocumento.FOTO_TERRENO, org, familia);
+            }
+        }
+
         return mapper.toDTO(solicitud);
+    }
+
+    // =========================================================================
+    // MÉTODOS AUXILIARES PRIVADOS (Manejo de Archivos)
+    // =========================================================================
+
+    private void guardarSiPresente(MultipartFile archivo, TipoDocumento tipo, Organizacion org, Familia familia) {
+        if (archivo == null || archivo.isEmpty()) {
+            return; // Saltea si no adjuntaron este archivo específico
+        }
+
+        validarArchivo(archivo);
+
+        try {
+            // Crea la carpeta si no existe en el sistema
+            Path directorio = Paths.get(CARPETA_UPLOADS);
+            if (!Files.exists(directorio)) {
+                Files.createDirectories(directorio);
+            }
+
+            // Genera nombre único con UUID para evitar sobreescrituras
+            String originalName = archivo.getOriginalFilename();
+            String extension = originalName.substring(originalName.lastIndexOf("."));
+            String nombreUnico = UUID.randomUUID().toString() + extension;
+            Path rutaDestino = directorio.resolve(nombreUnico);
+
+            // Guarda físicamente en el disco
+            Files.copy(archivo.getInputStream(), rutaDestino);
+
+            // Guarda el registro en la BD
+            Documento doc = new Documento();
+            doc.setNombre(originalName);
+            doc.setUrl(rutaDestino.toString());
+            doc.setTipo(tipo);
+            doc.setOrganizacion(org);
+            doc.setFamilia(familia);
+            docRepo.save(doc);
+
+        } catch (IOException e) {
+            throw new RuntimeException("Error al guardar el archivo: " + archivo.getOriginalFilename(), e);
+        }
+    }
+
+    private void validarArchivo(MultipartFile archivo) {
+        if (archivo.getSize() > MAX_SIZE) {
+            throw new RuntimeException("El archivo '" + archivo.getOriginalFilename() + "' supera el máximo de 5MB");
+        }
+        String originalName = archivo.getOriginalFilename();
+        if (originalName == null || !originalName.contains(".")) {
+            throw new RuntimeException("El archivo '" + originalName + "' no tiene extensión válida");
+        }
+        String ext = originalName.substring(originalName.lastIndexOf('.') + 1).toLowerCase();
+        if (!EXTENSIONES.contains(ext)) {
+            throw new RuntimeException("Extensión no permitida (." + ext + "). Solo PDF, JPG, JPEG o PNG.");
+        }
     }
 }

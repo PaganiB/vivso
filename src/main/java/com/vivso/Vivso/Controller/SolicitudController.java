@@ -7,6 +7,7 @@ import com.vivso.Vivso.Service.ISolicitudService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.net.URI;
@@ -24,11 +25,11 @@ public class SolicitudController {
         return ResponseEntity.ok(solicitudService.getSolicitudes());
     }
 
-    @PostMapping()
-    public ResponseEntity<SolicitudDTO> registrarSolicitudCompleta(@Valid @RequestBody SolicitudCompletaDTO megaDto) {
-        SolicitudDTO solicitudCreada = solicitudService.crearSolicitudCompleta( megaDto);
+    @PostMapping(value = "/form", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<SolicitudDTO> crearSolicitudCompleta(@Valid @ModelAttribute SolicitudCompletaDTO megaDto) {
 
-        // Retorna el 201 Created junto con la solicitud generada (que incluye idSolicitud)
+        SolicitudDTO solicitudCreada = solicitudService.crearSolicitudCompleta(megaDto);
+
         return ResponseEntity.status(HttpStatus.CREATED).body(solicitudCreada);
     }
 

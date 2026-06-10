@@ -3,6 +3,9 @@ package com.vivso.Vivso.DTO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @Getter @Setter
 @NoArgsConstructor
@@ -10,23 +13,27 @@ import lombok.*;
 @Builder
 public class SolicitudCompletaDTO {
 
-    @Valid
-    @NotNull(message = "Los datos de la organización son obligatorios")
-    private OrganizacionDTO organizacion;
+    // === 1. OBJETOS DE TEXTO ===
+    @Valid private OrganizacionDTO organizacion;
+    @Valid private IntegranteDTO presidente;
+    @Valid private IntegranteDTO tesorero;
+    @Valid private FamiliaDTO familia;
+    @Valid private SolicitudDTO solicitud;
 
-    @Valid
-    @NotNull(message = "Los datos del presidente son obligatorios")
-    private IntegranteDTO presidente;
+    // === 2. ARCHIVOS FÍSICOS ===
+    private MultipartFile notaSolicitud;
+    private MultipartFile actaAsamblea;
+    private MultipartFile constanciaCuentaBancaria;
+    private MultipartFile altaAfip;
+    private MultipartFile dniPresidente;
+    private MultipartFile dniTesorero;
 
-    @Valid
-    @NotNull(message = "Los datos del tesorero son obligatorios")
-    private IntegranteDTO tesorero;
+    private MultipartFile certificadoResidencia;
+    private MultipartFile certificadoDiscapacidad;
+    private MultipartFile escrituraPropiedad;
+    private MultipartFile declaracionJurada;
+    private MultipartFile actaCompromiso;
 
-    @Valid
-    @NotNull(message = "Los datos de la familia son obligatorios")
-    private FamiliaDTO familia;
-
-    @Valid
-    @NotNull(message = "Los datos de la solicitud son obligatorios")
-    private SolicitudDTO solicitud;
+    private List<MultipartFile> dniFamiliares;
+    private List<MultipartFile> fotosTerreno;
 }
