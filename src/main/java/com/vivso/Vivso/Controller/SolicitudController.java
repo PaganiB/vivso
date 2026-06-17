@@ -10,7 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.net.URI;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
+
+
 import java.util.List;
 
 @RestController
@@ -25,13 +27,61 @@ public class SolicitudController {
         return ResponseEntity.ok(solicitudService.getSolicitudes());
     }
 
-    @PostMapping(value = "/form", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<SolicitudDTO> crearSolicitudCompleta(@Valid @ModelAttribute SolicitudCompletaDTO megaDto) {
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<SolicitudDTO> crearSolicitud(
+            @RequestPart("datos") SolicitudCompletaDTO dto,
+            MultipartHttpServletRequest request
+    ) {
 
-        SolicitudDTO solicitudCreada = solicitudService.crearSolicitudCompleta(megaDto);
+        // request.getMultiFileMap() extrae TODOS los archivos físicos que mandó React
+        // y se los pasamos al Service en un solo bloque.
+        SolicitudDTO solicitudCreada = solicitudService.crearSolicitudCompleta(dto, request.getMultiFileMap());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(solicitudCreada);
     }
+    /*@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<SolicitudDTO> crearSolicitud(
+            @RequestPart("datos") SolicitudCompletaDTO dto,
+
+            @RequestPart(required = false) MultipartFile notaSolicitud,
+            @RequestPart(required = false) MultipartFile actaAsamblea,
+            @RequestPart(required = false) MultipartFile constanciaCuentaBancaria,
+            @RequestPart(required = false) MultipartFile altaAfip,
+            @RequestPart(required = false) MultipartFile dniPresidente,
+            @RequestPart(required = false) MultipartFile dniTesorero,
+
+            @RequestPart(required = false) MultipartFile certificadoResidencia,
+            @RequestPart(required = false) MultipartFile certificadoDiscapacidad,
+            @RequestPart(required = false) MultipartFile escrituraPropiedad,
+            @RequestPart(required = false) MultipartFile declaracionJurada,
+            @RequestPart(required = false) MultipartFile actaCompromiso,
+
+            @RequestPart(required = false) List<MultipartFile> dniFamiliares,
+            @RequestPart(required = false) List<MultipartFile> fotosTerreno
+    ) {
+
+        dto.setNotaSolicitud(notaSolicitud);
+        dto.setActaAsamblea(actaAsamblea);
+        dto.setConstanciaCuentaBancaria(constanciaCuentaBancaria);
+        dto.setAltaAfip(altaAfip);
+        dto.setDniPresidente(dniPresidente);
+        dto.setDniTesorero(dniTesorero);
+
+        dto.setCertificadoResidencia(certificadoResidencia);
+        dto.setCertificadoDiscapacidad(certificadoDiscapacidad);
+        dto.setEscrituraPropiedad(escrituraPropiedad);
+        dto.setDeclaracionJurada(declaracionJurada);
+        dto.setActaCompromiso(actaCompromiso);
+
+        dto.setDniFamiliares(dniFamiliares);
+        dto.setFotosTerreno(fotosTerreno);
+
+        SolicitudDTO solicitudCreada =
+                solicitudService.crearSolicitudCompleta(dto);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(solicitudCreada);
+    }*/
 
     @PutMapping("/{id}")
     public ResponseEntity<SolicitudDTO> updateSolicitud(@PathVariable Integer id, @Valid @RequestBody SolicitudDTO solicitudDto){

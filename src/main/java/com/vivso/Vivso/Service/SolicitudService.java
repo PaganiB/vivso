@@ -8,6 +8,7 @@ import com.vivso.Vivso.Repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -131,14 +132,15 @@ public class SolicitudService implements ISolicitudService {
     }
 
     @Transactional
-    public SolicitudDTO crearSolicitudCompleta(SolicitudCompletaDTO megaDto) {
+    public SolicitudDTO crearSolicitudCompleta(SolicitudCompletaDTO megaDto, MultiValueMap<String, MultipartFile> mapaArchivos) {
 
-        // 1. === GUARDAR EL TEXTO Y ARMAR RELACIONES ===
-
-        // Validación de CUIT para evitar errores de duplicado en la BD
+        // 1. === VALIDACIÓN PREVIA ===
+        // Chequeamos si el CUIT existe ANTES de hacer cualquier otra cosa
         if (orgRepo.existsById(megaDto.getOrganizacion().getCuit())) {
             throw new RuntimeException("El CUIT ya está registrado: " + megaDto.getOrganizacion().getCuit());
         }
+
+        // 2. === GUARDAR EL TEXTO Y ARMAR RELACIONES ===
         Organizacion org = orgRepo.save(mapper.toEntity(megaDto.getOrganizacion()));
 
         Integrante presidente = mapper.toEntity(megaDto.getPresidente());
@@ -161,33 +163,28 @@ public class SolicitudService implements ISolicitudService {
         }
         solicitud = solicitudRepo.save(solicitud); // Genera el idSolicitud
 
-        // 2. === GUARDAR LOS ARCHIVOS VINCULADOS ===
+        // 3. === BUCLE DINÁMICO PARA GUARDAR LOS ARCHIVOS ===
+        // Agregamos un chequeo de null por si mandan la solicitud sin ningún archivo
+        if (mapaArchivos != null) {
+            mapaArchivos.forEach((clave, listaArchivos) -> {
 
-        // Documentos de la Organización
-        guardarSiPresente(megaDto.getNotaSolicitud(), TipoDocumento.NOTA_SOLICITUD, org, familia);
-        guardarSiPresente(megaDto.getActaAsamblea(), TipoDocumento.ACTA_DE_ASAMBLEA_ACTUAL_HCD, org, familia);
-        guardarSiPresente(megaDto.getConstanciaCuentaBancaria(), TipoDocumento.CONSTANCIA_CUENTA_BANCARIA, org, familia);
-        guardarSiPresente(megaDto.getAltaAfip(), TipoDocumento.ALTA_AFIP, org, familia);
-        guardarSiPresente(megaDto.getDniPresidente(), TipoDocumento.DNI, org, familia);
-        guardarSiPresente(megaDto.getDniTesorero(), TipoDocumento.DNI, org, familia);
+                // Ignoramos la clave "datos" porque ahí viaja el JSON de texto
+                if (!clave.equals("datos")) {
+                    try {
+                        // Magia: Convertimos la clave que mandó React al Enum exacto.
+                        TipoDocumento tipoDoc = TipoDocumento.valueOf(clave.toUpperCase());
 
-        // Documentos de la Familia
-        guardarSiPresente(megaDto.getCertificadoResidencia(), TipoDocumento.CERTIFICADO_RESIDENCIA, org, familia);
-        guardarSiPresente(megaDto.getActaCompromiso(), TipoDocumento.ACTA_COMPROMISO, org, familia);
-        guardarSiPresente(megaDto.getCertificadoDiscapacidad(), TipoDocumento.CERTIFICADO_DISCAPACIDAD, org, familia);
-        guardarSiPresente(megaDto.getEscrituraPropiedad(), TipoDocumento.ESCRITURA_PROPIEDAD, org, familia);
-        guardarSiPresente(megaDto.getDeclaracionJurada(), TipoDocumento.DECLARACION_JURADA_POSEEDOR, org, familia);
+                        // Guardamos cada archivo (Por si en "FOTO_TERRENO" mandaron 3 imágenes juntas)
+                        for (MultipartFile archivo : listaArchivos) {
+                            guardarSiPresente(archivo, tipoDoc, org, familia);
+                        }
 
-        // Listas de Archivos
-        if (megaDto.getDniFamiliares() != null) {
-            for (MultipartFile dni : megaDto.getDniFamiliares()) {
-                guardarSiPresente(dni, TipoDocumento.DNI, org, familia);
-            }
-        }
-        if (megaDto.getFotosTerreno() != null) {
-            for (MultipartFile foto : megaDto.getFotosTerreno()) {
-                guardarSiPresente(foto, TipoDocumento.FOTO_TERRENO, org, familia);
-            }
+                    } catch (IllegalArgumentException e) {
+                        // Si mandan una clave que no existe en tu Enum, la ignoramos sin romper el servidor
+                        System.out.println("Se ignoró el archivo con clave: " + clave + " (No pertenece al Enum)");
+                    }
+                }
+            });
         }
 
         return mapper.toDTO(solicitud);
