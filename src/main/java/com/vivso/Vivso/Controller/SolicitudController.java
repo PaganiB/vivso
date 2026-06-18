@@ -1,5 +1,7 @@
 package com.vivso.Vivso.Controller;
 
+import com.vivso.Vivso.DTO.RegistroFamiliaDTO;
+import com.vivso.Vivso.DTO.RegistroOrganizacionDTO;
 import com.vivso.Vivso.DTO.SolicitudCompletaDTO;
 import com.vivso.Vivso.DTO.SolicitudDTO;
 import com.vivso.Vivso.Model.EstadoSolicitud;
@@ -39,49 +41,20 @@ public class SolicitudController {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(solicitudCreada);
     }
-    /*@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<SolicitudDTO> crearSolicitud(
-            @RequestPart("datos") SolicitudCompletaDTO dto,
 
-            @RequestPart(required = false) MultipartFile notaSolicitud,
-            @RequestPart(required = false) MultipartFile actaAsamblea,
-            @RequestPart(required = false) MultipartFile constanciaCuentaBancaria,
-            @RequestPart(required = false) MultipartFile altaAfip,
-            @RequestPart(required = false) MultipartFile dniPresidente,
-            @RequestPart(required = false) MultipartFile dniTesorero,
+    // Formulario 1: registrar una organización en el programa
+    @PostMapping(value = "/organizacion", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> registrarOrganizacion(@RequestPart("datos") RegistroOrganizacionDTO dto, MultipartHttpServletRequest request) {
+        solicitudService.registrarOrganizacion(dto, request.getMultiFileMap());
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
 
-            @RequestPart(required = false) MultipartFile certificadoResidencia,
-            @RequestPart(required = false) MultipartFile certificadoDiscapacidad,
-            @RequestPart(required = false) MultipartFile escrituraPropiedad,
-            @RequestPart(required = false) MultipartFile declaracionJurada,
-            @RequestPart(required = false) MultipartFile actaCompromiso,
-
-            @RequestPart(required = false) List<MultipartFile> dniFamiliares,
-            @RequestPart(required = false) List<MultipartFile> fotosTerreno
-    ) {
-
-        dto.setNotaSolicitud(notaSolicitud);
-        dto.setActaAsamblea(actaAsamblea);
-        dto.setConstanciaCuentaBancaria(constanciaCuentaBancaria);
-        dto.setAltaAfip(altaAfip);
-        dto.setDniPresidente(dniPresidente);
-        dto.setDniTesorero(dniTesorero);
-
-        dto.setCertificadoResidencia(certificadoResidencia);
-        dto.setCertificadoDiscapacidad(certificadoDiscapacidad);
-        dto.setEscrituraPropiedad(escrituraPropiedad);
-        dto.setDeclaracionJurada(declaracionJurada);
-        dto.setActaCompromiso(actaCompromiso);
-
-        dto.setDniFamiliares(dniFamiliares);
-        dto.setFotosTerreno(fotosTerreno);
-
-        SolicitudDTO solicitudCreada =
-                solicitudService.crearSolicitudCompleta(dto);
-
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(solicitudCreada);
-    }*/
+    // Formulario 2: presentar una solicitud de vivienda para una familia
+    @PostMapping(value = "/familia", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<SolicitudDTO> registrarSolicitudFamilia(@RequestPart("datos") RegistroFamiliaDTO dto, MultipartHttpServletRequest request) {
+        SolicitudDTO resultado = solicitudService.registrarSolicitudFamilia(dto, request.getMultiFileMap());
+        return ResponseEntity.status(HttpStatus.CREATED).body(resultado);
+    }
 
     @PutMapping("/{id}")
     public ResponseEntity<SolicitudDTO> updateSolicitud(@PathVariable Integer id, @Valid @RequestBody SolicitudDTO solicitudDto){

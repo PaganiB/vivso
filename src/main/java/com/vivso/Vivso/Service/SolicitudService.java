@@ -1,7 +1,6 @@
 package com.vivso.Vivso.Service;
 
-import com.vivso.Vivso.DTO.SolicitudCompletaDTO;
-import com.vivso.Vivso.DTO.SolicitudDTO;
+import com.vivso.Vivso.DTO.*;
 import com.vivso.Vivso.Mapper.VivsoMapper;
 import com.vivso.Vivso.Model.*;
 import com.vivso.Vivso.Repository.*;
@@ -26,6 +25,7 @@ public class SolicitudService implements ISolicitudService {
     @Autowired private IIntegranteRepository integranteRepo;
     @Autowired private IViviendaRepository viviendaRepo;
     @Autowired private IFamiliaRepository familiaRepo;
+    @Autowired private IFamiliarRepository familiarRepo;
     @Autowired private IDocumentoRepository docRepo;
     @Autowired private VivsoMapper mapper;
 
@@ -190,6 +190,98 @@ public class SolicitudService implements ISolicitudService {
         return mapper.toDTO(solicitud);
     }
 
+    // =============================================
+    // FORMULARIO 1: REGISTRO DE ORGANIZACIÓN
+    // =============================================
+    @Transactional
+    public void registrarOrganizacion(RegistroOrganizacionDTO dto,
+                                      MultiValueMap<String, MultipartFile> mapaArchivos) {
+
+        // Validar que el CUIT no exista ya
+        if (orgRepo.existsById(dto.getOrganizacion().getCuit())) {
+            throw new RuntimeException("El CUIT ya está registrado: " + dto.getOrganizacion().getCuit());
+        }
+
+        // Guardar org e integrantes
+        Organizacion org = orgRepo.save(mapper.toEntity(dto.getOrganizacion()));
+
+        Integrante presidente = mapper.toEntity(dto.getPresidente());
+        presidente.setOrganizacion(org);
+        integranteRepo.save(presidente);
+
+        if (dto.getTesorero() != null) {
+            Integrante tesorero = mapper.toEntity(dto.getTesorero());
+            tesorero.setOrganizacion(org);
+            integranteRepo.save(tesorero);
+        }
+
+        // Guardar archivos de la org (familia = null porque acá no hay familia)
+        if (mapaArchivos != null) {
+            mapaArchivos.forEach((clave, listaArchivos) -> {
+                if (!clave.equals("datos")) {
+                    try {
+                        TipoDocumento tipoDoc = TipoDocumento.valueOf(clave.toUpperCase());
+                        for (MultipartFile archivo : listaArchivos) {
+                            guardarSiPresente(archivo, tipoDoc, org, null);
+                        }
+                    } catch (IllegalArgumentException e) {
+                        System.out.println("Clave ignorada: " + clave);
+                    }
+                }
+            });
+        }
+    }
+
+    // =============================================
+    // FORMULARIO 2: SOLICITUD DE VIVIENDA (familia)
+    // =============================================
+    @Transactional
+    public SolicitudDTO registrarSolicitudFamilia(RegistroFamiliaDTO dto,
+                                                  MultiValueMap<String, MultipartFile> mapaArchivos) {
+
+        // Validar que la org que presenta exista
+        Organizacion org = orgRepo.findById(dto.getSolicitud().getCuitOrg())
+                .orElseThrow(() -> new RuntimeException("Organización no encontrada: " + dto.getSolicitud().getCuitOrg()));
+
+        // Guardar familia y sus familiares
+        Familia familia = familiaRepo.save(mapper.toEntity(dto.getFamilia()));
+
+        if (dto.getFamiliares() != null) {
+            for (FamiliarDTO familiarDTO : dto.getFamiliares()) {
+                Familiar familiar = mapper.toEntity(familiarDTO);
+                familiar.setFamilia(familia);
+                familiarRepo.save(familiar);
+            }
+        }
+
+        // Crear la solicitud
+        Solicitud solicitud = mapper.toEntity(dto.getSolicitud());
+        solicitud.setCuitOrg(org);
+        solicitud.setFamiliaBeneficiaria(familia);
+        solicitud.setEstado(EstadoSolicitud.Pendiente);
+        if (solicitud.getFechaSolicitud() == null) {
+            solicitud.setFechaSolicitud(LocalDate.now());
+        }
+        solicitud = solicitudRepo.save(solicitud);
+
+        // Guardar archivos de la familia (org = null porque acá no hay docs de org)
+        if (mapaArchivos != null) {
+            mapaArchivos.forEach((clave, listaArchivos) -> {
+                if (!clave.equals("datos")) {
+                    try {
+                        TipoDocumento tipoDoc = TipoDocumento.valueOf(clave.toUpperCase());
+                        for (MultipartFile archivo : listaArchivos) {
+                            guardarSiPresente(archivo, tipoDoc, null, familia);
+                        }
+                    } catch (IllegalArgumentException e) {
+                        System.out.println("Clave ignorada: " + clave);
+                    }
+                }
+            });
+        }
+        return mapper.toDTO(solicitud);
+    }
+
     // =========================================================================
     // MÉTODOS AUXILIARES PRIVADOS (Manejo de Archivos)
     // =========================================================================
@@ -198,6 +290,14 @@ public class SolicitudService implements ISolicitudService {
         if (archivo == null || archivo.isEmpty()) {
             return; // Saltea si no adjuntaron este archivo específico
         }
+        // Evita duplicados del mismo TipoDocumento para la misma org o familia
+        if (org != null && docRepo.existsByTipoAndOrganizacion(tipo, org)) {
+            throw new RuntimeException("Ya existe un documento de tipo '" + tipo.getValor() + "' para esta organización");
+        }
+        if (familia != null && docRepo.existsByTipoAndFamilia(tipo, familia)) {
+            throw new RuntimeException("Ya existe un documento de tipo '" + tipo.getValor() + "' para esta familia");
+        }
+
 
         validarArchivo(archivo);
 

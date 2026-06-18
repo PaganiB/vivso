@@ -2,6 +2,8 @@ package com.vivso.Vivso.Repository;
 
 import com.vivso.Vivso.Model.Documento;
 import com.vivso.Vivso.Model.Familia;
+import com.vivso.Vivso.Model.Organizacion;
+import com.vivso.Vivso.Model.TipoDocumento;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,4 +23,7 @@ public interface IDocumentoRepository extends JpaRepository<Documento, Integer> 
 
     // Busca por el ID del Usuario revisor
     List<Documento> findByRevisor_Id(Integer idUsuario);
+
+    boolean existsByTipoAndOrganizacion(TipoDocumento tipo, Organizacion organizacion);
+    boolean existsByTipoAndFamilia(TipoDocumento tipo, Familia familia);
 }

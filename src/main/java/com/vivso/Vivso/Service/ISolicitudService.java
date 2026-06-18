@@ -1,5 +1,7 @@
 package com.vivso.Vivso.Service;
 
+import com.vivso.Vivso.DTO.RegistroFamiliaDTO;
+import com.vivso.Vivso.DTO.RegistroOrganizacionDTO;
 import com.vivso.Vivso.DTO.SolicitudCompletaDTO;
 import com.vivso.Vivso.DTO.SolicitudDTO;
 import com.vivso.Vivso.Model.EstadoSolicitud;
@@ -27,5 +29,11 @@ public interface ISolicitudService {
     List<SolicitudDTO> buscarPorOrganizacion(String cuitOrg);
 
     SolicitudDTO crearSolicitudCompleta(SolicitudCompletaDTO megaDto, MultiValueMap<String, MultipartFile> mapaArchivos);
+
+    // --- NUEVOS ---
+    void registrarOrganizacion(RegistroOrganizacionDTO dto, MultiValueMap<String, MultipartFile> mapaArchivos);
+
+    SolicitudDTO registrarSolicitudFamilia(RegistroFamiliaDTO dto, MultiValueMap<String, MultipartFile> mapaArchivos);
+
 }
 
