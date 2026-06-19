@@ -19,6 +19,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -81,23 +82,18 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 1. Le damos permiso explícito al puerto de React (Vite) y a tu túnel de Ngrok
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:5173",
-                "https://blade-pretty-obstruct.ngrok-free.dev"
+                "https://fetch-reproduce-eatery.ngrok-free.dev"
         ));
 
-        // 2. Permitimos todos los métodos, fundamental el "OPTIONS" para el preflight de CORS
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 
-        // 3. Permitimos los headers que Javi necesita mandar (como el Token y el FormData)
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
+        configuration.setAllowedHeaders(List.of("*")); // <-- cambiá esto
 
-        // 4. Importante si el frontend maneja credenciales o tokens de sesión
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        // Aplicamos estas reglas a TODAS las rutas de tu API (/**)
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }

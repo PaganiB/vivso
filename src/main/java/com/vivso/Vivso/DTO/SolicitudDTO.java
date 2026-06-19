@@ -27,7 +27,7 @@ public class SolicitudDTO {
 
     private String numExp;
 
-    @NotNull(message = "Debe indicar el estado de la solicitud (Pendiente, Aprobada o Rechazada)")
+    //@NotNull(message = "Debe indicar el estado de la solicitud (Pendiente, Aprobada o Rechazada)")
     private EstadoSolicitud estado;
 
     @Size(max = 200, message = "Los caracteres máximos son 200")

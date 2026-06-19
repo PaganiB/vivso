@@ -1,6 +1,8 @@
 package com.vivso.Vivso.DTO;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.util.List;
@@ -12,13 +14,14 @@ import java.util.List;
 @Builder
 public class RegistroFamiliaDTO {
 
-    // === TEXTO ===
     @Valid private FamiliaDTO familia;
-    @Valid private List<FamiliarDTO> familiares; // la lista de integrantes del grupo familiar
-    @Valid private SolicitudDTO solicitud;       // necesitás el cuitOrg para saber qué org presenta
+    @Valid private List<FamiliarDTO> familiares;
 
-    // === ARCHIVOS (docs de la familia según el flyer) ===
-    // ACTA_COMPROMISO, DNI (familiares), CERTIFICADO_RESIDENCIA,
-    // ESCRITURA_PROPIEDAD o DECLARACION_JURADA_POSEEDOR, CERTIFICADO_DISCAPACIDAD, FOTO_TERRENO
+    // De la solicitud solo necesitás el cuitOrg y la observacion,
+    // el idFamilia, estado y fecha los pone el back
+    @NotBlank(message = "El cuit de la organizacion es obligatorio")
+    private String cuitOrg;
 
+    @Size(max = 200)
+    private String observacion;
 }

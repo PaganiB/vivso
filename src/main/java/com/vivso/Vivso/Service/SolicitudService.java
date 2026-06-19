@@ -240,8 +240,8 @@ public class SolicitudService implements ISolicitudService {
                                                   MultiValueMap<String, MultipartFile> mapaArchivos) {
 
         // Validar que la org que presenta exista
-        Organizacion org = orgRepo.findById(dto.getSolicitud().getCuitOrg())
-                .orElseThrow(() -> new RuntimeException("Organización no encontrada: " + dto.getSolicitud().getCuitOrg()));
+        Organizacion org = orgRepo.findById(dto.getCuitOrg())
+                .orElseThrow(() -> new RuntimeException("Organización no encontrada: " + dto.getCuitOrg()));
 
         // Guardar familia y sus familiares
         Familia familia = familiaRepo.save(mapper.toEntity(dto.getFamilia()));
@@ -254,17 +254,16 @@ public class SolicitudService implements ISolicitudService {
             }
         }
 
-        // Crear la solicitud
-        Solicitud solicitud = mapper.toEntity(dto.getSolicitud());
+        // Crear la solicitud — el back arma todo, el front no manda nada de esto
+        Solicitud solicitud = new Solicitud();
         solicitud.setCuitOrg(org);
         solicitud.setFamiliaBeneficiaria(familia);
         solicitud.setEstado(EstadoSolicitud.Pendiente);
-        if (solicitud.getFechaSolicitud() == null) {
-            solicitud.setFechaSolicitud(LocalDate.now());
-        }
+        solicitud.setObservacion(dto.getObservacion());
+        solicitud.setFechaSolicitud(LocalDate.now());
         solicitud = solicitudRepo.save(solicitud);
 
-        // Guardar archivos de la familia (org = null porque acá no hay docs de org)
+        // Guardar archivos de la familia
         if (mapaArchivos != null) {
             mapaArchivos.forEach((clave, listaArchivos) -> {
                 if (!clave.equals("datos")) {
