@@ -20,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -76,6 +77,8 @@ public class DocumentoService implements IDocumentoService {
         doc.setEstado(nuevoEstado);
         doc.setRevisor(revisor);
         doc.setMotivoRechazo(nuevoEstado == EstadoDocumento.RECHAZADO ? motivo : null);
+
+        doc.setFechaRevision(LocalDateTime.now());
 
         return mapper.toDTO(docRepo.save(doc));
     }
@@ -137,4 +140,6 @@ public class DocumentoService implements IDocumentoService {
             );
         }
     }
+
+
 }

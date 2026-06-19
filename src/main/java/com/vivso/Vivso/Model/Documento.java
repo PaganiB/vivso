@@ -44,7 +44,7 @@ public class Documento {
     private LocalDateTime fechaSubida;
 
     @LastModifiedDate
-    @Column(name = "fechaRevision", columnDefinition = "DATETIME")
+    @Column(name = "fechaRevision")
     private LocalDateTime fechaRevision;
 
     // --- Relaciones ---
