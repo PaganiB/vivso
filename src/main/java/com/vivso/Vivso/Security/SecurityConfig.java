@@ -3,6 +3,7 @@ package com.vivso.Vivso.Security;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -25,55 +26,86 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Autowired
-    private UserDetailsService userDetailsService;
-    @Autowired
-    private JwtAuthenticationFilter jwtAuthFilter;
+    @Autowired private UserDetailsService userDetailsService;
+    @Autowired private JwtAuthenticationFilter jwtAuthFilter;
 
-    // 1. El Encriptador: Le decimos a Spring que use el algoritmo BCrypt
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // 2. El Proveedor: Conecta tu UserDetailsService con el Encriptador
     @Bean
     public AuthenticationProvider authenticationProvider() {
-
-        // ¡El cambio clave! Ahora el servicio nace inyectado desde el constructor
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
-
-        // El PasswordEncoder se sigue seteando con normalidad
         provider.setPasswordEncoder(passwordEncoder());
-
         return provider;
     }
 
-    // 3. El Manager: Es el objeto que vamos a llamar desde el Controller para iniciar sesión
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
-    // 4. Los Permisos: Por ahora, dejamos que las rutas "/auth/**" sean públicas
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                // 1. HABILITAMOS CORS: Le decimos a Spring que acepte peticiones externas
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
-                // 2. Deshabilitamos CSRF porque usaremos Tokens
                 .csrf(csrf -> csrf.disable())
-
-                // 3. Reglas de las puertas (Rutas)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll() // Login y Registro sin seguridad
 
-                        // ATENCIÓN: Si Javi ya manda el token JWT, cambiá 'permitAll()' por 'authenticated()'
-                        .anyRequest().permitAll()
+                        // ── PÚBLICO ──────────────────────────────────────────────────────────
+                        // Login y registro de usuarios internos
+                        .requestMatchers("/auth/**").permitAll()
+                        // Formulario de la landing: una ONG sin cuenta puede presentar su solicitud
+                        .requestMatchers(HttpMethod.POST, "/solicitud/organizacion").permitAll()
+
+                        // ── USUARIO (solo ADMIN gestiona cuentas) ────────────────────────────
+                        .requestMatchers("/usuario/**").hasRole("ADMIN")
+
+                        // ── VISITA INICIAL (TECNICO realiza el relevamiento social) ──────────
+                        .requestMatchers(HttpMethod.POST, "/visita/**").hasAnyRole("ADMIN", "TECNICO")
+                        .requestMatchers(HttpMethod.PUT,  "/visita/**").hasAnyRole("ADMIN", "TECNICO")
+                        .requestMatchers(HttpMethod.DELETE, "/visita/**").hasRole("ADMIN")
+
+                        // ── VISITA OBRA (ARQUITECTO registra avance de construcción) ─────────
+                        .requestMatchers(HttpMethod.POST, "/visita-obra/**").hasAnyRole("ADMIN", "ARQUITECTO")
+                        .requestMatchers(HttpMethod.PUT,  "/visita-obra/**").hasAnyRole("ADMIN", "ARQUITECTO")
+                        .requestMatchers(HttpMethod.DELETE, "/visita-obra/**").hasRole("ADMIN")
+
+                        // ── VIVIENDA (ARQUITECTO aprueba y actualiza el AFO) ─────────────────
+                        .requestMatchers(HttpMethod.POST,   "/vivienda/**").hasAnyRole("ADMIN", "ARQUITECTO")
+                        .requestMatchers(HttpMethod.PUT,    "/vivienda/**").hasAnyRole("ADMIN", "ARQUITECTO")
+                        .requestMatchers(HttpMethod.DELETE, "/vivienda/**").hasRole("ADMIN")
+
+                        // ── SOLICITUD (OPERADOR carga, ARQUITECTO puede actualizar estado) ───
+                        .requestMatchers(HttpMethod.POST,   "/solicitud/**").hasAnyRole("ADMIN", "OPERADOR")
+                        .requestMatchers(HttpMethod.PUT,    "/solicitud/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO")
+                        .requestMatchers(HttpMethod.DELETE, "/solicitud/**").hasRole("ADMIN")
+
+                        // ── ONG / FAMILIA / INTEGRANTE (OPERADOR registra) ───────────────────
+                        .requestMatchers(HttpMethod.POST,   "/organizacion/**", "/familia/**",
+                                "/familiar/**",     "/integrante/**")
+                        .hasAnyRole("ADMIN", "OPERADOR")
+                        .requestMatchers(HttpMethod.PUT,    "/organizacion/**", "/familia/**",
+                                "/familiar/**",     "/integrante/**")
+                        .hasAnyRole("ADMIN", "OPERADOR")
+                        .requestMatchers(HttpMethod.DELETE, "/organizacion/**", "/familia/**",
+                                "/familiar/**",     "/integrante/**")
+                        .hasRole("ADMIN")
+
+                        // ── DOCUMENTOS (OPERADOR y TECNICO pueden subir) ─────────────────────
+                        .requestMatchers(HttpMethod.POST,   "/documento/**").hasAnyRole("ADMIN", "OPERADOR", "TECNICO")
+                        .requestMatchers(HttpMethod.PUT,    "/documento/**").hasAnyRole("ADMIN", "OPERADOR")
+                        .requestMatchers(HttpMethod.DELETE, "/documento/**").hasRole("ADMIN")
+
+                        // ── LECTURA (todos los roles autenticados pueden consultar) ──────────
+                        // CONSULTOR solo llega hasta acá — todos sus intentos de escribir
+                        // fueron rechazados arriba, solo le quedan los GET
+                        .requestMatchers(HttpMethod.GET, "/**").authenticated()
+
+                        // ── CUALQUIER OTRA COSA ───────────────────────────────────────────────
+                        .anyRequest().hasRole("ADMIN")
                 )
-
-                // 4. Agregamos el filtro JWT antes del filtro de Spring
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
@@ -81,16 +113,12 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:5173",
                 "https://fetch-reproduce-eatery.ngrok-free.dev"
         ));
-
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-
-        configuration.setAllowedHeaders(List.of("*")); // <-- cambiá esto
-
+        configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

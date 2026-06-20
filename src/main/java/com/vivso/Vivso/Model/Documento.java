@@ -43,7 +43,6 @@ public class Documento {
     @Column(name = "fechaSubida",updatable = false, nullable = false, columnDefinition = "DATETIME")
     private LocalDateTime fechaSubida;
 
-    @LastModifiedDate
     @Column(name = "fechaRevision")
     private LocalDateTime fechaRevision;
 

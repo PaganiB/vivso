@@ -5,7 +5,9 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Value;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 import java.util.function.Function;
@@ -15,10 +17,13 @@ public class JwtUtils {
 
     // 1. La Clave Secreta: Generamos una llave matemática súper segura de 256 bits.
     // (Solo el backend sabe leer esta llave, por lo que nadie puede falsificar tus tokens).
-    private static final Key SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    @Value("${jwt.secret}")
+    private String secretString;
+
 
     // 2. Tiempo de vida: Le damos 8 horas de validez al token antes de que caduque.
-    private static final long TIEMPO_EXPIRACION = 1000 * 60 * 60 * 8;
+    @Value("${jwt.expiration}")
+    private long tiempoExpiracion;
 
     // =======================================================================
     // MÉTODOS PRINCIPALES
@@ -29,8 +34,8 @@ public class JwtUtils {
         return Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(new Date(System.currentTimeMillis())) // Fecha de hoy
-                .setExpiration(new Date(System.currentTimeMillis() + TIEMPO_EXPIRACION)) // Fecha de vencimiento
-                .signWith(SECRET_KEY) // Lo firmamos con nuestra llave
+                .setExpiration(new Date(System.currentTimeMillis() + tiempoExpiracion)) // Fecha de vencimiento
+                .signWith(getSecretKey()) // Lo firmamos con nuestra llave
                 .compact();
     }
 
@@ -54,10 +59,14 @@ public class JwtUtils {
 
     private <T> T extraerClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = Jwts.parserBuilder()
-                .setSigningKey(SECRET_KEY)
+                .setSigningKey(getSecretKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
         return claimsResolver.apply(claims);
+    }
+
+    private Key getSecretKey() {
+        return Keys.hmacShaKeyFor(secretString.getBytes(StandardCharsets.UTF_8));
     }
 }
