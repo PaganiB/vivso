@@ -29,15 +29,12 @@ public class AuthService {
     private PasswordEncoder passwordEncoder;
 
     public Map<String, String> iniciarSesion(UsuarioLoginDTO loginDTO) {
-        // 1. Validamos credenciales
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginDTO.getUsername(), loginDTO.getPassword())
+                new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword())
         );
 
-        // 2. Fabricamos el token
-        String tokenGenerado = jwtUtils.generarToken(loginDTO.getUsername());
+        String tokenGenerado = jwtUtils.generarToken(loginDTO.getEmail());
 
-        // 3. Armamos la respuesta para que Feli y Javi la reciban en React
         Map<String, String> respuesta = new HashMap<>();
         respuesta.put("token", tokenGenerado);
         respuesta.put("mensaje", "Login exitoso");

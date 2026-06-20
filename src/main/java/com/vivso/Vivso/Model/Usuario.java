@@ -56,9 +56,7 @@ public class Usuario implements UserDetails {
 
     @Override
     public String getUsername() {
-        // Retornamos el username (si en el futuro prefieren que Javi o Feli manden el email
-        // para loguearse desde React, simplemente cambiás esto a "return this.email;")
-        return this.username;
+        return this.email;
     }
 
     @Override
