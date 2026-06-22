@@ -32,7 +32,7 @@ public class OrganizacionDTO {
     @NotBlank(message = "El número de CPE es obligatorio")
     private String cpe;
 
-    @NotNull(message = "La fecha de vencimiento es obligatoria")
+    //@NotNull(message = "La fecha de vencimiento es obligatoria")
     private LocalDate fechaVencimientoVigencia;
 
     private LocalDate fechaUltimaAsamblea;

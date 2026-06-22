@@ -215,6 +215,16 @@ public class SolicitudService implements ISolicitudService {
             integranteRepo.save(tesorero);
         }
 
+        // LOG TEMPORAL
+        System.out.println("=== CLAVES RECIBIDAS ===");
+        if (mapaArchivos != null) {
+            mapaArchivos.forEach((clave, lista) ->
+                    System.out.println("Clave: '" + clave + "' | Archivos: " + lista.size() + " | Tamaño: " + lista.get(0).getSize())
+            );
+        } else {
+            System.out.println("mapaArchivos es NULL");
+        }
+
         // Guardar archivos de la org (familia = null porque acá no hay familia)
         if (mapaArchivos != null) {
             mapaArchivos.forEach((clave, listaArchivos) -> {
@@ -286,6 +296,56 @@ public class SolicitudService implements ISolicitudService {
     // =========================================================================
 
     private void guardarSiPresente(MultipartFile archivo, TipoDocumento tipo, Organizacion org, Familia familia) {
+
+        // 1. BARRERA DE ENTRADA: Si está nulo o vacío, EXPLOTA Y CORTA TODO
+        if (archivo == null || archivo.isEmpty()) {
+            System.out.println("=== ARCHIVO VACÍO O NULL DETECTADO. TIPO: " + tipo + " ===");
+            throw new RuntimeException("El archivo para '" + tipo.name() + "' llegó vacío (0 bytes) o corrupto desde el frontend.");
+        }
+
+        // 2. Validar peso y extensión
+        validarArchivo(archivo);
+
+        try {
+            // 3. Preparar directorio
+            Path directorio = Paths.get(CARPETA_UPLOADS);
+            if (!Files.exists(directorio)) {
+                Files.createDirectories(directorio);
+            }
+
+            // 4. Nombre seguro (Aseguramos que no falle si no tiene extensión)
+            String originalName = archivo.getOriginalFilename();
+            if (originalName == null || !originalName.contains(".")) {
+                throw new RuntimeException("El archivo '" + tipo.name() + "' no tiene una extensión válida.");
+            }
+            String extension = originalName.substring(originalName.lastIndexOf("."));
+            String nombreUnico = UUID.randomUUID().toString() + extension;
+            Path rutaDestino = directorio.resolve(nombreUnico);
+
+            // 5. Guardado físico en disco
+            Files.copy(archivo.getInputStream(), rutaDestino);
+            System.out.println("=== ARCHIVO GUARDADO EN DISCO: " + rutaDestino);
+
+            // 6. Guardado en Base de Datos
+            Documento doc = new Documento();
+            doc.setNombre(originalName);
+            doc.setUrl(rutaDestino.toString());
+            doc.setTipo(tipo);
+            doc.setOrganizacion(org);
+            doc.setFamilia(familia);
+
+            System.out.println("=== INTENTANDO GUARDAR EN BD: " + tipo + " | org: " + (org != null ? org.getCuit() : "null"));
+            docRepo.save(doc);
+            System.out.println("=== GUARDADO EN BD EXITOSO");
+
+        } catch (IOException e) {
+            throw new RuntimeException("Error físico al guardar el archivo en disco: " + archivo.getOriginalFilename(), e);
+        } catch (Exception e) {
+            System.out.println("=== ERROR AL GUARDAR EN BD: " + e.getMessage());
+            throw new RuntimeException("Error al guardar registro en BD: " + e.getMessage(), e);
+        }
+    }
+    /*private void guardarSiPresente(MultipartFile archivo, TipoDocumento tipo, Organizacion org, Familia familia) {
         if (archivo == null || archivo.isEmpty()) {
             return; // Saltea si no adjuntaron este archivo específico
         }
@@ -328,7 +388,7 @@ public class SolicitudService implements ISolicitudService {
         } catch (IOException e) {
             throw new RuntimeException("Error al guardar el archivo: " + archivo.getOriginalFilename(), e);
         }
-    }
+    }*/
 
     private void validarArchivo(MultipartFile archivo) {
         if (archivo.getSize() > MAX_SIZE) {

@@ -6,7 +6,9 @@ import lombok.Getter;
 
 @Getter
 public enum TipoDocumento {
-    DNI("DNI"),
+    DNI_FAMILIAR("DNI FAMILIAR"),
+    DNI_TESORERO("DNI TESORERO"),
+    DNI_PRESIDENTE("DNI PRESIDENTE"),
     CERTIFICADO_DISCAPACIDAD("Certificado de Discapacidad"),
     CERTIFICADO_RESIDENCIA("Certificado de Residencia"),
     ESCRITURA_PROPIEDAD("Escritura de la propiedad"),
@@ -16,7 +18,8 @@ public enum TipoDocumento {
     CONSTANCIA_CUENTA_BANCARIA("Constancia de cuenta bancaria (BSE)"),
     ALTA_AFIP("Alta de AFIP"),
     NOTA_SOLICITUD("Nota de solicitud"),
-    ACTA_DE_ASAMBLEA_ACTUAL_HCD("Acta de Asamblea Actual"),
+    ACTA_ASAMBLEA("Acta de Asamblea Actual"),
+    CONSTANCIA_VIGENCIA("Constancia de vigencia"),
     OTRO("Otro");
 
     private final String valor;
