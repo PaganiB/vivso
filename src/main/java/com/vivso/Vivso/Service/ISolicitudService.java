@@ -1,8 +1,13 @@
 package com.vivso.Vivso.Service;
 
+import com.vivso.Vivso.DTO.RegistroFamiliaDTO;
+import com.vivso.Vivso.DTO.RegistroOrganizacionDTO;
+import com.vivso.Vivso.DTO.SolicitudCompletaDTO;
 import com.vivso.Vivso.DTO.SolicitudDTO;
 import com.vivso.Vivso.Model.EstadoSolicitud;
 import com.vivso.Vivso.Model.Solicitud;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -22,5 +27,13 @@ public interface ISolicitudService {
 
     // Buscar solicitudes asociadas a una organización específica
     List<SolicitudDTO> buscarPorOrganizacion(String cuitOrg);
+
+    SolicitudDTO crearSolicitudCompleta(SolicitudCompletaDTO megaDto, MultiValueMap<String, MultipartFile> mapaArchivos);
+
+    // --- NUEVOS ---
+    void registrarOrganizacion(RegistroOrganizacionDTO dto, MultiValueMap<String, MultipartFile> mapaArchivos);
+
+    SolicitudDTO registrarSolicitudFamilia(RegistroFamiliaDTO dto, MultiValueMap<String, MultipartFile> mapaArchivos);
+
 }
 

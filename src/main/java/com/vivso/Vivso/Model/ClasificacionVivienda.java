@@ -6,10 +6,17 @@ import lombok.Getter;
 
 @Getter
 public enum ClasificacionVivienda {
-    TIPO_1A("1a"),
-    TIPO_2A("2a"),
+    TIPO_1A("1a"), //Estandar
+    TIPO_2A("2a"), //Economica
     TIPO_2B("2b"), // Aparece en el reporte del VISOC
-    TIPO_5F("5f"), // Aparece en el reporte del VISOC
+    TIPO_3A("3a"),
+    TIPO_4A("4a"),
+    TIPO_4B("4b"),
+    TIPO_4C("4c"),
+    TIPO_5A("5a"),
+    TIPO_5B("5b"),
+    TIPO_5C("5c"),
+    TIPO_5D("5d"),
     DERRUMBE("DERRUMBE"),
     OTRA("OTRA");
 

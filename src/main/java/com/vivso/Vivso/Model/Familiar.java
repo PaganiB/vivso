@@ -13,8 +13,8 @@ import lombok.*;
 public class Familiar {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_integranteFamilia", nullable = false)
-    private Integer idIntegranteFamilia;
+    @Column(name = "id_familiar", nullable = false)
+    private Integer id_familiar;
 
     @Column(name = "DNI", length = 50)
     private String dni;

@@ -18,13 +18,13 @@ public class Documento {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Integer idDocumento;
 
-    @Column(nullable = false)
-    private String nombreOriginal;
+    @Column(name = "nombreOriginal", nullable = false)
+    private String nombre;
 
-    @Column(nullable = false)
-    private String urlPath; // Ruta donde se guarda el archivo
+    @Column(name = "urlPath", nullable = false)
+    private String url;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -43,8 +43,7 @@ public class Documento {
     @Column(name = "fechaSubida",updatable = false, nullable = false, columnDefinition = "DATETIME")
     private LocalDateTime fechaSubida;
 
-    @LastModifiedDate
-    @Column(name = "fechaRevision", columnDefinition = "DATETIME")
+    @Column(name = "fechaRevision")
     private LocalDateTime fechaRevision;
 
     // --- Relaciones ---

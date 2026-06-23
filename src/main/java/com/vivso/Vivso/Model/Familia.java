@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -15,7 +17,7 @@ public class Familia {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_familia", nullable = false)
-    private Integer id_familia;
+    private Integer idFamilia;
 
     @Column(name = "nombreRepresentante", length = 50)
     private String nombreRepresentante;
@@ -23,13 +25,12 @@ public class Familia {
     @Column(name = "contacto", length = 100)
     private String contacto;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "CUIT_org", nullable = false)
-    private Organizacion cuitOrg;
-
     @Column(name = "antiguedadRancho", columnDefinition = "int CHECK (antiguedadRancho >= 5)")
     private Integer antiguedadRancho;
 
     @Column(name = "coordenadasRancho", length = 150)
     private String coordenadasRancho;
+
+    @OneToMany(mappedBy = "familia", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Familiar> familiares;
 }

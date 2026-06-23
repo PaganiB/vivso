@@ -25,7 +25,7 @@ public class IntegranteController {
     @PostMapping
     public ResponseEntity<IntegranteDTO> crearIntegrante(@Valid @RequestBody IntegranteDTO integrante){
         IntegranteDTO created = integranteService.saveIntegrantes(integrante);
-        return ResponseEntity.created(URI.create("/integrante" + integrante.getIdIntegrante())).body(created);
+        return ResponseEntity.created(URI.create("/integrante/" + integrante.getIdIntegrante())).body(created);
     }
 
     @PutMapping ("/{idIntegrante}")

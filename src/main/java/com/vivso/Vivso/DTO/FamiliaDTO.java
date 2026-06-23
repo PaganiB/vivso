@@ -26,6 +26,4 @@ public class FamiliaDTO {
     @NotBlank(message = "Debe proporcionar las coordenadas de la vivienda")
     private String coordenadasRancho;
 
-    @NotBlank(message = "El CUIT de la organización es obligatorio para vincular la familia")
-    private String cuitOrg;
 }

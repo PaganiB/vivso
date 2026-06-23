@@ -6,6 +6,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Getter @Setter
 @AllArgsConstructor
 @NoArgsConstructor
@@ -26,10 +28,12 @@ public class Organizacion {
     @Column(name = "dom_legal", length = 100)
     private String dom_legal;
 
-    @Column(name = "contacto", length = 100)
-    private String contacto;
-
     @Column(name = "cpe", length = 100)
     private String cpe;
 
+    @Column(name = "fecha_vencimiento_vigencia", nullable = false)
+    private LocalDate fechaVencimientoVigencia; // Constancia de vigencia
+
+    @Column(name = "fecha_ultima_asamblea")
+    private LocalDate fechaUltimaAsamblea; // Para rastrear la renovación bianual
 }

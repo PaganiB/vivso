@@ -13,4 +13,5 @@ public class UsuarioRespuestaDTO {
     private String username;
     private String email;
     private String rol;
+    private Boolean activo;
 }

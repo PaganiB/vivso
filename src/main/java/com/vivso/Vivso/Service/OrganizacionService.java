@@ -1,126 +1,71 @@
 package com.vivso.Vivso.Service;
 
 import com.vivso.Vivso.DTO.OrganizacionDTO;
-import com.vivso.Vivso.Mapper.Mapper;
+import com.vivso.Vivso.Mapper.VivsoMapper;
 import com.vivso.Vivso.Model.Organizacion;
 import com.vivso.Vivso.Repository.IOrganizacionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import java.util.ArrayList;
+
 import java.util.List;
 
 @Service
 public class OrganizacionService implements IOrganizacionService {
 
-    @Autowired
-    private IOrganizacionRepository orgRepo;
+    @Autowired private IOrganizacionRepository orgRepo;
+    @Autowired private VivsoMapper mapper;
 
     @Override
     public List<OrganizacionDTO> getOrganizacion() {
-        //Creamos listas para organizaciones y dto
-        List<Organizacion> organizaciones = orgRepo.findAll();
-        List<OrganizacionDTO> organizacionesDto = new ArrayList<>();
-        //Recorremos todas las orgs de la lista organizaciones
-        //Las convertimos en dto y las agregamos a la lista dto
-        OrganizacionDTO dto;
-        for (Organizacion o : organizaciones) {
-            dto = Mapper.toDTO(o);
-            organizacionesDto.add (dto);
-        }
-        return organizacionesDto;
+        return orgRepo.findAll().stream()
+                .map(mapper::toDTO)
+                .toList();
     }
 
     @Override
-    public OrganizacionDTO saveOrganizacion(OrganizacionDTO organizacionDto) {
+    public OrganizacionDTO saveOrganizacion(OrganizacionDTO dto) {
+        if (orgRepo.existsById(dto.getCuit()))
+            throw new RuntimeException("Ese CUIT ya existe: " + dto.getCuit());
 
-        if (orgRepo.existsById(organizacionDto.getCuit())) throw new RuntimeException("Ese cuit ya existe");
-        //Construir nuestro objeto organizacion
-        var org = Organizacion.builder()
-                .cuit(organizacionDto.getCuit())
-                .nombre(organizacionDto.getNombre())
-                .tipo(organizacionDto.getTipo())
-                .dom_legal(organizacionDto.getDom_legal())
-                .contacto(organizacionDto.getContacto())
-                .cpe(organizacionDto.getCpe())
-                .build();
-        //Guardamos en la BD
-        orgRepo.save(org);
-        //Mapeo de salida
-        OrganizacionDTO organizacionSalida = Mapper.toDTO(org);
-        return organizacionSalida;
+        return mapper.toDTO(orgRepo.save(mapper.toEntity(dto)));
     }
 
     @Override
-    public OrganizacionDTO updateOrganizacion(String cuit, OrganizacionDTO organizacionDto) {
-        //buscar si la organizacion existe para actualizarla
-        Organizacion o = orgRepo.findById(cuit).orElse(null);
-        if (o == null) throw new RuntimeException("organizacion no encontrada");
-        //hacemos el update en todos los atributos donde sea necesario
-        if (organizacionDto.getNombre()!=null) {
-            o.setNombre(organizacionDto.getNombre());
-        }
-        if (organizacionDto.getTipo()!=null) {
-            o.setTipo(organizacionDto.getTipo());
-        }
-        if (organizacionDto.getDom_legal()!=null) {
-            o.setDom_legal(organizacionDto.getDom_legal());
-        }
-        if (organizacionDto.getContacto()!=null) {
-            o.setContacto(organizacionDto.getContacto());
-        }
-        if (organizacionDto.getCpe()!=null) {
-            o.setCpe(organizacionDto.getCpe());
-        }
-        //Guardamos en la BD la organizacion actualizada
-        orgRepo.save(o);
-        //Mapeo de la salida
-        OrganizacionDTO organizacionSalida = Mapper.toDTO(o);
-        return organizacionSalida;
+    public OrganizacionDTO updateOrganizacion(String cuit, OrganizacionDTO dto) {
+        Organizacion o = orgRepo.findById(cuit)
+                .orElseThrow(() -> new RuntimeException("Organización no encontrada: " + cuit));
+
+        // Aplica solo los campos no nulos — sin if por campo, el CUIT (PK) está ignorado en el mapper
+        mapper.updateFromDto(dto, o);
+
+        return mapper.toDTO(orgRepo.save(o));
     }
 
     @Override
     public void deleteOrganizacion(String cuit) {
-        Organizacion o = orgRepo.findById(cuit).orElse(null);
-        if (o == null) throw new RuntimeException("organizacion no encontrada");
+        Organizacion o = orgRepo.findById(cuit)
+                .orElseThrow(() -> new RuntimeException("Organización no encontrada: " + cuit));
         orgRepo.delete(o);
     }
 
     @Override
     public OrganizacionDTO buscarPorCuit(String cuit) {
-        //Buscamos la organizacion
-        Organizacion o = orgRepo.findById(cuit).orElse(null);
-        if (o == null) throw new RuntimeException("organizacion no encontrada");
-        //Convertivos organizacion a Dto
-        return Mapper.toDTO(o);
+        return orgRepo.findById(cuit)
+                .map(mapper::toDTO)
+                .orElseThrow(() -> new RuntimeException("Organización no encontrada: " + cuit));
     }
 
     @Override
     public List<OrganizacionDTO> buscarPorTipo(String tipo) {
-        //Buscamos las organizaciones pertenecientes al tipo elegido
-        List<Organizacion> o = orgRepo.findOrganizacionByTipo(tipo);
-        if (o.isEmpty()) {
-            throw new RuntimeException("Ninguna organizacion pertenece a este tipo");
-        }
-        //Creamos una lista para guardar los dto
-        List<OrganizacionDTO> organizacionesDto = new ArrayList<>();
-        for (Organizacion organizacion : o) {
-            organizacionesDto.add(Mapper.toDTO(organizacion));
-        }
-        return organizacionesDto;
+        List<Organizacion> result = orgRepo.findOrganizacionByTipo(tipo);
+        if (result.isEmpty()) throw new RuntimeException("Ninguna organización pertenece a este tipo");
+        return result.stream().map(mapper::toDTO).toList();
     }
 
     @Override
     public List<OrganizacionDTO> buscarPorNombre(String nombre) {
-        //Buscamos las organizaciones que contengan el nombre indicado
-        List<Organizacion> o = orgRepo.findByNombreContainingIgnoreCase(nombre);
-        if (o.isEmpty()) {
-            throw new RuntimeException("Ninguna organizacion tiene o contiene ese nombre");
-        }
-        //Creamos una lista para guardar los dto
-        List<OrganizacionDTO> organizacionesDto = new ArrayList<>();
-        for (Organizacion organizacion : o) {
-            organizacionesDto.add(Mapper.toDTO(organizacion));
-        }
-        return organizacionesDto;
+        List<Organizacion> result = orgRepo.findByNombreContainingIgnoreCase(nombre);
+        if (result.isEmpty()) throw new RuntimeException("Ninguna organización tiene o contiene ese nombre");
+        return result.stream().map(mapper::toDTO).toList();
     }
 }
