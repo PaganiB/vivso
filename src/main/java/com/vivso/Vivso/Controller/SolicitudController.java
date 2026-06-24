@@ -43,9 +43,21 @@ public class SolicitudController {
     }
 
     // Formulario 1: registrar una organización en el programa
-    @PostMapping(value = "/organizacion", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    /*@PostMapping(value = "/organizacion", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> registrarOrganizacion(@RequestPart("datos") RegistroOrganizacionDTO dto, MultipartHttpServletRequest request) {
         solicitudService.registrarOrganizacion(dto, request.getMultiFileMap());
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }*/
+
+    @PostMapping(value = "/organizacion", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> registrarOrganizacion(
+            @RequestPart("datos") RegistroOrganizacionDTO dto,
+            MultipartHttpServletRequest request) {
+
+        System.out.println("ENTRE AL CONTROLLER");
+
+        solicitudService.registrarOrganizacion(dto, request.getMultiFileMap());
+
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 

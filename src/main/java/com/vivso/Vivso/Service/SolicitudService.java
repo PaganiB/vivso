@@ -31,7 +31,7 @@ public class SolicitudService implements ISolicitudService {
 
     // Constantes para los archivos físicos
     private static final String CARPETA_UPLOADS = "uploads/documentos/";
-    private static final long MAX_SIZE = 5 * 1024 * 1024; // 5 MB
+    private static final long MAX_SIZE = 20 * 1024 * 1024; // cambiás acá, antes era 5MB
     private static final List<String> EXTENSIONES = List.of("pdf", "jpg", "jpeg", "png");
 
     @Override
@@ -335,8 +335,13 @@ public class SolicitudService implements ISolicitudService {
             doc.setFamilia(familia);
 
             System.out.println("=== INTENTANDO GUARDAR EN BD: " + tipo + " | org: " + (org != null ? org.getCuit() : "null"));
-            docRepo.save(doc);
-            System.out.println("=== GUARDADO EN BD EXITOSO");
+            Documento guardado = docRepo.save(doc);
+
+            System.out.println(
+                    "=== GUARDADO OK === " +
+                            "TIPO: " + guardado.getTipo() +
+                            " | ID: " + guardado.getIdDocumento()
+            );
 
         } catch (IOException e) {
             throw new RuntimeException("Error físico al guardar el archivo en disco: " + archivo.getOriginalFilename(), e);

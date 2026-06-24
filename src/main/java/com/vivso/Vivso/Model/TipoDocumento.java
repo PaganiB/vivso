@@ -6,20 +6,27 @@ import lombok.Getter;
 
 @Getter
 public enum TipoDocumento {
-    DNI_FAMILIAR("DNI FAMILIAR"),
-    DNI_TESORERO("DNI TESORERO"),
-    DNI_PRESIDENTE("DNI PRESIDENTE"),
-    CERTIFICADO_DISCAPACIDAD("Certificado de Discapacidad"),
-    CERTIFICADO_RESIDENCIA("Certificado de Residencia"),
-    ESCRITURA_PROPIEDAD("Escritura de la propiedad"),
-    DECLARACION_JURADA_POSEEDOR("Declaración Jurada"),
-    ACTA_COMPROMISO("Acta Compromiso"),
-    FOTO_TERRENO("Foto del Terreno"),
-    CONSTANCIA_CUENTA_BANCARIA("Constancia de cuenta bancaria (BSE)"),
-    ALTA_AFIP("Alta de AFIP"),
+    // organizacion
+    ACTA_COMPROMISO_ONG("Acta Compromiso de la organizacion"),
     NOTA_SOLICITUD("Nota de solicitud"),
+    ALTA_AFIP("Alta de AFIP"),
     ACTA_ASAMBLEA("Acta de Asamblea Actual"),
     CONSTANCIA_VIGENCIA("Constancia de vigencia"),
+
+    DNI_PRESIDENTE("DNI PRESIDENTE"),
+    DNI_TESORERO("DNI TESORERO"),
+    CERTIFICADO_RESIDENCIA_PRESIDENTE("Certificado de Residencia del Presidente"),
+    CERTIFICADO_RESIDENCIA_TESORERO("Certificado de Residencia de tesorero"),
+    CONSTANCIA_CUENTA_BANCARIA("Constancia de cuenta bancaria (BSE)"),
+    // familia
+    DNI_FAMILIARES("DNI FAMILIAR"),
+    CERTIFICADO_DISCAPACIDAD("Certificado de Discapacidad"),
+    ESCRITURA_PROPIEDAD("Escritura de la propiedad"),
+    ACTA_COMPROMISO_FAMILIA("Acta Compromiso"),
+    FOTOS_TERRENO("Foto del Terreno"),
+    CERTIFICADO_RESIDENCIA_FAMILIA("Certificado de Residencia  de familia"),
+    DECLARACION_JURADA("Declaración Jurada"),
+
     OTRO("Otro");
 
     private final String valor;
