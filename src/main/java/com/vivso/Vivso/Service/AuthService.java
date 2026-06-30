@@ -9,7 +9,6 @@ import com.vivso.Vivso.Security.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,45 +23,34 @@ public class AuthService {
     @Autowired
     private JwtUtils jwtUtils;
     @Autowired
-    private IUsuarioRepository usuarioRepo;
+    private IUsuarioRepository usuarioRepository;
     @Autowired
-    private PasswordEncoder passwordEncoder;
+    private IUsuarioService usuarioService;
 
     public Map<String, String> iniciarSesion(UsuarioLoginDTO loginDTO) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword())
         );
 
+        // Buscamos el usuario para obtener el rol
+        Usuario usuario = usuarioRepository.findByEmail(loginDTO.getEmail())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
         String tokenGenerado = jwtUtils.generarToken(loginDTO.getEmail());
 
         Map<String, String> respuesta = new HashMap<>();
         respuesta.put("token", tokenGenerado);
         respuesta.put("mensaje", "Login exitoso");
+        respuesta.put("rol", usuario.getRol());
 
         return respuesta;
     }
 
     @Transactional
     public UsuarioRespuestaDTO registrarUsuario(UsuarioRegistroDTO registroDTO) {
-        // 1. Verificamos que no exista
-        if (usuarioRepo.findByUsername(registroDTO.getUsername()).isPresent()) {
-            throw new IllegalArgumentException("Error: El nombre de usuario ya está en uso.");
-        }
 
-        // 2. Mapeamos
-        Usuario nuevoUsuario = new Usuario();
-        nuevoUsuario.setUsername(registroDTO.getUsername());
-        nuevoUsuario.setEmail(registroDTO.getEmail());
-        nuevoUsuario.setRol(registroDTO.getRol());
-        nuevoUsuario.setActivo(true);
+        Usuario usuarioGuardado = usuarioService.registrarNuevoUsuario(registroDTO);
 
-        // 3. Encriptamos
-        nuevoUsuario.setPassword_hash(passwordEncoder.encode(registroDTO.getPassword()));
-
-        // 4. Guardamos
-        Usuario usuarioGuardado = usuarioRepo.save(nuevoUsuario);
-
-        // 5. Devolvemos el DTO limpio
         return UsuarioRespuestaDTO.builder()
                 .id(usuarioGuardado.getId())
                 .username(usuarioGuardado.getUsername())

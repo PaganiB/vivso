@@ -1,6 +1,7 @@
 package com.vivso.Vivso.Controller;
 
 import com.vivso.Vivso.DTO.DocumentoDTO;
+import com.vivso.Vivso.DTO.RevisionDocumentoDTO;
 import com.vivso.Vivso.Model.EstadoDocumento;
 import com.vivso.Vivso.Model.TipoDocumento;
 import com.vivso.Vivso.Service.IDocumentoService;
@@ -34,37 +35,48 @@ public class DocumentoController {
     }
 
     // 2. REVISAR DOCUMENTO (Aprobar o Rechazar)
-    // Usamos @PatchMapping porque solo estamos actualizando una parte del documento (el estado)
     @PatchMapping("/{idDoc}/revisar")
     public ResponseEntity<DocumentoDTO> revisarDocumento(
             @PathVariable Integer idDoc,
-            @RequestParam("idRevisor") Integer idRevisor,
-            @RequestParam("nuevoEstado") EstadoDocumento nuevoEstado,
-            @RequestParam(value = "motivo", required = false) String motivo) {
+            @RequestBody RevisionDocumentoDTO request) {
 
+        // Sacamos los datos del JSON
+        Integer idRevisor = request.getIdRevisor();
+        EstadoDocumento nuevoEstado = request.getNuevoEstado();
+        String motivo = request.getMotivo();
+
+        // Llamamos al service igual que antes
         DocumentoDTO actualizado = documentoService.revisar(idDoc, idRevisor, nuevoEstado, motivo);
         return ResponseEntity.ok(actualizado);
     }
 
-    // 3. LISTAR POR FAMILIA
+    // 3. Remplazar documento rechazado por operador
+    @PatchMapping("/{id}/reemplazar")
+    public ResponseEntity<DocumentoDTO> reemplazarDocumento(
+            @PathVariable Integer id,
+            @RequestParam("archivo") MultipartFile archivo) {
+        return ResponseEntity.ok(documentoService.reemplazar(id, archivo));
+    }
+
+    // 4. LISTAR POR FAMILIA
     @GetMapping("/familia/{idFamilia}")
     public ResponseEntity<List<DocumentoDTO>> listarPorFamilia(@PathVariable Integer idFamilia) {
         return ResponseEntity.ok(documentoService.listarPorFamilia(idFamilia));
     }
 
-    // 4. LISTAR POR ORGANIZACIÓN
+    // 5. LISTAR POR ORGANIZACIÓN
     @GetMapping("/organizacion/{cuitOrg}")
     public ResponseEntity<List<DocumentoDTO>> listarPorOrganizacion(@PathVariable String cuitOrg) {
         return ResponseEntity.ok(documentoService.listarPorOrganizacion(cuitOrg));
     }
 
-    // 5. LISTAR POR USUARIO REVISOR
+    // 6. LISTAR POR USUARIO REVISOR
     @GetMapping("/revisor/{idUsuario}")
     public ResponseEntity<List<DocumentoDTO>> listarPorUsuarioRevisor(@PathVariable Integer idUsuario) {
         return ResponseEntity.ok(documentoService.listarPorUsuarioRevisor(idUsuario));
     }
 
-    // 6. ELIMINAR DOCUMENTO
+    // 7. ELIMINAR DOCUMENTO
     @DeleteMapping("/{id}")
     public ResponseEntity<String> eliminar(@PathVariable Integer id) {
         documentoService.eliminar(id);

@@ -9,6 +9,7 @@ import java.util.Optional;
 
 @Repository
 public interface IOrganizacionRepository extends JpaRepository<Organizacion, String> {
+    Optional<Organizacion> findByCuit(String cuit);
     List<Organizacion> findByNombreContainingIgnoreCase(String nombre);
     List<Organizacion> findOrganizacionByTipo(String tipo);
 }

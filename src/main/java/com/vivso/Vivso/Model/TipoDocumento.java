@@ -12,12 +12,12 @@ public enum TipoDocumento {
     ALTA_AFIP("Alta de AFIP"),
     ACTA_ASAMBLEA("Acta de Asamblea Actual"),
     CONSTANCIA_VIGENCIA("Constancia de vigencia"),
+    CONSTANCIA_CUENTA_BANCARIA("Constancia de cuenta bancaria (BSE)"),
 
     DNI_PRESIDENTE("DNI PRESIDENTE"),
     DNI_TESORERO("DNI TESORERO"),
     CERTIFICADO_RESIDENCIA_PRESIDENTE("Certificado de Residencia del Presidente"),
     CERTIFICADO_RESIDENCIA_TESORERO("Certificado de Residencia de tesorero"),
-    CONSTANCIA_CUENTA_BANCARIA("Constancia de cuenta bancaria (BSE)"),
     // familia
     DNI_FAMILIARES("DNI FAMILIAR"),
     CERTIFICADO_DISCAPACIDAD("Certificado de Discapacidad"),
