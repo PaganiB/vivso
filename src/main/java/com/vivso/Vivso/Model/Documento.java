@@ -27,7 +27,7 @@ public class Documento {
     private String url;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 100)
     private TipoDocumento tipo;
 
     @Enumerated(EnumType.STRING)
@@ -43,8 +43,7 @@ public class Documento {
     @Column(name = "fechaSubida",updatable = false, nullable = false, columnDefinition = "DATETIME")
     private LocalDateTime fechaSubida;
 
-    @LastModifiedDate
-    @Column(name = "fechaRevision", columnDefinition = "DATETIME")
+    @Column(name = "fechaRevision")
     private LocalDateTime fechaRevision;
 
     // --- Relaciones ---

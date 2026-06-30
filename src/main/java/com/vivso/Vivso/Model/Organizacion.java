@@ -28,9 +28,6 @@ public class Organizacion {
     @Column(name = "dom_legal", length = 100)
     private String dom_legal;
 
-    @Column(name = "contacto", length = 100)
-    private String contacto;
-
     @Column(name = "cpe", length = 100)
     private String cpe;
 

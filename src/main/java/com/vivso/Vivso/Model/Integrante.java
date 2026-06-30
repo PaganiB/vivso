@@ -26,6 +26,9 @@ public class Integrante {
     @Column(name = "apellido", length = 50)
     private String apellido;
 
+    @Column(name = "correo", length = 250)
+    private String correo;
+
     @Column(name = "telefono", length = 20)
     private String telefono;
 

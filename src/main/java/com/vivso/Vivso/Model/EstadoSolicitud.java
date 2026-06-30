@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 
 public enum EstadoSolicitud {
     Pendiente,
+    SemiAprobada,
     Aprobada,
     Rechazada;
 

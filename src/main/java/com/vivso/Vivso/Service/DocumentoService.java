@@ -14,12 +14,12 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,6 +33,8 @@ public class DocumentoService implements IDocumentoService {
     @Autowired private VivsoMapper mapper;
 
     private final String rootFolder = "uploads/documentos";
+    private static final long MAX_SIZE_BYTES = 20 * 1024 * 1024; // 20MB
+    private static final List<String> EXTENSIONES_PERMITIDAS = List.of("pdf", "jpg", "jpeg", "png");
 
     @Override
     @Transactional
@@ -74,7 +76,47 @@ public class DocumentoService implements IDocumentoService {
         doc.setRevisor(revisor);
         doc.setMotivoRechazo(nuevoEstado == EstadoDocumento.RECHAZADO ? motivo : null);
 
+        doc.setFechaRevision(LocalDateTime.now());
+
         return mapper.toDTO(docRepo.save(doc));
+    }
+
+    @Override
+    @Transactional
+    public DocumentoDTO reemplazar(Integer idDoc, MultipartFile archivo) {
+        Documento doc = docRepo.findById(idDoc)
+                .orElseThrow(() -> new RuntimeException("Documento no encontrado: " + idDoc));
+
+        if (doc.getEstado() != EstadoDocumento.RECHAZADO) {
+            throw new RuntimeException("Solo se pueden reemplazar documentos rechazados");
+        }
+
+        validarArchivo(archivo, doc.getNombre());
+
+        try {
+            Path directorio = Paths.get(rootFolder);
+            if (!Files.exists(directorio)) Files.createDirectories(directorio);
+
+            String originalName = archivo.getOriginalFilename();
+            if (originalName == null || !originalName.contains("."))
+                throw new RuntimeException("El archivo no tiene extensión válida.");
+
+            Path rutaDestino = directorio.resolve(
+                    UUID.randomUUID().toString() + originalName.substring(originalName.lastIndexOf(".")));
+
+            Files.copy(archivo.getInputStream(), rutaDestino);
+
+            doc.setNombre(originalName);
+            doc.setUrl(rutaDestino.toString());
+            doc.setEstado(EstadoDocumento.PENDIENTE);
+            doc.setMotivoRechazo(null);
+            doc.setRevisor(null);
+
+            return mapper.toDTO(docRepo.save(doc));
+
+        } catch (IOException e) {
+            throw new RuntimeException("Error al guardar el archivo: " + archivo.getOriginalFilename(), e);
+        }
     }
 
     @Override
@@ -108,4 +150,31 @@ public class DocumentoService implements IDocumentoService {
     public void eliminar(Integer id) {
         docRepo.deleteById(id);
     }
+
+    private void validarArchivo(MultipartFile archivo, String nombreCampo) {
+        if (archivo == null || archivo.isEmpty()) return;
+
+        // Validar tamaño
+        if (archivo.getSize() > MAX_SIZE_BYTES) {
+            throw new RuntimeException(
+                    "El archivo '" + nombreCampo + "' supera el máximo de 20MB " +
+                            "(peso actual: " + archivo.getSize() / (1024 * 1024) + "MB)"
+            );
+        }
+
+        // Validar extensión
+        String nombreOriginal = archivo.getOriginalFilename();
+        if (nombreOriginal == null || !nombreOriginal.contains(".")) {
+            throw new RuntimeException("El archivo '" + nombreCampo + "' no tiene una extensión válida");
+        }
+
+        String extension = nombreOriginal.substring(nombreOriginal.lastIndexOf('.') + 1).toLowerCase();
+        if (!EXTENSIONES_PERMITIDAS.contains(extension)) {
+            throw new RuntimeException(
+                    "El archivo '" + nombreCampo + "' tiene extensión no permitida (." + extension + "). " +
+                            "Solo se aceptan: PDF, JPG, PNG"
+            );
+        }
+    }
+
 }
