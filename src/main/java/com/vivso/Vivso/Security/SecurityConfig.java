@@ -59,39 +59,39 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/solicitud/organizacion").permitAll()
 
                         // ── INTEGRANTE (solo accede a sus cosas) ─────────────────────────────
-                        .requestMatchers(HttpMethod.POST,   "/solicitud/familia").hasRole("INTEGRANTE")
-                        .requestMatchers(HttpMethod.GET,    "/solicitud/organizacion/**").hasAnyRole("ADMIN", "OPERADOR", "INTEGRANTE")
-                        .requestMatchers(HttpMethod.GET,    "/documento/organizacion/**").hasAnyRole("ADMIN", "OPERADOR", "INTEGRANTE")
+                        .requestMatchers(HttpMethod.POST, "/solicitud/familia").hasRole("INTEGRANTE")
+                        .requestMatchers(HttpMethod.GET, "/solicitud/organizacion/**").hasAnyRole("ADMIN", "OPERADOR", "INTEGRANTE")
+                        .requestMatchers(HttpMethod.GET, "/documento/organizacion/**").hasAnyRole("ADMIN", "OPERADOR", "INTEGRANTE")
                         .requestMatchers(HttpMethod.PATCH, "/documento/*/reemplazar").hasAnyRole("ADMIN", "INTEGRANTE")
-                        .requestMatchers(HttpMethod.POST,  "/documento/**").hasAnyRole("ADMIN", "OPERADOR", "INTEGRANTE")                        .requestMatchers(HttpMethod.POST,   "/documento/**").hasAnyRole("ADMIN", "OPERADOR", "INTEGRANTE")
+                        .requestMatchers(HttpMethod.POST, "/documento/**").hasAnyRole("ADMIN", "OPERADOR", "INTEGRANTE")
 
                         // ── OPERADOR (bandeja de entrada, aprueba/rechaza) ────────────────────
-                        .requestMatchers(HttpMethod.PUT,    "/solicitud/*/aprobar").hasAnyRole("ADMIN", "OPERADOR")
+                        .requestMatchers(HttpMethod.PUT, "/solicitud/*/aprobar").hasAnyRole("ADMIN", "OPERADOR")
                         .requestMatchers(HttpMethod.DELETE, "/solicitud/*/rechazar").hasAnyRole("ADMIN", "OPERADOR")
-                        .requestMatchers(HttpMethod.PUT,    "/solicitud/**").hasAnyRole("ADMIN", "OPERADOR")
+                        .requestMatchers(HttpMethod.PUT, "/solicitud/**").hasAnyRole("ADMIN", "OPERADOR")
                         .requestMatchers(HttpMethod.PATCH, "/documento/*/revisar").hasAnyRole("ADMIN", "OPERADOR")
                         .requestMatchers("/usuario/**").hasAnyRole("ADMIN", "OPERADOR")
 
                         // ── TECNICO (visitas) ─────────────────────────────────────────────────
-                        .requestMatchers(HttpMethod.POST,   "/visita/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO")
-                        .requestMatchers(HttpMethod.PUT,    "/visita/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO")
-                        .requestMatchers(HttpMethod.GET,    "/visita/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO", "ARQUITECTO")
+                        .requestMatchers(HttpMethod.POST, "/visita/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO")
+                        .requestMatchers(HttpMethod.PUT, "/visita/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO")
+                        .requestMatchers(HttpMethod.GET, "/visita/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO", "ARQUITECTO")
 
                         // ── ARQUITECTO (revisión y decisiones) ───────────────────────────────
-                        .requestMatchers(HttpMethod.PUT,    "/vivienda/**").hasAnyRole("ADMIN", "ARQUITECTO")
-                        .requestMatchers(HttpMethod.GET,    "/vivienda/**").hasAnyRole("ADMIN", "ARQUITECTO", "TECNICO", "OPERADOR")
+                        .requestMatchers(HttpMethod.PUT, "/vivienda/**").hasAnyRole("ADMIN", "ARQUITECTO")
+                        .requestMatchers(HttpMethod.GET, "/vivienda/**").hasAnyRole("ADMIN", "ARQUITECTO", "TECNICO", "OPERADOR")
 
                         // ── LECTURA GENERAL (OPERADOR y ARQUITECTO ven expedientes completos) ─
-                        .requestMatchers(HttpMethod.GET,    "/solicitud/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO")
-                        .requestMatchers(HttpMethod.GET,    "/familia/**", "/familiar/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO", "TECNICO")
-                        .requestMatchers(HttpMethod.GET,    "/organizacion/**", "/integrante/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO")
-                        .requestMatchers(HttpMethod.GET,    "/documento/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO")
+                        .requestMatchers(HttpMethod.GET, "/solicitud/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO")
+                        .requestMatchers(HttpMethod.GET, "/familia/**", "/familiar/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO", "TECNICO")
+                        .requestMatchers(HttpMethod.GET, "/organizacion/**", "/integrante/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO")
+                        .requestMatchers(HttpMethod.GET, "/documento/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO")
 
                         // ── ESCRITURA GENERAL (solo OPERADOR registra datos) ─────────────────
-                        .requestMatchers(HttpMethod.POST,   "/organizacion/**", "/familia/**",
-                                "/familiar/**",    "/integrante/**").hasAnyRole("ADMIN", "OPERADOR")
-                        .requestMatchers(HttpMethod.PUT,    "/organizacion/**", "/familia/**",
-                                "/familiar/**",    "/integrante/**").hasAnyRole("ADMIN", "OPERADOR")
+                        .requestMatchers(HttpMethod.POST, "/organizacion/**", "/familia/**",
+                                "/familiar/**", "/integrante/**").hasAnyRole("ADMIN", "OPERADOR")
+                        .requestMatchers(HttpMethod.PUT, "/organizacion/**", "/familia/**",
+                                "/familiar/**", "/integrante/**").hasAnyRole("ADMIN", "OPERADOR")
 
                         // ── BORRADO (solo ADMIN) ──────────────────────────────────────────────
                         .requestMatchers(HttpMethod.DELETE, "/**").hasRole("ADMIN")

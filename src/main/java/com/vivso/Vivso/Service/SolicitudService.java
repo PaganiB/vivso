@@ -4,6 +4,7 @@ import com.vivso.Vivso.DTO.*;
 import com.vivso.Vivso.Mapper.VivsoMapper;
 import com.vivso.Vivso.Model.*;
 import com.vivso.Vivso.Repository.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,9 +15,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class SolicitudService implements ISolicitudService {
 
@@ -29,6 +33,7 @@ public class SolicitudService implements ISolicitudService {
     @Autowired private IDocumentoRepository docRepo;
     @Autowired private VivsoMapper mapper;
     @Autowired private IUsuarioService usuarioService;
+    @Autowired private IEmailService emailService;
 
     // Constantes para los archivos físicos
     private static final String CARPETA_UPLOADS = "uploads/documentos/";
@@ -189,36 +194,116 @@ public class SolicitudService implements ISolicitudService {
     @Override
     @Transactional
     public void aprobarOrganizacion(String cuit) {
+        // 1. Validar que existe la organización
         Organizacion org = orgRepo.findById(cuit)
                 .orElseThrow(() -> new RuntimeException("Organización no encontrada: " + cuit));
 
+        // 2. Obtener los integrantes (presidente y tesorero)
         List<Integrante> integrantes = integranteRepo.findByOrganizacion_Cuit(cuit);
         if (integrantes.isEmpty())
             throw new RuntimeException("La organización no tiene integrantes registrados");
 
+        // 3. Cambiar estado de la organización
+        //org.setEstado("APROBADA");
+        //org.setFechaAprobacion(LocalDateTime.now());
+        //orgRepo.save(org);
+
+        // 4. Crear usuarios y enviar credenciales
         for (Integrante integrante : integrantes) {
-            // La contraseña es su DNI por ahora
-            UsuarioRegistroDTO nuevoUsuario = UsuarioRegistroDTO.builder()
-                    .username(integrante.getNombre() + "." + integrante.getApellido())
-                    .email(integrante.getCorreo())
-                    .password(integrante.getDni())
-                    .rol("INTEGRANTE")
-                    .build();
+            try {
+                // Generar username único
+                String usernameBase = (integrante.getNombre() + "." + integrante.getApellido())
+                        .toLowerCase()
+                        .replaceAll("[^a-z0-9.]", "");
 
-            usuarioService.registrarNuevoUsuario(nuevoUsuario);
+                String username = usernameBase;
+                int contador = 1;
+                while (usuarioService.existePorUsername(username)) {
+                    username = usernameBase + contador;
+                    contador++;
+                }
 
-            // TODO: mandar mail con credenciales al integrante
+                // Generar contraseña temporal segura
+                String caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%";
+                Random random = new Random();
+                StringBuilder password = new StringBuilder();
+                for (int i = 0; i < 12; i++) {
+                    password.append(caracteres.charAt(random.nextInt(caracteres.length())));
+                }
+                String passwordTemporal = password.toString();
+
+                // Crear el usuario
+                UsuarioRegistroDTO nuevoUsuario = UsuarioRegistroDTO.builder()
+                        .username(username)
+                        .email(integrante.getCorreo())
+                        .password(passwordTemporal)
+                        .rol("INTEGRANTE")
+                        .build();
+
+                usuarioService.registrarNuevoUsuario(nuevoUsuario);
+
+                // Enviar email con credenciales + notificación de aprobación
+                emailService.enviarCredencialesYAprobacion(
+                        integrante.getCorreo(),
+                        username,
+                        passwordTemporal,
+                        org.getNombre()
+                );
+
+                log.info("Usuario creado y email enviado para: {} de {}",
+                        username, org.getNombre());
+
+            } catch (RuntimeException e) {
+                log.error("Error procesando integrante de {}: {}",
+                        org.getNombre(), e.getMessage(), e);
+                throw new RuntimeException(
+                        "Error al procesar integrante: " + integrante.getNombre(), e);
+            }
         }
     }
+
     @Override
     @Transactional
     public void rechazarOrganizacion(String cuit, String motivo) {
+        // 1. Validar que existe la organización
         Organizacion org = orgRepo.findByCuit(cuit)
                 .orElseThrow(() -> new RuntimeException("Organización no encontrada: " + cuit));
 
+        // 2. Obtener emails de los integrantes ANTES de eliminar
+        List<Integrante> integrantes = integranteRepo.findByOrganizacion_Cuit(cuit);
+
+        // 3. Cambiar estado a RECHAZADA
+        //org.setEstado("RECHAZADA");
+        //org.setMotivo(motivo);
+        //org.setFechaRechazo(LocalDateTime.now());
+        //orgRepo.save(org);
+
+        // 4. Eliminar documentos e integrantes de la BD
         docRepo.deleteByOrganizacion_Cuit(cuit);
         integranteRepo.deleteByOrganizacion_Cuit(cuit);
+
+        // 5. Enviar email de rechazo a cada integrante
+        for (Integrante integrante : integrantes) {
+            try {
+                emailService.enviarNotificacionSolicitudRechazada(
+                        integrante.getCorreo(),
+                        org.getNombre(),
+                        motivo
+                );
+
+                log.info("Email de rechazo enviado a: {}", integrante.getCorreo());
+
+            } catch (RuntimeException e) {
+                log.error("Error al enviar email de rechazo a {}: {}",
+                        integrante.getCorreo(), e.getMessage());
+                // Continuar con el siguiente, no fallar todo
+            }
+        }
+
+        // 6. Eliminar la organización
         orgRepo.delete(org);
+
+        log.info("Organización {} rechazada y datos eliminados", cuit);
     }
 
     // =============================================
