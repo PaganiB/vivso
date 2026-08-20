@@ -20,7 +20,7 @@ public interface IDocumentoRepository extends JpaRepository<Documento, Integer> 
 
     // Busca por el CUIT de la entidad Organizacion que está dentro de Documento
     List<Documento> findByOrganizacion_Cuit(String cuit);
-
+    void deleteByOrganizacion_Cuit(String cuit);
     // Busca por el ID del Usuario revisor
     List<Documento> findByRevisor_Id(Integer idUsuario);
 

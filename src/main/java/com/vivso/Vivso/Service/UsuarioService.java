@@ -7,6 +7,7 @@ import com.vivso.Vivso.Mapper.VivsoMapper;
 import com.vivso.Vivso.Model.Usuario;
 import com.vivso.Vivso.Repository.IUsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,6 +17,7 @@ public class UsuarioService implements IUsuarioService {
 
     @Autowired private IUsuarioRepository usuarioRepo;
     @Autowired private VivsoMapper mapper;
+    @Autowired private PasswordEncoder passwordEncoder;
 
     @Override
     public List<UsuarioRespuestaDTO> listarTodos() {
@@ -58,8 +60,10 @@ public class UsuarioService implements IUsuarioService {
 
     @Override
     public Usuario registrarNuevoUsuario(UsuarioRegistroDTO dto) {
+
         if (existePorEmail(dto.getEmail()))
             throw new RuntimeException("El email ya está registrado.");
+
         if (existePorUsername(dto.getUsername()))
             throw new RuntimeException("El nombre de usuario ya existe.");
 
@@ -68,7 +72,9 @@ public class UsuarioService implements IUsuarioService {
         usuario.setEmail(dto.getEmail());
         usuario.setRol(dto.getRol());
         usuario.setActivo(true);
-        usuario.setPassword_hash(dto.getPassword()); // TODO: reemplazar por BCrypt al implementar JWT
+
+        // Encriptar contraseña
+        usuario.setPassword_hash(passwordEncoder.encode(dto.getPassword()));
 
         return usuarioRepo.save(usuario);
     }

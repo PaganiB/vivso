@@ -28,12 +28,14 @@ public interface ISolicitudService {
     // Buscar solicitudes asociadas a una organización específica
     List<SolicitudDTO> buscarPorOrganizacion(String cuitOrg);
 
-    SolicitudDTO crearSolicitudCompleta(SolicitudCompletaDTO megaDto, MultiValueMap<String, MultipartFile> mapaArchivos);
-
-    // --- NUEVOS ---
+    // Formulario Organizacion
     void registrarOrganizacion(RegistroOrganizacionDTO dto, MultiValueMap<String, MultipartFile> mapaArchivos);
-
+    void aprobarOrganizacion(String cuit);
+    void rechazarOrganizacion(String cuit, String motivo);
+    // Formulario Familia
     SolicitudDTO registrarSolicitudFamilia(RegistroFamiliaDTO dto, MultiValueMap<String, MultipartFile> mapaArchivos);
-
+    SolicitudDTO aprobarSolicitudVivienda(Integer idSolicitud, String numExp);
+    void rechazarSolicitudVivienda(Integer idSolicitud, String motivo);
+    SolicitudDTO semiAprobarSolicitud(Integer idSolicitud, String motivo);
 }
 

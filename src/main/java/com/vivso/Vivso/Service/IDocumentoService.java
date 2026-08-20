@@ -11,6 +11,7 @@ public interface IDocumentoService {
 
     DocumentoDTO subirDocumento(MultipartFile archivo, TipoDocumento tipo, Integer idFamilia, String cuitOrg);
     DocumentoDTO revisar(Integer idDoc, Integer idRevisor, EstadoDocumento nuevoEstado, String motivo);
+    DocumentoDTO reemplazar(Integer idDoc, MultipartFile archivo);
     List<DocumentoDTO> listarPorFamilia(Integer idFamilia);
     List<DocumentoDTO> listarPorOrganizacion(String cuitOrg);
     List<DocumentoDTO> listarPorUsuarioRevisor(Integer idUsuario);

@@ -10,7 +10,7 @@ import java.util.List;
 @Repository
 public interface IIntegranteRepository extends JpaRepository<Integrante, Integer> {
     List<Integrante> findByOrganizacion_Cuit(String cuitOrg);
-
+    void deleteByOrganizacion_Cuit(String cuit);
     List<Integrante> findByActivoTrue();
 
     @Query("SELECT CASE WHEN COUNT(i) > 0 THEN true ELSE false END " +

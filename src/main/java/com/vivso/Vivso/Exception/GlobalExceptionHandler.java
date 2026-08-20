@@ -13,7 +13,7 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     // 1. MANEJO DE EXCEPCIONES DE LÓGICA (RuntimeException)
-    @ExceptionHandler(RuntimeException.class)
+    /*@ExceptionHandler(RuntimeException.class)
     public ResponseEntity<String> manejarRuntime(RuntimeException ex) {
         String mensaje = ex.getMessage().toLowerCase();
 
@@ -28,6 +28,24 @@ public class GlobalExceptionHandler {
         }
 
         // Para cualquier otro error de lógica de negocio
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    }*/
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<String> manejarRuntime(RuntimeException ex) {
+
+        ex.printStackTrace(); // <-- agregar esto
+
+        String mensaje = ex.getMessage().toLowerCase();
+
+        if (mensaje.contains("no encontrado")) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+        }
+
+        if (mensaje.contains("ya existe") || mensaje.contains("registrado")) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+        }
+
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 

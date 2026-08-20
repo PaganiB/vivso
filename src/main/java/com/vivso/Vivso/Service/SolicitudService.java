@@ -28,10 +28,11 @@ public class SolicitudService implements ISolicitudService {
     @Autowired private IFamiliarRepository familiarRepo;
     @Autowired private IDocumentoRepository docRepo;
     @Autowired private VivsoMapper mapper;
+    @Autowired private IUsuarioService usuarioService;
 
     // Constantes para los archivos físicos
     private static final String CARPETA_UPLOADS = "uploads/documentos/";
-    private static final long MAX_SIZE = 5 * 1024 * 1024; // 5 MB
+    private static final long MAX_SIZE = 20 * 1024 * 1024; // 20Mb
     private static final List<String> EXTENSIONES = List.of("pdf", "jpg", "jpeg", "png");
 
     @Override
@@ -131,68 +132,10 @@ public class SolicitudService implements ISolicitudService {
         return result.stream().map(mapper::toDTO).toList();
     }
 
-    @Transactional
-    public SolicitudDTO crearSolicitudCompleta(SolicitudCompletaDTO megaDto, MultiValueMap<String, MultipartFile> mapaArchivos) {
-
-        // 1. === VALIDACIÓN PREVIA ===
-        // Chequeamos si el CUIT existe ANTES de hacer cualquier otra cosa
-        if (orgRepo.existsById(megaDto.getOrganizacion().getCuit())) {
-            throw new RuntimeException("El CUIT ya está registrado: " + megaDto.getOrganizacion().getCuit());
-        }
-
-        // 2. === GUARDAR EL TEXTO Y ARMAR RELACIONES ===
-        Organizacion org = orgRepo.save(mapper.toEntity(megaDto.getOrganizacion()));
-
-        Integrante presidente = mapper.toEntity(megaDto.getPresidente());
-        presidente.setOrganizacion(org);
-        integranteRepo.save(presidente);
-
-        if (megaDto.getTesorero() != null) {
-            Integrante tesorero = mapper.toEntity(megaDto.getTesorero());
-            tesorero.setOrganizacion(org);
-            integranteRepo.save(tesorero);
-        }
-
-        Familia familia = familiaRepo.save(mapper.toEntity(megaDto.getFamilia()));
-
-        Solicitud solicitud = mapper.toEntity(megaDto.getSolicitud());
-        solicitud.setCuitOrg(org);
-        solicitud.setFamiliaBeneficiaria(familia);
-        if (solicitud.getFechaSolicitud() == null) {
-            solicitud.setFechaSolicitud(LocalDate.now()); // Asegura fecha de hoy si no viene
-        }
-        solicitud = solicitudRepo.save(solicitud); // Genera el idSolicitud
-
-        // 3. === BUCLE DINÁMICO PARA GUARDAR LOS ARCHIVOS ===
-        // Agregamos un chequeo de null por si mandan la solicitud sin ningún archivo
-        if (mapaArchivos != null) {
-            mapaArchivos.forEach((clave, listaArchivos) -> {
-
-                // Ignoramos la clave "datos" porque ahí viaja el JSON de texto
-                if (!clave.equals("datos")) {
-                    try {
-                        // Magia: Convertimos la clave que mandó React al Enum exacto.
-                        TipoDocumento tipoDoc = TipoDocumento.valueOf(clave.toUpperCase());
-
-                        // Guardamos cada archivo (Por si en "FOTO_TERRENO" mandaron 3 imágenes juntas)
-                        for (MultipartFile archivo : listaArchivos) {
-                            guardarSiPresente(archivo, tipoDoc, org, familia);
-                        }
-
-                    } catch (IllegalArgumentException e) {
-                        // Si mandan una clave que no existe en tu Enum, la ignoramos sin romper el servidor
-                        System.out.println("Se ignoró el archivo con clave: " + clave + " (No pertenece al Enum)");
-                    }
-                }
-            });
-        }
-
-        return mapper.toDTO(solicitud);
-    }
-
     // =============================================
     // FORMULARIO 1: REGISTRO DE ORGANIZACIÓN
     // =============================================
+    @Override
     @Transactional
     public void registrarOrganizacion(RegistroOrganizacionDTO dto,
                                       MultiValueMap<String, MultipartFile> mapaArchivos) {
@@ -242,9 +185,46 @@ public class SolicitudService implements ISolicitudService {
         }
     }
 
+    // Metodos para aceptar o rechazar el form de org
+    @Override
+    @Transactional
+    public void aprobarOrganizacion(String cuit) {
+        Organizacion org = orgRepo.findById(cuit)
+                .orElseThrow(() -> new RuntimeException("Organización no encontrada: " + cuit));
+
+        List<Integrante> integrantes = integranteRepo.findByOrganizacion_Cuit(cuit);
+        if (integrantes.isEmpty())
+            throw new RuntimeException("La organización no tiene integrantes registrados");
+
+        for (Integrante integrante : integrantes) {
+            // La contraseña es su DNI por ahora
+            UsuarioRegistroDTO nuevoUsuario = UsuarioRegistroDTO.builder()
+                    .username(integrante.getNombre() + "." + integrante.getApellido())
+                    .email(integrante.getCorreo())
+                    .password(integrante.getDni())
+                    .rol("INTEGRANTE")
+                    .build();
+
+            usuarioService.registrarNuevoUsuario(nuevoUsuario);
+
+            // TODO: mandar mail con credenciales al integrante
+        }
+    }
+    @Override
+    @Transactional
+    public void rechazarOrganizacion(String cuit, String motivo) {
+        Organizacion org = orgRepo.findByCuit(cuit)
+                .orElseThrow(() -> new RuntimeException("Organización no encontrada: " + cuit));
+
+        docRepo.deleteByOrganizacion_Cuit(cuit);
+        integranteRepo.deleteByOrganizacion_Cuit(cuit);
+        orgRepo.delete(org);
+    }
+
     // =============================================
     // FORMULARIO 2: SOLICITUD DE VIVIENDA (familia)
     // =============================================
+    @Override
     @Transactional
     public SolicitudDTO registrarSolicitudFamilia(RegistroFamiliaDTO dto,
                                                   MultiValueMap<String, MultipartFile> mapaArchivos) {
@@ -291,6 +271,64 @@ public class SolicitudService implements ISolicitudService {
         return mapper.toDTO(solicitud);
     }
 
+    // =============================================
+    // APROBAR SOLICITUD DE VIVIENDA
+    // =============================================
+    @Override
+    @Transactional
+    public SolicitudDTO aprobarSolicitudVivienda(Integer idSolicitud, String numExp) {
+        Solicitud s = solicitudRepo.findById(idSolicitud)
+                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada: " + idSolicitud));
+
+        if (s.getEstado() == EstadoSolicitud.Aprobada)
+            throw new RuntimeException("La solicitud ya está aprobada");
+
+        Vivienda vivienda = viviendaRepo.findViviendaByNumExp(numExp)
+                .orElseThrow(() -> new RuntimeException("Expediente no encontrado: " + numExp));
+
+        s.setEstado(EstadoSolicitud.Aprobada);
+        s.setNumExp(vivienda);
+        s.setFechaActivacion(LocalDate.now());
+
+        return mapper.toDTO(solicitudRepo.save(s));
+    }
+
+    // =============================================
+    // RECHAZAR SOLICITUD DE VIVIENDA
+    // =============================================
+    @Override
+    @Transactional
+    public void rechazarSolicitudVivienda(Integer idSolicitud, String motivo) {
+        Solicitud s = solicitudRepo.findById(idSolicitud)
+                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada: " + idSolicitud));
+
+        if (s.getEstado() == EstadoSolicitud.Aprobada)
+            throw new RuntimeException("No se puede rechazar una solicitud ya aprobada");
+
+        s.setEstado(EstadoSolicitud.Rechazada);
+        s.setObservacion(motivo);
+
+        solicitudRepo.save(s);
+    }
+
+    @Override
+    @Transactional
+    public SolicitudDTO semiAprobarSolicitud(Integer idSolicitud, String motivo) {
+        Solicitud s = solicitudRepo.findById(idSolicitud)
+                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada: " + idSolicitud));
+
+        if (s.getEstado() == EstadoSolicitud.Aprobada)
+            throw new RuntimeException("No se puede modificar una solicitud ya aprobada");
+
+        if (s.getEstado() == EstadoSolicitud.Rechazada)
+            throw new RuntimeException("No se puede modificar una solicitud ya rechazada");
+
+        s.setEstado(EstadoSolicitud.SemiAprobada);
+        s.setObservacion(motivo); // acá el operador especifica qué documento está mal
+
+        return mapper.toDTO(solicitudRepo.save(s));
+    }
+
     // =========================================================================
     // MÉTODOS AUXILIARES PRIVADOS (Manejo de Archivos)
     // =========================================================================
@@ -335,8 +373,13 @@ public class SolicitudService implements ISolicitudService {
             doc.setFamilia(familia);
 
             System.out.println("=== INTENTANDO GUARDAR EN BD: " + tipo + " | org: " + (org != null ? org.getCuit() : "null"));
-            docRepo.save(doc);
-            System.out.println("=== GUARDADO EN BD EXITOSO");
+            Documento guardado = docRepo.save(doc);
+
+            System.out.println(
+                    "=== GUARDADO OK === " +
+                            "TIPO: " + guardado.getTipo() +
+                            " | ID: " + guardado.getIdDocumento()
+            );
 
         } catch (IOException e) {
             throw new RuntimeException("Error físico al guardar el archivo en disco: " + archivo.getOriginalFilename(), e);
@@ -345,38 +388,31 @@ public class SolicitudService implements ISolicitudService {
             throw new RuntimeException("Error al guardar registro en BD: " + e.getMessage(), e);
         }
     }
-    /*private void guardarSiPresente(MultipartFile archivo, TipoDocumento tipo, Organizacion org, Familia familia) {
-        if (archivo == null || archivo.isEmpty()) {
-            return; // Saltea si no adjuntaron este archivo específico
-        }
-        // Evita duplicados del mismo TipoDocumento para la misma org o familia
-        if (org != null && docRepo.existsByTipoAndOrganizacion(tipo, org)) {
-            throw new RuntimeException("Ya existe un documento de tipo '" + tipo.getValor() + "' para esta organización");
-        }
-        if (familia != null && docRepo.existsByTipoAndFamilia(tipo, familia)) {
-            throw new RuntimeException("Ya existe un documento de tipo '" + tipo.getValor() + "' para esta familia");
-        }
 
+    /* METODO NUEVO PARA PROBAR
+    private void guardarSiPresente(MultipartFile archivo, TipoDocumento tipo, Organizacion org, Familia familia) {
+
+        // Opcional: solo el certificado de discapacidad puede no venir
+        if (archivo == null || archivo.isEmpty()) {
+            if (tipo == TipoDocumento.CERTIFICADO_DISCAPACIDAD) return;
+            throw new RuntimeException("El archivo '" + tipo.name() + "' es obligatorio y no fue recibido.");
+        }
 
         validarArchivo(archivo);
 
         try {
-            // Crea la carpeta si no existe en el sistema
             Path directorio = Paths.get(CARPETA_UPLOADS);
-            if (!Files.exists(directorio)) {
-                Files.createDirectories(directorio);
-            }
+            if (!Files.exists(directorio)) Files.createDirectories(directorio);
 
-            // Genera nombre único con UUID para evitar sobreescrituras
             String originalName = archivo.getOriginalFilename();
-            String extension = originalName.substring(originalName.lastIndexOf("."));
-            String nombreUnico = UUID.randomUUID().toString() + extension;
-            Path rutaDestino = directorio.resolve(nombreUnico);
+            if (originalName == null || !originalName.contains("."))
+                throw new RuntimeException("El archivo '" + tipo.name() + "' no tiene extensión válida.");
 
-            // Guarda físicamente en el disco
+            Path rutaDestino = directorio.resolve(UUID.randomUUID().toString() +
+                    originalName.substring(originalName.lastIndexOf(".")));
+
             Files.copy(archivo.getInputStream(), rutaDestino);
 
-            // Guarda el registro en la BD
             Documento doc = new Documento();
             doc.setNombre(originalName);
             doc.setUrl(rutaDestino.toString());
@@ -392,7 +428,7 @@ public class SolicitudService implements ISolicitudService {
 
     private void validarArchivo(MultipartFile archivo) {
         if (archivo.getSize() > MAX_SIZE) {
-            throw new RuntimeException("El archivo '" + archivo.getOriginalFilename() + "' supera el máximo de 5MB");
+            throw new RuntimeException("El archivo '" + archivo.getOriginalFilename() + "' supera el máximo de 20MB");
         }
         String originalName = archivo.getOriginalFilename();
         if (originalName == null || !originalName.contains(".")) {
