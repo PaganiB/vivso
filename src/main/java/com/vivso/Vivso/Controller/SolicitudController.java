@@ -37,7 +37,7 @@ public class SolicitudController {
         return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/organizacion/{cuit}/rechazar")
+    @PutMapping("/organizacion/{cuit}/rechazar")
     public ResponseEntity<Void> rechazarOrganizacion(@PathVariable String cuit,
                                                      @RequestParam String motivo) {
         solicitudService.rechazarOrganizacion(cuit, motivo);

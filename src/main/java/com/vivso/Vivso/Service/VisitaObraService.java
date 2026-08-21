@@ -9,6 +9,7 @@ import com.vivso.Vivso.Repository.IUsuarioRepository;
 import com.vivso.Vivso.Repository.IVisitaObraRepository;
 import com.vivso.Vivso.Repository.IViviendaRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,13 +17,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class VisitaObraService implements IVisitaObraService {
 
-    private  IVisitaObraRepository visitaRepo;
-    private  IViviendaRepository viviendaRepo;
-    private  IUsuarioRepository usuarioRepo;
-    private VivsoMapper mapper;
+    @Autowired IVisitaObraRepository visitaRepo;
+    @Autowired  IViviendaRepository viviendaRepo;
+    @Autowired  IUsuarioRepository usuarioRepo;
+    @Autowired  VivsoMapper mapper;
 
     @Override
     @Transactional

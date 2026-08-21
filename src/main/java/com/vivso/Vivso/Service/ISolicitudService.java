@@ -6,6 +6,7 @@ import com.vivso.Vivso.DTO.SolicitudCompletaDTO;
 import com.vivso.Vivso.DTO.SolicitudDTO;
 import com.vivso.Vivso.Model.EstadoSolicitud;
 import com.vivso.Vivso.Model.Solicitud;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -30,7 +31,9 @@ public interface ISolicitudService {
 
     // Formulario Organizacion
     void registrarOrganizacion(RegistroOrganizacionDTO dto, MultiValueMap<String, MultipartFile> mapaArchivos);
+
     void aprobarOrganizacion(String cuit);
+
     void rechazarOrganizacion(String cuit, String motivo);
     // Formulario Familia
     SolicitudDTO registrarSolicitudFamilia(RegistroFamiliaDTO dto, MultiValueMap<String, MultipartFile> mapaArchivos);
