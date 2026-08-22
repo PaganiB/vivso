@@ -1,8 +1,6 @@
 package com.vivso.Vivso.Controller;
 
-import com.vivso.Vivso.DTO.RegistroFamiliaDTO;
-import com.vivso.Vivso.DTO.RegistroOrganizacionDTO;
-import com.vivso.Vivso.DTO.SolicitudDTO;
+import com.vivso.Vivso.DTO.*;
 import com.vivso.Vivso.Model.EstadoSolicitud;
 import com.vivso.Vivso.Service.ISolicitudService;
 import jakarta.validation.Valid;
@@ -42,6 +40,40 @@ public class SolicitudController {
                                                      @RequestParam String motivo) {
         solicitudService.rechazarOrganizacion(cuit, motivo);
         return ResponseEntity.noContent().build();
+    }
+
+    // ==================== SEMI-APROBADO (OBSERVACIONES) ====================
+
+    /**
+     * El operador marca una solicitud con observaciones (campos a corregir)
+     */
+    @PostMapping("/marcar-observaciones/{idSolicitud}")
+    public ResponseEntity<Void> marcarObservaciones(
+            @PathVariable Integer idSolicitud,
+            @RequestParam List<String> camposObservados,
+            @RequestParam String motivo) {
+        solicitudService.marcarObservaciones(idSolicitud, camposObservados, motivo);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * El front trae los datos actuales de la solicitud usando el token (sin login)
+     */
+    @GetMapping("/token/{token}")
+    public ResponseEntity<SolicitudOrganizacionDTO> obtenerPorToken(@PathVariable String token) {
+        SolicitudOrganizacionDTO dto = solicitudService.obtenerSolicitudOrgPorToken(token);
+        return ResponseEntity.ok(dto);
+    }
+
+    /**
+     * La organización envía solo los campos corregidos usando el token (sin login)
+     */
+    @PutMapping("/editar-token")
+    public ResponseEntity<Void> editarConToken(
+            @RequestParam String token,
+            @RequestBody SolicitudOrganizacionPatchDTO dto) {
+        solicitudService.actualizarSolicitudOrgConToken(token, dto);
+        return ResponseEntity.ok().build();
     }
 
     // ── FORMULARIO 2: Solicitud de vivienda (requiere INTEGRANTE) ─────────

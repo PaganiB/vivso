@@ -3,6 +3,7 @@ package com.vivso.Vivso.Model;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Entity
 @Table(name = "solicitud_organizacion", schema = "vivso3")
@@ -69,6 +70,12 @@ public class SolicitudOrganizacion {
     private LocalDate fechaAprobacion;
     private LocalDate fechaSolicitud;
 
+    @Column(name = "token_edicion", unique = true)
+    private String tokenEdicion;
+
+    @Column(name = "campos_observados", columnDefinition = "TEXT")
+    private String camposObservados;
+
     @PrePersist
     public void prePersist() {
         if (this.estado == null) {
@@ -76,6 +83,9 @@ public class SolicitudOrganizacion {
         }
         if (this.fechaSolicitud == null) {
             this.fechaSolicitud = LocalDate.now();
+        }
+        if (this.tokenEdicion == null) {
+            this.tokenEdicion = UUID.randomUUID().toString();
         }
     }
 }

@@ -57,6 +57,8 @@ public class SecurityConfig {
                         //En realidad solo el login tiene acceso público, el registrar usuario no.
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/solicitud/organizacion").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/solicitud/token/**").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/solicitud/editar-token").permitAll()
 
                         // ── INTEGRANTE (solo accede a sus cosas) ─────────────────────────────
                         .requestMatchers(HttpMethod.POST, "/solicitud/familia").hasRole("INTEGRANTE")

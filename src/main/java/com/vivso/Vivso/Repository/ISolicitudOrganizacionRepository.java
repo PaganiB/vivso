@@ -13,4 +13,5 @@ public interface ISolicitudOrganizacionRepository extends JpaRepository<Solicitu
     Optional<SolicitudOrganizacion> findByCuit(String cuit);
     boolean existsByCuit(String cuit);
     List<SolicitudOrganizacion> findByEstado(EstadoSolicitud estado);
+    Optional<SolicitudOrganizacion> findByTokenEdicion(String tokenEdicion);
 }

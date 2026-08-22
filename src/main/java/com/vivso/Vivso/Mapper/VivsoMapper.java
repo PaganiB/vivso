@@ -149,4 +149,14 @@ public interface VivsoMapper {
     @Mapping(target = "tecnico",   ignore = true) // No modificamos la relación desde acá
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateFromDto(VisitaInicialDTO dto, @MappingTarget VisitaInicial visitaInicial);
+
+    // ======================== SOLICITUD ORGANIZACION ========================
+    // Todos los campos coinciden → sin @Mapping necesario para el toDTO
+
+    SolicitudOrganizacionDTO toDTO(SolicitudOrganizacion solicitudOrganizacion);
+
+    @Mapping(target = "cuit",                              ignore = true) // No se edita vía PATCH
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void updateFromPatchDto(SolicitudOrganizacionPatchDTO dto, @MappingTarget SolicitudOrganizacion solicitudOrganizacion);
+
 }

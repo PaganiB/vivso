@@ -215,6 +215,11 @@ public class SolicitudService implements ISolicitudService {
 
         if (sol.getEstado() == EstadoSolicitud.Aprobada) throw new RuntimeException("Ya está aprobada.");
 
+        // Validar que no exista ya una organización aprobada con ese CUIT
+        if (orgRepo.existsById(cuit)) {
+            throw new RuntimeException("Ya existe una organización activa con el CUIT: " + cuit);
+        }
+
         // 1. Crear Organización Oficial
         Organizacion org = Organizacion.builder()
                 .cuit(sol.getCuit()).nombre(sol.getNombre()).tipo(sol.getTipo())
@@ -285,49 +290,116 @@ public class SolicitudService implements ISolicitudService {
         }
     }
 
-//METODO RECHAZAR V2
-@Override
-@Transactional
-public void rechazarOrganizacion(String cuit, String motivo) {
-    SolicitudOrganizacion sol = solicitudOrgRepo.findByCuit(cuit)
-            .orElseThrow(() -> new RuntimeException("Solicitud no encontrada."));
+    //METODO RECHAZAR V2
+    @Override
+    @Transactional
+    public void rechazarOrganizacion(String cuit, String motivo) {
+        SolicitudOrganizacion sol = solicitudOrgRepo.findByCuit(cuit)
+                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada."));
 
-    if (sol.getEstado() == EstadoSolicitud.Aprobada) throw new RuntimeException("No se puede rechazar una ONG ya aprobada.");
+        if (sol.getEstado() == EstadoSolicitud.Aprobada) throw new RuntimeException("No se puede rechazar una ONG ya aprobada.");
 
-    // 1. Borramos los archivos pesados del servidor
-    borrarArchivoFisico(sol.getUrlNotaSolicitud());
-    borrarArchivoFisico(sol.getUrlAltaAfip());
-    borrarArchivoFisico(sol.getUrlActaAsamblea());
-    borrarArchivoFisico(sol.getUrlActaCompromiso());
-    borrarArchivoFisico(sol.getUrlConstanciaVigencia());
-    borrarArchivoFisico(sol.getUrlConstanciaCuentaBancaria());
-    borrarArchivoFisico(sol.getUrlDniPresidente());
-    borrarArchivoFisico(sol.getUrlCertificadoResidenciaPresidente());
-    borrarArchivoFisico(sol.getUrlDniTesorero());
-    borrarArchivoFisico(sol.getUrlCertificadoResidenciaTesorero());
+        // 1. Borramos los archivos pesados del servidor
+        borrarArchivoFisico(sol.getUrlNotaSolicitud());
+        borrarArchivoFisico(sol.getUrlAltaAfip());
+        borrarArchivoFisico(sol.getUrlActaAsamblea());
+        borrarArchivoFisico(sol.getUrlActaCompromiso());
+        borrarArchivoFisico(sol.getUrlConstanciaVigencia());
+        borrarArchivoFisico(sol.getUrlConstanciaCuentaBancaria());
+        borrarArchivoFisico(sol.getUrlDniPresidente());
+        borrarArchivoFisico(sol.getUrlCertificadoResidenciaPresidente());
+        borrarArchivoFisico(sol.getUrlDniTesorero());
+        borrarArchivoFisico(sol.getUrlCertificadoResidenciaTesorero());
 
-    // 2. Limpiamos las rutas en la BD para que no apunten a la nada, pero conservamos el motivo
-    sol.setUrlNotaSolicitud(null);
-    sol.setUrlAltaAfip(null);
-    sol.setUrlActaAsamblea(null);
-    sol.setUrlActaCompromiso(null);
-    sol.setUrlConstanciaVigencia(null);
-    sol.setUrlConstanciaCuentaBancaria(null);
-    sol.setUrlDniPresidente(null);
-    sol.setUrlCertificadoResidenciaPresidente(null);
-    sol.setUrlDniTesorero(null);
-    sol.setUrlCertificadoResidenciaTesorero(null);
+        // 2. Limpiamos las rutas en la BD para que no apunten a la nada, pero conservamos el motivo
+        sol.setUrlNotaSolicitud(null);
+        sol.setUrlAltaAfip(null);
+        sol.setUrlActaAsamblea(null);
+        sol.setUrlActaCompromiso(null);
+        sol.setUrlConstanciaVigencia(null);
+        sol.setUrlConstanciaCuentaBancaria(null);
+        sol.setUrlDniPresidente(null);
+        sol.setUrlCertificadoResidenciaPresidente(null);
+        sol.setUrlDniTesorero(null);
+        sol.setUrlCertificadoResidenciaTesorero(null);
 
-    sol.setEstado(EstadoSolicitud.Rechazada);
-    sol.setMotivo(motivo);
-    sol.setFechaRechazo(LocalDate.now());
-    solicitudOrgRepo.save(sol);
+        sol.setEstado(EstadoSolicitud.Rechazada);
+        sol.setMotivo(motivo);
+        sol.setFechaRechazo(LocalDate.now());
+        solicitudOrgRepo.save(sol);
 
-    // 3. Notificamos al correo del presidente usando el servicio que armó Marian
-    if (sol.getCorreoPresidente() != null && sol.getCorreoPresidente().contains("@")) {
-        emailService.enviarNotificacionSolicitudRechazada(sol.getCorreoPresidente(), sol.getNombre(), motivo);
+        // 3. Notificamos al correo del presidente usando el servicio que armó Marian
+        if (sol.getCorreoPresidente() != null && sol.getCorreoPresidente().contains("@")) {
+            emailService.enviarNotificacionSolicitudRechazada(sol.getCorreoPresidente(), sol.getNombre(), motivo);
+        }
     }
-}
+
+    @Override
+    @Transactional
+    public void marcarObservaciones(Integer idSolicitud, List<String> camposObservados, String motivo) {
+        SolicitudOrganizacion sol = solicitudOrgRepo.findById(idSolicitud)
+                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
+
+        sol.setEstado(EstadoSolicitud.SemiAprobada);
+        sol.setMotivo(motivo);
+        sol.setCamposObservados(String.join(",", camposObservados));
+        solicitudOrgRepo.save(sol);
+
+        // Enviar email al presidente (y tesorero si tiene)
+        emailService.enviarNotificacionObservaciones(
+                sol.getCorreoPresidente(),
+                sol.getNombre(),
+                motivo,
+                camposObservados,
+                sol.getTokenEdicion()
+        );
+
+        if (sol.getCorreoTesorero() != null) {
+            emailService.enviarNotificacionObservaciones(
+                    sol.getCorreoTesorero(),
+                    sol.getNombre(),
+                    motivo,
+                    camposObservados,
+                    sol.getTokenEdicion()
+            );
+        }
+
+        log.info("Solicitud {} marcada con observaciones", idSolicitud);
+    }
+
+    @Override
+    public SolicitudOrganizacionDTO obtenerSolicitudOrgPorToken(String token) {
+        SolicitudOrganizacion sol = solicitudOrgRepo.findByTokenEdicion(token)
+                .orElseThrow(() -> new RuntimeException("Token inválido"));
+
+        if (sol.getEstado() != EstadoSolicitud.SemiAprobada) {
+            throw new RuntimeException("Esta solicitud no tiene observaciones pendientes");
+        }
+
+        return mapper.toDTO(sol);
+    }
+
+    @Override
+    @Transactional
+    public void actualizarSolicitudOrgConToken(String token, SolicitudOrganizacionPatchDTO dto) {
+        SolicitudOrganizacion sol = solicitudOrgRepo.findByTokenEdicion(token)
+                .orElseThrow(() -> new RuntimeException("Token inválido"));
+
+        if (sol.getEstado() != EstadoSolicitud.SemiAprobada) {
+            throw new RuntimeException("Esta solicitud no está en observaciones");
+        }
+
+        mapper.updateFromPatchDto(dto, sol);
+
+        // Vuelve a Pendiente para que el operador la revise de nuevo
+        sol.setEstado(EstadoSolicitud.Pendiente);
+        sol.setCamposObservados(null);
+        sol.setMotivo(null);
+
+        solicitudOrgRepo.save(sol);
+
+        log.info("Solicitud {} actualizada vía token, vuelve a estado Pendiente", sol.getIdSolicitudOrg());
+    }
 
     // =============================================
     // FORMULARIO 2: SOLICITUD DE VIVIENDA (familia)

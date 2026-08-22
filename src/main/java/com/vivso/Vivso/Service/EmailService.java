@@ -9,6 +9,9 @@ import org.springframework.stereotype.Service;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Slf4j
 @Service
 public class EmailService implements  IEmailService {
@@ -301,4 +304,187 @@ public class EmailService implements  IEmailService {
         """;
     }
 
+    @Override
+    public void enviarNotificacionObservaciones(String email, String nombreOrganizacion, String motivo, List<String> camposObservados, String token) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(mailFrom);
+            helper.setTo(email);
+            helper.setSubject("Solicitud con Observaciones - VIVSO");
+
+            String htmlContent = construirHtmlObservaciones(nombreOrganizacion, motivo, camposObservados, token);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            log.info("Email de observaciones enviado a: {}", email);
+
+        } catch (MessagingException e) {
+            log.error("Error al enviar email de observaciones a {}: {}", email, e.getMessage(), e);
+            throw new RuntimeException("No se pudo enviar el email de observaciones", e);
+        }
+    }
+
+    /**
+     * Construye el HTML para el email de observaciones
+     */
+    private String construirHtmlObservaciones(String nombreOrganizacion, String motivo, List<String> campos, String token) {
+        String linkEdicion = appUrl + "/editar-solicitud?token=" + token;
+
+        StringBuilder listaCampos = new StringBuilder();
+        for (String campo : campos) {
+            listaCampos.append("<li>").append(traducirNombreCampo(campo)).append("</li>");
+        }
+
+        return """
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body {
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                }
+                .container {
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 20px;
+                    background-color: #f5f5f5;
+                }
+                .header {
+                    background-color: #f39c12;
+                    color: white;
+                    padding: 30px;
+                    text-align: center;
+                    border-radius: 5px 5px 0 0;
+                }
+                .content {
+                    background-color: white;
+                    padding: 30px;
+                    border-radius: 0 0 5px 5px;
+                }
+                .campos-box {
+                    background-color: #fff3cd;
+                    padding: 15px;
+                    border-left: 4px solid #f39c12;
+                    margin: 20px 0;
+                    border-radius: 3px;
+                }
+                .motivo-box {
+                    background-color: #ecf0f1;
+                    padding: 15px;
+                    margin: 20px 0;
+                    border-radius: 3px;
+                }
+                .button {
+                    display: inline-block;
+                    background-color: #f39c12;
+                    color: white;
+                    padding: 12px 30px;
+                    text-decoration: none;
+                    border-radius: 5px;
+                    margin-top: 20px;
+                }
+                .warning {
+                    background-color: #fadbd8;
+                    padding: 15px;
+                    border-left: 4px solid #e74c3c;
+                    margin: 20px 0;
+                    border-radius: 3px;
+                    color: #922b21;
+                    font-size: 14px;
+                }
+                .footer {
+                    font-size: 12px;
+                    color: #7f8c8d;
+                    margin-top: 20px;
+                    padding-top: 20px;
+                    border-top: 1px solid #ecf0f1;
+                    text-align: center;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>⚠️ Solicitud con Observaciones</h1>
+                </div>
+                <div class="content">
+                    <p>Hola,</p>
+                    <p>Revisamos la solicitud de <strong>""" + nombreOrganizacion + """
+</strong> y encontramos algunos datos que necesitan corrección.</p>
+
+                    <div class="motivo-box">
+                        <strong>Comentario del revisor:</strong>
+                        <p>""" + motivo + """
+</p>
+                    </div>
+
+                    <div class="campos-box">
+                        <strong>Campos a corregir:</strong>
+                        <ul>""" + listaCampos.toString() + """
+</ul>
+                    </div>
+
+                    <p>No es necesario volver a completar todo el formulario, solo corregí los campos indicados.</p>
+
+                    <center>
+                        <a href=\"""" + linkEdicion + """
+                    \" class="button">Corregir mi solicitud</a>
+                    </center>
+
+                    <div class="warning">
+                        <strong>🔒 Importante:</strong> Este link es personal e intransferible. No lo compartas con nadie, ya que permite editar la solicitud de tu organización.
+                    </div>
+
+                    <div class="footer">
+                        <p>&copy; 2026 VIVSO - Todos los derechos reservados</p>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        """;
+    }
+
+    /**
+     * Traduce el nombre técnico del campo a algo legible para el usuario
+     */
+    private String traducirNombreCampo(String campo) {
+        return switch (campo) {
+            case "nombre" -> "Nombre de la organización";
+            case "tipo" -> "Tipo de organización";
+            case "domLegal" -> "Domicilio legal";
+            case "cpe" -> "CPE";
+            case "fechaVencimientoVigencia" -> "Fecha de vencimiento de vigencia";
+            case "fechaUltimaAsamblea" -> "Fecha de última asamblea";
+            case "dniPresidente" -> "DNI del Presidente";
+            case "nombrePresidente" -> "Nombre del Presidente";
+            case "apellidoPresidente" -> "Apellido del Presidente";
+            case "correoPresidente" -> "Correo del Presidente";
+            case "telefonoPresidente" -> "Teléfono del Presidente";
+            case "domicilioPresidente" -> "Domicilio del Presidente";
+            case "dniTesorero" -> "DNI del Tesorero";
+            case "nombreTesorero" -> "Nombre del Tesorero";
+            case "apellidoTesorero" -> "Apellido del Tesorero";
+            case "correoTesorero" -> "Correo del Tesorero";
+            case "telefonoTesorero" -> "Teléfono del Tesorero";
+            case "domicilioTesorero" -> "Domicilio del Tesorero";
+            case "urlNotaSolicitud" -> "Nota de solicitud";
+            case "urlConstanciaVigencia" -> "Constancia de vigencia";
+            case "urlActaCompromiso" -> "Acta de compromiso";
+            case "urlActaAsamblea" -> "Acta de asamblea";
+            case "urlConstanciaCuentaBancaria" -> "Constancia de cuenta bancaria";
+            case "urlAltaAfip" -> "Alta AFIP";
+            case "urlDniPresidente" -> "DNI del Presidente (archivo)";
+            case "urlDniTesorero" -> "DNI del Tesorero (archivo)";
+            case "urlCertificadoResidenciaPresidente" -> "Certificado de residencia del Presidente";
+            case "urlCertificadoResidenciaTesorero" -> "Certificado de residencia del Tesorero";
+            default -> campo;
+        };
+    }
 }
