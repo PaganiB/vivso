@@ -4,6 +4,7 @@ import com.vivso.Vivso.DTO.*;
 import com.vivso.Vivso.Mapper.VivsoMapper;
 import com.vivso.Vivso.Model.*;
 import com.vivso.Vivso.Repository.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,8 +16,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class SolicitudService implements ISolicitudService {
 
@@ -29,6 +32,8 @@ public class SolicitudService implements ISolicitudService {
     @Autowired private IDocumentoRepository docRepo;
     @Autowired private VivsoMapper mapper;
     @Autowired private IUsuarioService usuarioService;
+    @Autowired private IEmailService emailService;
+    @Autowired private ISolicitudOrganizacionRepository solicitudOrgRepo;
 
     // Constantes para los archivos físicos
     private static final String CARPETA_UPLOADS = "uploads/documentos/";
@@ -135,95 +140,273 @@ public class SolicitudService implements ISolicitudService {
     // =============================================
     // FORMULARIO 1: REGISTRO DE ORGANIZACIÓN
     // =============================================
+    //REGISTRAR ORGANIZACION V2
     @Override
     @Transactional
-    public void registrarOrganizacion(RegistroOrganizacionDTO dto,
-                                      MultiValueMap<String, MultipartFile> mapaArchivos) {
+    public void registrarOrganizacion(RegistroOrganizacionDTO dto, MultiValueMap<String, MultipartFile> mapaArchivos) {
+        String cuit = dto.getOrganizacion().getCuit();
 
-        // Validar que el CUIT no exista ya
-        if (orgRepo.existsById(dto.getOrganizacion().getCuit())) {
-            throw new RuntimeException("El CUIT ya está registrado: " + dto.getOrganizacion().getCuit());
-        }
+        // 1. Validar que no exista en tabla oficial ni en sala de espera
+        if (orgRepo.existsById(cuit)) throw new RuntimeException("El CUIT ya es una organización activa.");
+        if (solicitudOrgRepo.existsByCuit(cuit)) throw new RuntimeException("Ya hay una solicitud en trámite para este CUIT.");
 
-        // Guardar org e integrantes
-        Organizacion org = orgRepo.save(mapper.toEntity(dto.getOrganizacion()));
+        // 2. Armamos la fila gigante con los datos de texto
+        SolicitudOrganizacion sol = SolicitudOrganizacion.builder()
+                .cuit(cuit)
+                .nombre(dto.getOrganizacion().getNombre())
+                .tipo(dto.getOrganizacion().getTipo())
+                .domLegal(dto.getOrganizacion().getDom_legal())
+                .cpe(dto.getOrganizacion().getCpe())
+                .fechaVencimientoVigencia(dto.getOrganizacion().getFechaVencimientoVigencia())
+                .fechaUltimaAsamblea(dto.getOrganizacion().getFechaUltimaAsamblea())
+                // Presidente
+                .dniPresidente(dto.getPresidente().getDni())
+                .nombrePresidente(dto.getPresidente().getNombre())
+                .apellidoPresidente(dto.getPresidente().getApellido())
+                .correoPresidente(dto.getPresidente().getCorreo())
+                .telefonoPresidente(dto.getPresidente().getTelefono())
+                .fechaAltaCargoPresidente(dto.getPresidente().getFechaAltaCargo())
+                .domicilioPresidente(dto.getPresidente().getDomicilio())
+                .estado(EstadoSolicitud.Pendiente)
+                .build();
 
-        Integrante presidente = mapper.toEntity(dto.getPresidente());
-        presidente.setOrganizacion(org);
-        integranteRepo.save(presidente);
-
+        // Si viene el Tesorero, lo sumamos
         if (dto.getTesorero() != null) {
-            Integrante tesorero = mapper.toEntity(dto.getTesorero());
-            tesorero.setOrganizacion(org);
-            integranteRepo.save(tesorero);
+            sol.setDniTesorero(dto.getTesorero().getDni());
+            sol.setNombreTesorero(dto.getTesorero().getNombre());
+            sol.setApellidoTesorero(dto.getTesorero().getApellido());
+            sol.setCorreoTesorero(dto.getTesorero().getCorreo());
+            sol.setTelefonoTesorero(dto.getTesorero().getTelefono());
+            sol.setFechaAltaCargoTesorero(dto.getTesorero().getFechaAltaCargo());
+            sol.setDomicilioTesorero(dto.getTesorero().getDomicilio());
         }
 
-        // LOG TEMPORAL
-        System.out.println("=== CLAVES RECIBIDAS ===");
-        if (mapaArchivos != null) {
-            mapaArchivos.forEach((clave, lista) ->
-                    System.out.println("Clave: '" + clave + "' | Archivos: " + lista.size() + " | Tamaño: " + lista.get(0).getSize())
-            );
-        } else {
-            System.out.println("mapaArchivos es NULL");
-        }
-
-        // Guardar archivos de la org (familia = null porque acá no hay familia)
+        // 3. Guardar archivos en disco y asignar las rutas a la solicitud
         if (mapaArchivos != null) {
             mapaArchivos.forEach((clave, listaArchivos) -> {
-                if (!clave.equals("datos")) {
-                    try {
-                        TipoDocumento tipoDoc = TipoDocumento.valueOf(clave.toUpperCase());
-                        for (MultipartFile archivo : listaArchivos) {
-                            guardarSiPresente(archivo, tipoDoc, org, null);
-                        }
-                    } catch (IllegalArgumentException e) {
-                        System.out.println("Clave ignorada: " + clave);
+                if (!clave.equals("datos") && !listaArchivos.isEmpty()) {
+                    String rutaFisica = guardarArchivoFisico(listaArchivos.get(0));
+                    switch (clave.toUpperCase()) {
+                        case "NOTA_SOLICITUD": sol.setUrlNotaSolicitud(rutaFisica); break;
+                        case "ALTA_AFIP": sol.setUrlAltaAfip(rutaFisica); break;
+                        case "ACTA_COMPROMISO_ONG": sol.setUrlActaCompromiso(rutaFisica); break;
+                        case "ACTA_ASAMBLEA": sol.setUrlActaAsamblea(rutaFisica); break;
+                        case "CONSTANCIA_VIGENCIA": sol.setUrlConstanciaVigencia(rutaFisica); break;
+                        case "CONSTANCIA_CUENTA_BANCARIA": sol.setUrlConstanciaCuentaBancaria(rutaFisica); break;
+                        case "DNI_PRESIDENTE": sol.setUrlDniPresidente(rutaFisica); break;
+                        case "CERTIFICADO_RESIDENCIA_PRESIDENTE": sol.setUrlCertificadoResidenciaPresidente(rutaFisica); break;
+                        case "DNI_TESORERO": sol.setUrlDniTesorero(rutaFisica); break;
+                        case "CERTIFICADO_RESIDENCIA_TESORERO": sol.setUrlCertificadoResidenciaTesorero(rutaFisica); break;
                     }
                 }
             });
         }
-    }
 
+        solicitudOrgRepo.save(sol);
+    }
     // Metodos para aceptar o rechazar el form de org
+
+    //METODO APROBAR V2
     @Override
     @Transactional
     public void aprobarOrganizacion(String cuit) {
-        Organizacion org = orgRepo.findById(cuit)
-                .orElseThrow(() -> new RuntimeException("Organización no encontrada: " + cuit));
+        SolicitudOrganizacion sol = solicitudOrgRepo.findByCuit(cuit)
+                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada para el CUIT: " + cuit));
 
-        List<Integrante> integrantes = integranteRepo.findByOrganizacion_Cuit(cuit);
-        if (integrantes.isEmpty())
-            throw new RuntimeException("La organización no tiene integrantes registrados");
+        if (sol.getEstado() == EstadoSolicitud.Aprobada) throw new RuntimeException("Ya está aprobada.");
 
-        for (Integrante integrante : integrantes) {
-            // La contraseña es su DNI por ahora
-            UsuarioRegistroDTO nuevoUsuario = UsuarioRegistroDTO.builder()
-                    .username(integrante.getNombre() + "." + integrante.getApellido())
-                    .email(integrante.getCorreo())
-                    .password(integrante.getDni())
-                    .rol("INTEGRANTE")
+        // Validar que no exista ya una organización aprobada con ese CUIT
+        if (orgRepo.existsById(cuit)) {
+            throw new RuntimeException("Ya existe una organización activa con el CUIT: " + cuit);
+        }
+
+        // 1. Crear Organización Oficial
+        Organizacion org = Organizacion.builder()
+                .cuit(sol.getCuit()).nombre(sol.getNombre()).tipo(sol.getTipo())
+                .dom_legal(sol.getDomLegal()).cpe(sol.getCpe())
+                .fechaVencimientoVigencia(sol.getFechaVencimientoVigencia())
+                .fechaUltimaAsamblea(sol.getFechaUltimaAsamblea())
+                .build();
+        orgRepo.save(org);
+
+        // 2. Crear Presidente Oficial
+        Integrante presidente = Integrante.builder()
+                .dni(sol.getDniPresidente()).nombre(sol.getNombrePresidente())
+                .apellido(sol.getApellidoPresidente()).correo(sol.getCorreoPresidente())
+                .telefono(sol.getTelefonoPresidente()).domicilio(sol.getDomicilioPresidente())
+                .fechaAltaCargo(sol.getFechaAltaCargoPresidente())
+                .cargo(TipoCargo.PRESIDENTE).activo(true).organizacion(org)
+                .build();
+        integranteRepo.save(presidente);
+
+        // 3. Crear Tesorero Oficial (Si existe)
+        if (sol.getDniTesorero() != null) {
+            Integrante tesorero = Integrante.builder()
+                    .dni(sol.getDniTesorero()).nombre(sol.getNombreTesorero())
+                    .apellido(sol.getApellidoTesorero()).correo(sol.getCorreoTesorero())
+                    .telefono(sol.getTelefonoTesorero()).domicilio(sol.getDomicilioTesorero())
+                    .fechaAltaCargo(sol.getFechaAltaCargoTesorero())
+                    .cargo(TipoCargo.TESORERO).activo(true).organizacion(org)
                     .build();
+            integranteRepo.save(tesorero);
+        }
 
-            usuarioService.registrarNuevoUsuario(nuevoUsuario);
+        // 4. Crear Entidades Documento Oficiales (Agregamos el 'null' al final para la Familia)
+        crearEntidadDocumento(sol.getUrlNotaSolicitud(), TipoDocumento.NOTA_SOLICITUD, org, null);
+        crearEntidadDocumento(sol.getUrlAltaAfip(), TipoDocumento.ALTA_AFIP, org, null);
+        crearEntidadDocumento(sol.getUrlActaAsamblea(), TipoDocumento.ACTA_ASAMBLEA, org, null);
+        crearEntidadDocumento(sol.getUrlActaCompromiso(), TipoDocumento.ACTA_COMPROMISO_ONG, org, null);
+        crearEntidadDocumento(sol.getUrlConstanciaVigencia(), TipoDocumento.CONSTANCIA_VIGENCIA, org, null);
+        crearEntidadDocumento(sol.getUrlConstanciaCuentaBancaria(), TipoDocumento.CONSTANCIA_CUENTA_BANCARIA, org, null);
+        crearEntidadDocumento(sol.getUrlDniPresidente(), TipoDocumento.DNI_PRESIDENTE, org, null);
+        crearEntidadDocumento(sol.getUrlCertificadoResidenciaPresidente(), TipoDocumento.CERTIFICADO_RESIDENCIA_PRESIDENTE, org, null);
+        crearEntidadDocumento(sol.getUrlDniTesorero(), TipoDocumento.DNI_TESORERO, org, null);
+        crearEntidadDocumento(sol.getUrlCertificadoResidenciaTesorero(), TipoDocumento.CERTIFICADO_RESIDENCIA_TESORERO, org, null);
 
-            // TODO: mandar mail con credenciales al integrante
+        // 5. Actualizar la tabla temporal (queda como historial)
+        sol.setEstado(EstadoSolicitud.Aprobada);
+        sol.setFechaAprobacion(LocalDate.now());
+        sol.setMotivo("Aprobada por el Ministerio. Pasada a tablas oficiales.");
+        solicitudOrgRepo.save(sol);
+
+        // 6. Lógica de creación de Usuarios y envío de Mails[cite: 3]
+
+        // -> Cuenta para el Presidente
+        generarUsuarioYEnviarMail(
+                sol.getNombrePresidente(),
+                sol.getApellidoPresidente(),
+                sol.getCorreoPresidente(),
+                org.getNombre()
+        );
+
+        // -> Cuenta para el Tesorero (Si la ONG lo registró)
+        if (sol.getDniTesorero() != null) {
+            generarUsuarioYEnviarMail(
+                    sol.getNombreTesorero(),
+                    sol.getApellidoTesorero(),
+                    sol.getCorreoTesorero(),
+                    org.getNombre()
+            );
         }
     }
+
+    //METODO RECHAZAR V2
     @Override
     @Transactional
     public void rechazarOrganizacion(String cuit, String motivo) {
-        Organizacion org = orgRepo.findByCuit(cuit)
-                .orElseThrow(() -> new RuntimeException("Organización no encontrada: " + cuit));
+        SolicitudOrganizacion sol = solicitudOrgRepo.findByCuit(cuit)
+                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada."));
 
-        docRepo.deleteByOrganizacion_Cuit(cuit);
-        integranteRepo.deleteByOrganizacion_Cuit(cuit);
-        orgRepo.delete(org);
+        if (sol.getEstado() == EstadoSolicitud.Aprobada) throw new RuntimeException("No se puede rechazar una ONG ya aprobada.");
+
+        // 1. Borramos los archivos pesados del servidor
+        borrarArchivoFisico(sol.getUrlNotaSolicitud());
+        borrarArchivoFisico(sol.getUrlAltaAfip());
+        borrarArchivoFisico(sol.getUrlActaAsamblea());
+        borrarArchivoFisico(sol.getUrlActaCompromiso());
+        borrarArchivoFisico(sol.getUrlConstanciaVigencia());
+        borrarArchivoFisico(sol.getUrlConstanciaCuentaBancaria());
+        borrarArchivoFisico(sol.getUrlDniPresidente());
+        borrarArchivoFisico(sol.getUrlCertificadoResidenciaPresidente());
+        borrarArchivoFisico(sol.getUrlDniTesorero());
+        borrarArchivoFisico(sol.getUrlCertificadoResidenciaTesorero());
+
+        // 2. Limpiamos las rutas en la BD para que no apunten a la nada, pero conservamos el motivo
+        sol.setUrlNotaSolicitud(null);
+        sol.setUrlAltaAfip(null);
+        sol.setUrlActaAsamblea(null);
+        sol.setUrlActaCompromiso(null);
+        sol.setUrlConstanciaVigencia(null);
+        sol.setUrlConstanciaCuentaBancaria(null);
+        sol.setUrlDniPresidente(null);
+        sol.setUrlCertificadoResidenciaPresidente(null);
+        sol.setUrlDniTesorero(null);
+        sol.setUrlCertificadoResidenciaTesorero(null);
+
+        sol.setEstado(EstadoSolicitud.Rechazada);
+        sol.setMotivo(motivo);
+        sol.setFechaRechazo(LocalDate.now());
+        solicitudOrgRepo.save(sol);
+
+        // 3. Notificamos al correo del presidente usando el servicio que armó Marian
+        if (sol.getCorreoPresidente() != null && sol.getCorreoPresidente().contains("@")) {
+            emailService.enviarNotificacionSolicitudRechazada(sol.getCorreoPresidente(), sol.getNombre(), motivo);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void marcarObservaciones(Integer idSolicitud, List<String> camposObservados, String motivo) {
+        SolicitudOrganizacion sol = solicitudOrgRepo.findById(idSolicitud)
+                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
+
+        sol.setEstado(EstadoSolicitud.SemiAprobada);
+        sol.setMotivo(motivo);
+        sol.setCamposObservados(String.join(",", camposObservados));
+        solicitudOrgRepo.save(sol);
+
+        // Enviar email al presidente (y tesorero si tiene)
+        emailService.enviarNotificacionObservaciones(
+                sol.getCorreoPresidente(),
+                sol.getNombre(),
+                motivo,
+                camposObservados,
+                sol.getTokenEdicion()
+        );
+
+        if (sol.getCorreoTesorero() != null) {
+            emailService.enviarNotificacionObservaciones(
+                    sol.getCorreoTesorero(),
+                    sol.getNombre(),
+                    motivo,
+                    camposObservados,
+                    sol.getTokenEdicion()
+            );
+        }
+
+        log.info("Solicitud {} marcada con observaciones", idSolicitud);
+    }
+
+    @Override
+    public SolicitudOrganizacionDTO obtenerSolicitudOrgPorToken(String token) {
+        SolicitudOrganizacion sol = solicitudOrgRepo.findByTokenEdicion(token)
+                .orElseThrow(() -> new RuntimeException("Token inválido"));
+
+        if (sol.getEstado() != EstadoSolicitud.SemiAprobada) {
+            throw new RuntimeException("Esta solicitud no tiene observaciones pendientes");
+        }
+
+        return mapper.toDTO(sol);
+    }
+
+    @Override
+    @Transactional
+    public void actualizarSolicitudOrgConToken(String token, SolicitudOrganizacionPatchDTO dto) {
+        SolicitudOrganizacion sol = solicitudOrgRepo.findByTokenEdicion(token)
+                .orElseThrow(() -> new RuntimeException("Token inválido"));
+
+        if (sol.getEstado() != EstadoSolicitud.SemiAprobada) {
+            throw new RuntimeException("Esta solicitud no está en observaciones");
+        }
+
+        mapper.updateFromPatchDto(dto, sol);
+
+        // Vuelve a Pendiente para que el operador la revise de nuevo
+        sol.setEstado(EstadoSolicitud.Pendiente);
+        sol.setCamposObservados(null);
+        sol.setMotivo(null);
+
+        solicitudOrgRepo.save(sol);
+
+        log.info("Solicitud {} actualizada vía token, vuelve a estado Pendiente", sol.getIdSolicitudOrg());
     }
 
     // =============================================
     // FORMULARIO 2: SOLICITUD DE VIVIENDA (familia)
     // =============================================
+
+
+    //METODO V2 REGISTRAR SOLICITUD FAMILIA
     @Override
     @Transactional
     public SolicitudDTO registrarSolicitudFamilia(RegistroFamiliaDTO dto,
@@ -256,21 +439,26 @@ public class SolicitudService implements ISolicitudService {
         // Guardar archivos de la familia
         if (mapaArchivos != null) {
             mapaArchivos.forEach((clave, listaArchivos) -> {
-                if (!clave.equals("datos")) {
+                if (!clave.equals("datos") && !listaArchivos.isEmpty()) {
                     try {
                         TipoDocumento tipoDoc = TipoDocumento.valueOf(clave.toUpperCase());
                         for (MultipartFile archivo : listaArchivos) {
-                            guardarSiPresente(archivo, tipoDoc, null, familia);
+
+                            // 1. Guardamos el archivo físico y obtenemos la ruta
+                            String rutaFisica = guardarArchivoFisico(archivo);
+
+                            // 2. Creamos la entidad Documento oficial en la BD (org es null acá)
+                            crearEntidadDocumento(rutaFisica, tipoDoc, null, familia);
+
                         }
                     } catch (IllegalArgumentException e) {
-                        System.out.println("Clave ignorada: " + clave);
+                        System.out.println("Clave de documento ignorada: " + clave);
                     }
                 }
             });
         }
         return mapper.toDTO(solicitud);
     }
-
     // =============================================
     // APROBAR SOLICITUD DE VIVIENDA
     // =============================================
@@ -333,98 +521,39 @@ public class SolicitudService implements ISolicitudService {
     // MÉTODOS AUXILIARES PRIVADOS (Manejo de Archivos)
     // =========================================================================
 
-    private void guardarSiPresente(MultipartFile archivo, TipoDocumento tipo, Organizacion org, Familia familia) {
-
-        // 1. BARRERA DE ENTRADA: Si está nulo o vacío, EXPLOTA Y CORTA TODO
+    //METODO V2
+    private String guardarArchivoFisico(MultipartFile archivo) {
+        // 1. Validamos que no esté vacío
         if (archivo == null || archivo.isEmpty()) {
-            System.out.println("=== ARCHIVO VACÍO O NULL DETECTADO. TIPO: " + tipo + " ===");
-            throw new RuntimeException("El archivo para '" + tipo.name() + "' llegó vacío (0 bytes) o corrupto desde el frontend.");
+            throw new RuntimeException("El archivo llegó vacío o corrupto desde el frontend.");
         }
 
-        // 2. Validar peso y extensión
+        // 2. Pasamos el archivo por tu validador de peso y extensión
         validarArchivo(archivo);
 
         try {
-            // 3. Preparar directorio
+            // 3. Preparamos la carpeta
             Path directorio = Paths.get(CARPETA_UPLOADS);
             if (!Files.exists(directorio)) {
                 Files.createDirectories(directorio);
             }
 
-            // 4. Nombre seguro (Aseguramos que no falle si no tiene extensión)
+            // 4. Generamos un nombre único
             String originalName = archivo.getOriginalFilename();
-            if (originalName == null || !originalName.contains(".")) {
-                throw new RuntimeException("El archivo '" + tipo.name() + "' no tiene una extensión válida.");
-            }
-            String extension = originalName.substring(originalName.lastIndexOf("."));
-            String nombreUnico = UUID.randomUUID().toString() + extension;
+            String ext = originalName.substring(originalName.lastIndexOf("."));
+            String nombreUnico = UUID.randomUUID().toString() + ext;
+
+            // 5. Armamos la ruta final y copiamos el archivo
             Path rutaDestino = directorio.resolve(nombreUnico);
-
-            // 5. Guardado físico en disco
             Files.copy(archivo.getInputStream(), rutaDestino);
-            System.out.println("=== ARCHIVO GUARDADO EN DISCO: " + rutaDestino);
 
-            // 6. Guardado en Base de Datos
-            Documento doc = new Documento();
-            doc.setNombre(originalName);
-            doc.setUrl(rutaDestino.toString());
-            doc.setTipo(tipo);
-            doc.setOrganizacion(org);
-            doc.setFamilia(familia);
-
-            System.out.println("=== INTENTANDO GUARDAR EN BD: " + tipo + " | org: " + (org != null ? org.getCuit() : "null"));
-            Documento guardado = docRepo.save(doc);
-
-            System.out.println(
-                    "=== GUARDADO OK === " +
-                            "TIPO: " + guardado.getTipo() +
-                            " | ID: " + guardado.getIdDocumento()
-            );
+            // 6. Devolvemos el String con la ruta para guardarlo en la tabla temporal
+            return rutaDestino.toString();
 
         } catch (IOException e) {
-            throw new RuntimeException("Error físico al guardar el archivo en disco: " + archivo.getOriginalFilename(), e);
-        } catch (Exception e) {
-            System.out.println("=== ERROR AL GUARDAR EN BD: " + e.getMessage());
-            throw new RuntimeException("Error al guardar registro en BD: " + e.getMessage(), e);
+            throw new RuntimeException("Error físico al guardar el archivo en el servidor: " + e.getMessage(), e);
         }
     }
-
-    /* METODO NUEVO PARA PROBAR
-    private void guardarSiPresente(MultipartFile archivo, TipoDocumento tipo, Organizacion org, Familia familia) {
-
-        // Opcional: solo el certificado de discapacidad puede no venir
-        if (archivo == null || archivo.isEmpty()) {
-            if (tipo == TipoDocumento.CERTIFICADO_DISCAPACIDAD) return;
-            throw new RuntimeException("El archivo '" + tipo.name() + "' es obligatorio y no fue recibido.");
-        }
-
-        validarArchivo(archivo);
-
-        try {
-            Path directorio = Paths.get(CARPETA_UPLOADS);
-            if (!Files.exists(directorio)) Files.createDirectories(directorio);
-
-            String originalName = archivo.getOriginalFilename();
-            if (originalName == null || !originalName.contains("."))
-                throw new RuntimeException("El archivo '" + tipo.name() + "' no tiene extensión válida.");
-
-            Path rutaDestino = directorio.resolve(UUID.randomUUID().toString() +
-                    originalName.substring(originalName.lastIndexOf(".")));
-
-            Files.copy(archivo.getInputStream(), rutaDestino);
-
-            Documento doc = new Documento();
-            doc.setNombre(originalName);
-            doc.setUrl(rutaDestino.toString());
-            doc.setTipo(tipo);
-            doc.setOrganizacion(org);
-            doc.setFamilia(familia);
-            docRepo.save(doc);
-
-        } catch (IOException e) {
-            throw new RuntimeException("Error al guardar el archivo: " + archivo.getOriginalFilename(), e);
-        }
-    }*/
 
     private void validarArchivo(MultipartFile archivo) {
         if (archivo.getSize() > MAX_SIZE) {
@@ -437,6 +566,74 @@ public class SolicitudService implements ISolicitudService {
         String ext = originalName.substring(originalName.lastIndexOf('.') + 1).toLowerCase();
         if (!EXTENSIONES.contains(ext)) {
             throw new RuntimeException("Extensión no permitida (." + ext + "). Solo PDF, JPG, JPEG o PNG.");
+        }
+    }
+
+    //NUEVO METODO PARA BORRAR DOCUMENTOS FISICOS
+    private void borrarArchivoFisico(String url) {
+        if (url != null && !url.isEmpty()) {
+            try {
+                Files.deleteIfExists(Paths.get(url));
+            } catch (IOException e) {
+                log.error("No se pudo borrar el archivo: {}", url);
+            }
+        }
+    }
+
+    //NUEVO METODO PARA CREAR LA ENTIDAD DOCUMENTO
+    private void crearEntidadDocumento(String url, TipoDocumento tipo, Organizacion org, Familia familia) {
+        if (url != null && !url.isEmpty()) {
+            Documento doc = new Documento();
+            doc.setNombre(Paths.get(url).getFileName().toString());
+            doc.setUrl(url);
+            doc.setTipo(tipo);
+            doc.setEstado(EstadoDocumento.PENDIENTE);
+            doc.setOrganizacion(org);
+            doc.setFamilia(familia);
+            docRepo.save(doc);
+        }
+    }
+
+    //METODO PARA GENERAR LAS CREDENCIALES
+    private void generarUsuarioYEnviarMail(String nombre, String apellido, String correo, String nombreOrg) {
+        // Validamos que tenga un correo válido
+        if (correo != null && correo.contains("@")) {
+
+            // 1. Fabricamos el nombre de usuario (Ej: maria.gomez)
+            String usernameBase = nombre.toLowerCase() + "." + apellido.toLowerCase();
+            String username = usernameBase.replaceAll("[^a-z0-9.]", "");
+            int contador = 1;
+
+            // Verificamos que no exista en la BD
+            while (usuarioService.existePorUsername(username)) {
+                username = usernameBase + contador++;
+            }
+
+            // 2. Fabricamos la contraseña temporal
+            String caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%";
+            StringBuilder password = new StringBuilder();
+            Random random = new Random();
+            for (int i = 0; i < 12; i++) {
+                password.append(caracteres.charAt(random.nextInt(caracteres.length())));
+            }
+
+            // 3. Guardamos el nuevo usuario
+            UsuarioRegistroDTO nuevoUsuario = UsuarioRegistroDTO.builder()
+                    .username(username)
+                    .email(correo)
+                    .password(password.toString())
+                    .rol("INTEGRANTE") // Ambos tendrán el mismo rol en el sistema
+                    .build();
+
+            usuarioService.registrarNuevoUsuario(nuevoUsuario);
+
+            // 4. Disparamos el correo usando el EmailService de Marian
+            emailService.enviarCredencialesYAprobacion(
+                    correo,
+                    username,
+                    password.toString(),
+                    nombreOrg
+            );
         }
     }
 }

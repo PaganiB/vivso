@@ -31,6 +31,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }*/
 
+    @ExceptionHandler(VivsoException.class)
+    public ResponseEntity<String> manejarVivsoException(VivsoException ex) {
+        return ResponseEntity.status(ex.getStatus()).body(ex.getMessage());
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<String> manejarRuntime(RuntimeException ex) {
 
