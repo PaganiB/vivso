@@ -11,7 +11,7 @@ public interface IVisitaInicialService {
     List<VisitaInicialDTO> getVisitas();
 
     //Guardar VISITA v2
-    public VisitaInicialDTO saveVisita(VisitaInicialDTO dto, List<MultipartFile> fotos);
+    VisitaInicialDTO saveVisita(VisitaInicialDTO dto, List<MultipartFile> fotos);
     VisitaInicialDTO updateVisita(Integer idVisita, VisitaInicialDTO visita);
 
     void deleteVisita(Integer idVisita);
