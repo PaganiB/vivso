@@ -5,6 +5,7 @@ import jakarta.validation.constraints.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter @Setter
 @NoArgsConstructor
@@ -46,4 +47,6 @@ public class VisitaInicialDTO {
 
     @NotNull(message = "Debe indicar si tiene prioridad social o no")
     private Boolean tienePrioridadSocial;
+
+    private List<String> urlsFotos;
 }
