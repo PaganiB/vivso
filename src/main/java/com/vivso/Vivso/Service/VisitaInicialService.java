@@ -11,7 +11,16 @@ import com.vivso.Vivso.Repository.IVisitaInicialRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class VisitaInicialService implements IVisitaInicialService {
@@ -28,18 +37,40 @@ public class VisitaInicialService implements IVisitaInicialService {
                 .toList();
     }
 
+    //Metodo para guardar la visita CON FOTOS
     @Override
-    public VisitaInicialDTO saveVisita(VisitaInicialDTO dto) {
+    @Transactional // Recomendado al guardar entidad + procesar archivos
+    public VisitaInicialDTO saveVisita(VisitaInicialDTO dto, List<MultipartFile> fotos) {
+
+        // 1. Buscamos las relaciones usando tu nueva excepción inteligente
         Usuario tecnico = usuarioRepository.findById(dto.getIdTecnico())
-                .orElseThrow(() -> new RuntimeException("Usuario tecnico no encontrado con id " + dto.getIdTecnico()));
+                .orElseThrow(() -> new RuntimeException("Usuario técnico no encontrado con ID: " + dto.getIdTecnico()));
 
         Solicitud solicitud = solicitudRepository.findById(dto.getIdSolicitud())
-                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada con id " + dto.getIdSolicitud()));
+                .orElseThrow(() -> new RuntimeException("Solicitud de vivienda no encontrada con ID: " + dto.getIdSolicitud()));
 
+        // 2. Mapeamos el DTO a la entidad
         VisitaInicial v = vivsoMapper.toEntity(dto);
         v.setTecnico(tecnico);
         v.setSolicitud(solicitud);
 
+        // 3. Procesamos las fotos si es que enviaron alguna
+        List<String> rutas = new ArrayList<>();
+
+        if (fotos != null && !fotos.isEmpty()) {
+            for (MultipartFile foto : fotos) {
+                if (!foto.isEmpty()) {
+                    // Usamos el método auxiliar para guardar en disco
+                    String ruta = guardarArchivoFisico(foto);
+                    rutas.add(ruta);
+                }
+            }
+        }
+
+        // Asignamos la lista de rutas generadas a la entidad
+        v.setUrlsFotos(rutas);
+
+        // 4. Guardamos en MariaDB y devolvemos el DTO
         return vivsoMapper.toDTO(visitaRepository.save(v));
     }
 
@@ -80,5 +111,31 @@ public class VisitaInicialService implements IVisitaInicialService {
         return visitas.stream()
                 .map(vivsoMapper::toDTO)
                 .toList();
+    }
+
+    //METODO AUXILAR
+    private String guardarArchivoFisico(MultipartFile archivo) {
+        try {
+            // Generamos un nombre único con UUID para que no haya conflictos
+            String nombreArchivo = UUID.randomUUID().toString() + "_" + archivo.getOriginalFilename();
+
+            // Definimos la carpeta donde se guardarán (ej: uploads/visitas)
+            Path rutaDirectorio = Paths.get("uploads/visitas");
+
+            // Si la carpeta no existe, la crea automáticamente
+            if (!Files.exists(rutaDirectorio)) {
+                Files.createDirectories(rutaDirectorio);
+            }
+
+            // Guardamos el archivo en el disco
+            Path rutaArchivo = rutaDirectorio.resolve(nombreArchivo);
+            Files.copy(archivo.getInputStream(), rutaArchivo, StandardCopyOption.REPLACE_EXISTING);
+
+            return rutaArchivo.toString();
+
+        } catch (IOException e) {
+            // Usamos tu excepción genérica para que el controlador ataje el error 500/409
+            throw new RuntimeException("Error al guardar la foto en el servidor: " + e.getMessage());
+        }
     }
 }

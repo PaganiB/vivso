@@ -70,14 +70,14 @@ public class SecurityConfig {
                         // ── OPERADOR (bandeja de entrada, aprueba/rechaza) ────────────────────
                         .requestMatchers(HttpMethod.PUT, "/solicitud/*/aprobar").hasAnyRole("ADMIN", "OPERADOR")
                         .requestMatchers(HttpMethod.DELETE, "/solicitud/*/rechazar").hasAnyRole("ADMIN", "OPERADOR")
-                        .requestMatchers(HttpMethod.PUT, "/solicitud/**").hasAnyRole("ADMIN", "OPERADOR")
+                        .requestMatchers(HttpMethod.POST, "/solicitud/**").hasAnyRole("ADMIN", "OPERADOR")
                         .requestMatchers(HttpMethod.PATCH, "/documento/*/revisar").hasAnyRole("ADMIN", "OPERADOR")
                         .requestMatchers("/usuario/**").hasAnyRole("ADMIN", "OPERADOR")
 
                         // ── TECNICO (visitas) ─────────────────────────────────────────────────
-                        .requestMatchers(HttpMethod.POST, "/visita/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO")
-                        .requestMatchers(HttpMethod.PUT, "/visita/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO")
-                        .requestMatchers(HttpMethod.GET, "/visita/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO", "ARQUITECTO")
+                        .requestMatchers(HttpMethod.POST, "/visita-inicial/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO")
+                        .requestMatchers(HttpMethod.PUT, "/visita-inicial/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO")
+                        .requestMatchers(HttpMethod.GET, "/visita-inicial/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO", "ARQUITECTO")
 
                         // ── ARQUITECTO (revisión y decisiones) ───────────────────────────────
                         .requestMatchers(HttpMethod.PUT, "/vivienda/**").hasAnyRole("ADMIN", "ARQUITECTO")
@@ -88,8 +88,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/familia/**", "/familiar/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO", "TECNICO")
                         .requestMatchers(HttpMethod.GET, "/organizacion/**", "/integrante/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO")
                         .requestMatchers(HttpMethod.GET, "/documento/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO")
+                        .requestMatchers(HttpMethod.GET, "/organizacion/**", "/integrante/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO", "TECNICO")
 
                         // ── ESCRITURA GENERAL (solo OPERADOR registra datos) ─────────────────
+                        .requestMatchers(HttpMethod.POST, "/solicitud", "/organizacion/**", "/familia/**",
+                                "/familiar/**", "/integrante/**").hasAnyRole("ADMIN", "OPERADOR")
                         .requestMatchers(HttpMethod.POST, "/organizacion/**", "/familia/**",
                                 "/familiar/**", "/integrante/**").hasAnyRole("ADMIN", "OPERADOR")
                         .requestMatchers(HttpMethod.PUT, "/organizacion/**", "/familia/**",
@@ -110,7 +113,9 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:5173",
-                "https://fetch-reproduce-eatery.ngrok-free.dev"
+                "https://fetch-reproduce-eatery.ngrok-free.dev",
+                "http://localhost:8081",
+                "http://192.168.100.6:8081"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));

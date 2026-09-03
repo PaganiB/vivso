@@ -46,4 +46,11 @@ public class Solicitud {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "id_familia", nullable = false)
     private Familia familiaBeneficiaria;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.estado == null) {
+            this.estado = EstadoSolicitud.Pendiente;
+        }
+    }
 }

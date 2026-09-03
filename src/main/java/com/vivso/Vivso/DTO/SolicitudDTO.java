@@ -35,4 +35,8 @@ public class SolicitudDTO {
 
     @NotNull(message = "Debe indicar el ID de la familia solicitante")
     private Integer idFamilia;
+
+    private String nombreRepresentanteFamilia;
+
+    private String nombreOrganizacion;
 }
