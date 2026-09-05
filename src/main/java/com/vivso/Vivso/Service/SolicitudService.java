@@ -48,68 +48,6 @@ public class SolicitudService implements ISolicitudService {
     }
 
     @Override
-    public SolicitudDTO saveSolicitud(SolicitudDTO dto) {
-        Organizacion org = orgRepo.findById(dto.getCuitOrg())
-                .orElseThrow(() -> new RuntimeException("Organización no encontrada: " + dto.getCuitOrg()));
-
-        Vivienda viv = null;
-        if (dto.getEstado() == EstadoSolicitud.Aprobada) {
-            if (dto.getNumExp() == null || dto.getNumExp().isBlank())
-                throw new RuntimeException("Debe indicar el número de expediente para solicitudes aprobadas");
-            viv = viviendaRepo.findViviendaByNumExp(dto.getNumExp())
-                    .orElseThrow(() -> new RuntimeException("Vivienda no encontrada: " + dto.getNumExp()));
-        }
-
-        Familia familia = familiaRepo.findById(dto.getIdFamilia())
-                .orElseThrow(() -> new RuntimeException("Familia no encontrada: " + dto.getIdFamilia()));
-
-        Solicitud s = mapper.toEntity(dto);
-        s.setCuitOrg(org);
-        s.setNumExp(viv);
-        s.setFamiliaBeneficiaria(familia);
-        s.setFechaActivacion(dto.getEstado() == EstadoSolicitud.Aprobada ? LocalDate.now() : null);
-
-        return mapper.toDTO(solicitudRepo.save(s));
-    }
-
-    @Override
-    public SolicitudDTO updateSolicitud(Integer id, SolicitudDTO dto) {
-        Solicitud s = solicitudRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada: " + id));
-
-        if (dto.getGDE() != null)            s.setGDE(dto.getGDE());
-        if (dto.getFechaSolicitud() != null) s.setFechaSolicitud(dto.getFechaSolicitud());
-        if (dto.getObservacion() != null)    s.setObservacion(dto.getObservacion());
-
-        if (dto.getCuitOrg() != null) {
-            s.setCuitOrg(orgRepo.findById(dto.getCuitOrg())
-                    .orElseThrow(() -> new RuntimeException("Organización no encontrada: " + dto.getCuitOrg())));
-        }
-
-        if (dto.getIdFamilia() != null) {
-            s.setFamiliaBeneficiaria(familiaRepo.findById(dto.getIdFamilia())
-                    .orElseThrow(() -> new RuntimeException("Familia no encontrada: " + dto.getIdFamilia())));
-        }
-
-        if (dto.getEstado() != null) s.setEstado(dto.getEstado());
-
-        // Lógica de estado: numExp y fechaActivacion van juntos
-        EstadoSolicitud estadoFinal = s.getEstado();
-        if (estadoFinal == EstadoSolicitud.Aprobada) {
-            if (dto.getNumExp() == null || dto.getNumExp().isBlank())
-                throw new RuntimeException("Debe indicar el número de expediente para solicitudes aprobadas");
-            s.setNumExp(viviendaRepo.findViviendaByNumExp(dto.getNumExp())
-                    .orElseThrow(() -> new RuntimeException("Expediente no encontrado: " + dto.getNumExp())));
-            if (s.getFechaActivacion() == null) s.setFechaActivacion(LocalDate.now());
-        } else {
-            s.setNumExp(null);
-            s.setFechaActivacion(null);
-        }
-
-        return mapper.toDTO(solicitudRepo.save(s));
-    }
-
-    @Override
     public void deleteSolicitud(Integer id) {
         Solicitud s = solicitudRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Solicitud no encontrada: " + id));
@@ -431,9 +369,6 @@ public class SolicitudService implements ISolicitudService {
         Solicitud solicitud = new Solicitud();
         solicitud.setCuitOrg(org);
         solicitud.setFamiliaBeneficiaria(familia);
-        solicitud.setEstado(EstadoSolicitud.Pendiente);
-        solicitud.setObservacion(dto.getObservacion());
-        solicitud.setFechaSolicitud(LocalDate.now());
         solicitud = solicitudRepo.save(solicitud);
 
         // Guardar archivos de la familia
@@ -464,18 +399,25 @@ public class SolicitudService implements ISolicitudService {
     // =============================================
     @Override
     @Transactional
-    public SolicitudDTO aprobarSolicitudVivienda(Integer idSolicitud, String numExp) {
+    public SolicitudDTO aprobarSolicitudVivienda(Integer idSolicitud) {
         Solicitud s = solicitudRepo.findById(idSolicitud)
                 .orElseThrow(() -> new RuntimeException("Solicitud no encontrada: " + idSolicitud));
 
         if (s.getEstado() == EstadoSolicitud.Aprobada)
             throw new RuntimeException("La solicitud ya está aprobada");
 
-        Vivienda vivienda = viviendaRepo.findViviendaByNumExp(numExp)
-                .orElseThrow(() -> new RuntimeException("Expediente no encontrado: " + numExp));
+        if (s.getNumExp() == null || s.getNumExp().isBlank())
+            throw new RuntimeException("La solicitud no tiene número de expediente asignado. Debe cargarlo antes de aprobar.");
+
+        // Crear la Vivienda asociada (nace acá, con su propio ID autoincremental)
+        Vivienda vivienda = Vivienda.builder()
+                .familia(s.getFamiliaBeneficiaria())
+                .estado(EstadoVivienda.INICIADA) // o el estado inicial que corresponda
+                .build();
+        vivienda = viviendaRepo.save(vivienda);
 
         s.setEstado(EstadoSolicitud.Aprobada);
-        s.setNumExp(vivienda);
+        s.setVivienda(vivienda);
         s.setFechaActivacion(LocalDate.now());
 
         return mapper.toDTO(solicitudRepo.save(s));
@@ -636,4 +578,19 @@ public class SolicitudService implements ISolicitudService {
             );
         }
     }
+
+    @Override
+    @Transactional
+    public SolicitudDTO asignarNumeroExpediente(Integer idSolicitud, String numExp) {
+        Solicitud s = solicitudRepo.findById(idSolicitud)
+                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada: " + idSolicitud));
+
+        if (numExp == null || numExp.isBlank())
+            throw new RuntimeException("El número de expediente no puede estar vacío");
+
+        s.setNumExp(numExp);
+
+        return mapper.toDTO(solicitudRepo.save(s));
+    }
+
 }

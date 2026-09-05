@@ -28,8 +28,8 @@ public class VisitaObraService implements IVisitaObraService {
     @Transactional
     public VisitaObraDTO registrarVisita(VisitaObraDTO dto) {
 
-        Vivienda vivienda = viviendaRepo.findById(dto.getNumExpVivienda())
-                .orElseThrow(() -> new RuntimeException("Error: Vivienda no encontrada con expediente " + dto.getNumExpVivienda()));
+        Vivienda vivienda = viviendaRepo.findById(dto.getIdVivienda())
+                .orElseThrow(() -> new RuntimeException("Error: Vivienda no encontrada con ID " + dto.getIdVivienda()));
 
         Usuario tecnico = usuarioRepo.findById(dto.getIdTecnico())
                 .orElseThrow(() -> new RuntimeException("Error: Técnico no encontrado con ID " + dto.getIdTecnico()));
@@ -47,8 +47,8 @@ public class VisitaObraService implements IVisitaObraService {
     }
 
     @Override
-    public List<VisitaObraDTO> obtenerHistorialPorVivienda(String numExp) {
-        return visitaRepo.findByVivienda_NumExpOrderByFechaDesc(numExp)
+    public List<VisitaObraDTO> obtenerHistorialPorVivienda(Integer idVivienda) {
+        return visitaRepo.findByVivienda_IdViviendaOrderByFechaDesc(idVivienda)
                 .stream()
                 .map(mapper::toDTO)
                 .collect(Collectors.toList());

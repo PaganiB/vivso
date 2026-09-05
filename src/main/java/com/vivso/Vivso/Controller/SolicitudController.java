@@ -68,7 +68,7 @@ public class SolicitudController {
     /**
      * La organización envía solo los campos corregidos usando el token (sin login)
      */
-    @PutMapping("/editar-token")
+    @PatchMapping("/editar-token")
     public ResponseEntity<Void> editarConToken(
             @RequestParam String token,
             @RequestBody SolicitudOrganizacionPatchDTO dto) {
@@ -86,9 +86,8 @@ public class SolicitudController {
     }
 
     @PutMapping("/{id}/aprobar")
-    public ResponseEntity<SolicitudDTO> aprobarSolicitud(@PathVariable Integer id,
-                                                         @RequestParam String numExp) {
-        return ResponseEntity.ok(solicitudService.aprobarSolicitudVivienda(id, numExp));
+    public ResponseEntity<SolicitudDTO> aprobarSolicitud(@PathVariable Integer id) {
+        return ResponseEntity.ok(solicitudService.aprobarSolicitudVivienda(id));
     }
 
     @PutMapping("/{id}/rechazar")
@@ -125,13 +124,14 @@ public class SolicitudController {
         return ResponseEntity.ok(solicitudService.buscarPorOrganizacion(cuit));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<SolicitudDTO> updateSolicitud(@PathVariable Integer id, @Valid @RequestBody SolicitudDTO dto) {
-        return ResponseEntity.ok(solicitudService.updateSolicitud(id, dto));
-    }
-
     @DeleteMapping("/{id}")
     public void deleteSolicitud(@PathVariable Integer id) {
         solicitudService.deleteSolicitud(id);
+    }
+
+    @PatchMapping("/{idSolicitud}/expediente")
+    public ResponseEntity<SolicitudDTO> asignarExpediente(@PathVariable Integer idSolicitud,
+                                                          @RequestParam String numExp) {
+        return ResponseEntity.ok(solicitudService.asignarNumeroExpediente(idSolicitud, numExp));
     }
 }
