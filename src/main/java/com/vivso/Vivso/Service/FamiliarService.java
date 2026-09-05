@@ -42,13 +42,8 @@ public class FamiliarService implements IFamiliarService {
         Familia fam = familiaRepo.findById(dto.getFamilia())
                 .orElseThrow(() -> new RuntimeException("Familia no encontrada: " + dto.getFamilia()));
 
-        Usuario user = dto.getUsuario() != null
-                ? usuarioRepo.findByUsername(dto.getUsuario()).orElse(null)
-                : null;
-
         Familiar familiar = mapper.toEntity(dto);   // Mapea todos los campos simples + defaultValue condicion_especial
         familiar.setFamilia(fam);
-        familiar.setUsuario(user);
 
         return mapper.toDTO(familiarRepository.save(familiar));
     }
@@ -65,10 +60,6 @@ public class FamiliarService implements IFamiliarService {
         Familia fam = familiaRepo.findById(dto.getFamilia())
                 .orElseThrow(() -> new RuntimeException("Familia no encontrada: " + dto.getFamilia()));
         familiar.setFamilia(fam);
-
-        if (dto.getUsuario() != null) {
-            familiar.setUsuario(usuarioRepo.findByUsername(dto.getUsuario()).orElse(null));
-        }
 
         return mapper.toDTO(familiarRepository.save(familiar));
     }

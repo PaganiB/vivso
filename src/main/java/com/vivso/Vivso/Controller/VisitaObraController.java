@@ -24,9 +24,9 @@ public class VisitaObraController {
         return ResponseEntity.created(URI.create("/visita-obra/" + created.getIdVisitaObra())).body(created);
     }
 
-    @GetMapping("/vivienda/{numExp}")
-    public ResponseEntity<List<VisitaObraDTO>> obtenerHistorialPorVivienda(@PathVariable String numExp) {
-        List<VisitaObraDTO> historial = visitaService.obtenerHistorialPorVivienda(numExp);
+    @GetMapping("/vivienda/{idVivienda}")
+    public ResponseEntity<List<VisitaObraDTO>> obtenerHistorialPorVivienda(@PathVariable Integer idVivienda) {
+        List<VisitaObraDTO> historial = visitaService.obtenerHistorialPorVivienda(idVivienda);
 
         return ResponseEntity.ok(historial);
     }

@@ -34,6 +34,4 @@ public class FamiliarDTO {
     @NotNull(message = "El ID de la familia es obligatorio para el vínculo")
     private Integer familia;
 
-    @Size(max = 50, message = "El nombre de usuario no puede superar los 50 caracteres")
-    private String usuario;
 }

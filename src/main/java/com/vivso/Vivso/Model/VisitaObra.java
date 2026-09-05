@@ -36,7 +36,7 @@ public class VisitaObra {
     // --- Relaciones ---
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "numExp_vivienda", nullable = false)
+    @JoinColumn(name = "id_vivienda", nullable = false)
     private Vivienda vivienda;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

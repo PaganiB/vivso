@@ -18,9 +18,6 @@ public class Solicitud {
     @Column(name = "id_solicitud", nullable = false)
     private Integer idSolicitud;
 
-    @Column(name = "GDE", length = 50)
-    private String GDE;
-
     @Column(name = "fechaSolicitud")
     private LocalDate fechaSolicitud;
 
@@ -28,9 +25,12 @@ public class Solicitud {
     @JoinColumn(name = "CUIT_org", nullable = false)
     private Organizacion cuitOrg;
 
+    @Column(name = "numExp")
+    private String numExp;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "numExp")
-    private Vivienda numExp;
+    @JoinColumn(name = "id_vivienda")
+    private Vivienda vivienda;
 
     @Lob
     @Enumerated(EnumType.STRING)
@@ -51,6 +51,9 @@ public class Solicitud {
     public void prePersist() {
         if (this.estado == null) {
             this.estado = EstadoSolicitud.Pendiente;
+        }
+        if (this.fechaSolicitud == null) {
+            this.fechaSolicitud = LocalDate.now();
         }
     }
 }

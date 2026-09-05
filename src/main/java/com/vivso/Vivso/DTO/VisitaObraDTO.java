@@ -38,8 +38,8 @@ public class VisitaObraDTO {
 
     // --- Identificadores para las relaciones ---
 
-    @NotBlank(message = "El expediente de la vivienda es obligatorio")
-    private String numExpVivienda;
+    @NotNull(message = "El ID de la vivienda es obligatorio")
+    private Integer idVivienda;
 
     @NotNull(message = "El ID del técnico es obligatorio")
     private Integer idTecnico;
