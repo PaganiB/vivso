@@ -17,11 +17,9 @@ public class RegistroFamiliaDTO {
     @Valid private FamiliaDTO familia;
     @Valid private List<FamiliarDTO> familiares;
 
-    // De la solicitud solo necesitás el cuitOrg y la observacion,
-    // el idFamilia, estado y fecha los pone el back
+    // De la solicitud solo necesitás el cuitOrg. La observacion,
+    //  La observacion, el idFamilia, estado y fecha los pone el back
     @NotBlank(message = "El cuit de la organizacion es obligatorio")
     private String cuitOrg;
 
-    @Size(max = 200)
-    private String observacion;
 }

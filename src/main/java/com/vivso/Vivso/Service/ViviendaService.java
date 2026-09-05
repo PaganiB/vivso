@@ -29,18 +29,11 @@ public class ViviendaService implements IViviendaService {
     }
 
     @Override
-    public ViviendaDTO buscarPorExpediente(String numExp) {
-        return viviendaRepo.findViviendaByNumExp(numExp)
-                .map(mapper::toDTO)
-                .orElseThrow(() -> new RuntimeException("Vivienda no encontrada: " + numExp));
-    }
-
-    @Override
     @Transactional
-    public void eliminar(String numExp) {
-        if (!viviendaRepo.existsById(numExp))
-            throw new RuntimeException("No se puede eliminar: la vivienda " + numExp + " no existe.");
-        viviendaRepo.deleteById(numExp);
+    public void eliminar(Integer idVivienda) {
+        if (!viviendaRepo.existsById(idVivienda))
+            throw new RuntimeException("No se puede eliminar: la vivienda " + idVivienda + " no existe.");
+        viviendaRepo.deleteById(idVivienda);
     }
 
     @Override
@@ -71,9 +64,9 @@ public class ViviendaService implements IViviendaService {
 
     @Override
     @Transactional
-    public ViviendaDTO actualizar(String numExp, ViviendaDTO dto) {
-        Vivienda v = viviendaRepo.findById(numExp)
-                .orElseThrow(() -> new RuntimeException("Vivienda no encontrada: " + numExp));
+    public ViviendaDTO actualizar(Integer idVivienda, ViviendaDTO dto) {
+        Vivienda v = viviendaRepo.findById(idVivienda)
+                .orElseThrow(() -> new RuntimeException("Vivienda no encontrada: " + idVivienda));
 
         mapper.updateFromDto(dto, v);
 
@@ -105,4 +98,12 @@ public class ViviendaService implements IViviendaService {
                 .map(mapper::toDTO)
                 .toList();
     }
+
+    @Override
+    public ViviendaDTO buscarPorId(Integer idVivienda) {
+        return viviendaRepo.findById(idVivienda)
+                .map(mapper::toDTO)
+                .orElseThrow(() -> new RuntimeException("Vivienda no encontrada: " + idVivienda));
+    }
+
 }
