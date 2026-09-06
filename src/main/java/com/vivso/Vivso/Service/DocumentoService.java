@@ -11,6 +11,7 @@ import com.vivso.Vivso.Repository.IFamiliaRepository;
 import com.vivso.Vivso.Repository.IOrganizacionRepository;
 import com.vivso.Vivso.Repository.IUsuarioRepository;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class DocumentoService implements IDocumentoService {
 
@@ -147,7 +149,12 @@ public class DocumentoService implements IDocumentoService {
     }
 
     @Override
+    @Transactional
     public void eliminar(Integer id) {
+        Documento doc = docRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Documento no encontrado: " + id));
+
+        borrarArchivoFisico(doc.getUrl());
         docRepo.deleteById(id);
     }
 
@@ -174,6 +181,56 @@ public class DocumentoService implements IDocumentoService {
                     "El archivo '" + nombreCampo + "' tiene extensión no permitida (." + extension + "). " +
                             "Solo se aceptan: PDF, JPG, PNG"
             );
+        }
+    }
+
+    @Override
+    public String guardarArchivoFisico(MultipartFile archivo) {
+        if (archivo == null || archivo.isEmpty()) {
+            throw new RuntimeException("El archivo llegó vacío o corrupto desde el frontend.");
+        }
+        validarArchivo(archivo, archivo.getOriginalFilename());
+
+        try {
+            Path pathRoot = Paths.get(rootFolder);
+            if (!Files.exists(pathRoot)) Files.createDirectories(pathRoot);
+
+            String originalName = archivo.getOriginalFilename();
+            String ext = originalName.substring(originalName.lastIndexOf("."));
+            String nombreUnico = UUID.randomUUID().toString() + ext;
+
+            Path rutaDestino = pathRoot.resolve(nombreUnico);
+            Files.copy(archivo.getInputStream(), rutaDestino);
+
+            return rutaDestino.toString();
+        } catch (IOException e) {
+            throw new RuntimeException("Error al guardar el archivo: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public DocumentoDTO crearDesdeRutaExistente(String url, TipoDocumento tipo, Integer idFamilia, String cuitOrg) {
+        Documento doc = new Documento();
+        doc.setNombre(Paths.get(url).getFileName().toString());
+        doc.setUrl(url);
+        doc.setTipo(tipo);
+        doc.setEstado(EstadoDocumento.PENDIENTE);
+
+        if (idFamilia != null) doc.setFamilia(familiaRepo.findById(idFamilia).orElse(null));
+        if (cuitOrg != null) doc.setOrganizacion(orgRepo.findById(cuitOrg).orElse(null));
+
+        return mapper.toDTO(docRepo.save(doc));
+    }
+
+    @Override
+    public void borrarArchivoFisico(String url) {
+        if (url != null && !url.isEmpty()) {
+            try {
+                Files.deleteIfExists(Paths.get(url));
+            } catch (Exception e) {
+                log.error("No se pudo borrar el archivo físico: {}", url);
+            }
         }
     }
 

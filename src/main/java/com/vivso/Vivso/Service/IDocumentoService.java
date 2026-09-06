@@ -16,4 +16,9 @@ public interface IDocumentoService {
     List<DocumentoDTO> listarPorOrganizacion(String cuitOrg);
     List<DocumentoDTO> listarPorUsuarioRevisor(Integer idUsuario);
     void eliminar(Integer id);
+
+    // Hacen lo mismo que el subir documento pero en 2 partes, porque en solicitud organizacion es asi
+    String guardarArchivoFisico(MultipartFile archivo);
+    DocumentoDTO crearDesdeRutaExistente(String url, TipoDocumento tipo, Integer idFamilia, String cuitOrg);
+    void borrarArchivoFisico(String url);
 }

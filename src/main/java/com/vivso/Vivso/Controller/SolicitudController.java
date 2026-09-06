@@ -20,69 +20,18 @@ public class SolicitudController {
     @Autowired
     private ISolicitudService solicitudService;
 
-    // ── FORMULARIO 1: Registro de organización (PÚBLICO) ─────────────────
-    @PostMapping(value = "/organizacion", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Void> registrarOrganizacion(
-            @RequestPart("datos") RegistroOrganizacionDTO dto,
-            MultipartHttpServletRequest request) {
-        solicitudService.registrarOrganizacion(dto, request.getMultiFileMap());
-        return ResponseEntity.status(HttpStatus.CREATED).build();
-    }
-
-    @PutMapping("/organizacion/{cuit}/aprobar")
-    public ResponseEntity<Void> aprobarOrganizacion(@PathVariable String cuit) {
-        solicitudService.aprobarOrganizacion(cuit);
-        return ResponseEntity.ok().build();
-    }
-
-    @PutMapping("/organizacion/{cuit}/rechazar")
-    public ResponseEntity<Void> rechazarOrganizacion(@PathVariable String cuit,
-                                                     @RequestParam String motivo) {
-        solicitudService.rechazarOrganizacion(cuit, motivo);
-        return ResponseEntity.noContent().build();
-    }
-
-    // ==================== SEMI-APROBADO (OBSERVACIONES) ====================
-
-    /**
-     * El operador marca una solicitud con observaciones (campos a corregir)
-     */
-    @PostMapping("/marcar-observaciones/{idSolicitud}")
-    public ResponseEntity<Void> marcarObservaciones(
-            @PathVariable Integer idSolicitud,
-            @RequestParam List<String> camposObservados,
-            @RequestParam String motivo) {
-        solicitudService.marcarObservaciones(idSolicitud, camposObservados, motivo);
-        return ResponseEntity.ok().build();
-    }
-
-    /**
-     * El front trae los datos actuales de la solicitud usando el token (sin login)
-     */
-    @GetMapping("/token/{token}")
-    public ResponseEntity<SolicitudOrganizacionDTO> obtenerPorToken(@PathVariable String token) {
-        SolicitudOrganizacionDTO dto = solicitudService.obtenerSolicitudOrgPorToken(token);
-        return ResponseEntity.ok(dto);
-    }
-
-    /**
-     * La organización envía solo los campos corregidos usando el token (sin login)
-     */
-    @PatchMapping("/editar-token")
-    public ResponseEntity<Void> editarConToken(
-            @RequestParam String token,
-            @RequestBody SolicitudOrganizacionPatchDTO dto) {
-        solicitudService.actualizarSolicitudOrgConToken(token, dto);
-        return ResponseEntity.ok().build();
-    }
-
-    // ── FORMULARIO 2: Solicitud de vivienda (requiere INTEGRANTE) ─────────
     @PostMapping(value = "/familia", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<SolicitudDTO> registrarSolicitudFamilia(
             @RequestPart("datos") RegistroFamiliaDTO dto,
             MultipartHttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(solicitudService.registrarSolicitudFamilia(dto, request.getMultiFileMap()));
+    }
+
+    @PatchMapping("/{idSolicitud}/expediente")
+    public ResponseEntity<SolicitudDTO> asignarExpediente(@PathVariable Integer idSolicitud,
+                                                          @RequestParam String numExp) {
+        return ResponseEntity.ok(solicitudService.asignarNumeroExpediente(idSolicitud, numExp));
     }
 
     @PutMapping("/{id}/aprobar")
@@ -129,9 +78,4 @@ public class SolicitudController {
         solicitudService.deleteSolicitud(id);
     }
 
-    @PatchMapping("/{idSolicitud}/expediente")
-    public ResponseEntity<SolicitudDTO> asignarExpediente(@PathVariable Integer idSolicitud,
-                                                          @RequestParam String numExp) {
-        return ResponseEntity.ok(solicitudService.asignarNumeroExpediente(idSolicitud, numExp));
-    }
 }
