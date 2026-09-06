@@ -12,6 +12,6 @@ import java.util.Optional;
 public interface ISolicitudOrganizacionRepository extends JpaRepository<SolicitudOrganizacion, Integer> {
     Optional<SolicitudOrganizacion> findByCuit(String cuit);
     boolean existsByCuit(String cuit);
-    List<SolicitudOrganizacion> findByEstado(EstadoSolicitud estado);
+    boolean existsByCuitAndEstadoIn(String cuit, List<EstadoSolicitud> estados);
     Optional<SolicitudOrganizacion> findByTokenEdicion(String tokenEdicion);
 }

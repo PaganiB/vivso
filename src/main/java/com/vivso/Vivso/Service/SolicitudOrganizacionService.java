@@ -1,6 +1,8 @@
 package com.vivso.Vivso.Service;
 
 import com.vivso.Vivso.DTO.*;
+import com.vivso.Vivso.Exception.RecursoNoEncontradoException;
+import com.vivso.Vivso.Exception.ReglaDeNegocioException;
 import com.vivso.Vivso.Mapper.VivsoMapper;
 import com.vivso.Vivso.Model.*;
 import com.vivso.Vivso.Repository.IIntegranteRepository;
@@ -8,6 +10,7 @@ import com.vivso.Vivso.Repository.IOrganizacionRepository;
 import com.vivso.Vivso.Repository.ISolicitudOrganizacionRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.MultiValueMap;
@@ -33,8 +36,10 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
     public void registrarOrganizacion(RegistroOrganizacionDTO dto, MultiValueMap<String, MultipartFile> mapaArchivos) {
         String cuit = dto.getOrganizacion().getCuit();
 
-        if (orgRepo.existsById(cuit)) throw new RuntimeException("El CUIT ya es una organización activa.");
-        if (solicitudOrgRepo.existsByCuit(cuit)) throw new RuntimeException("Ya hay una solicitud en trámite para este CUIT.");
+        if (orgRepo.existsById(cuit))
+            throw new ReglaDeNegocioException("El CUIT ya es una organización activa.", HttpStatus.CONFLICT);
+        if (solicitudOrgRepo.existsByCuitAndEstadoIn(cuit, List.of(EstadoSolicitud.Pendiente, EstadoSolicitud.SemiAprobada)))
+            throw new ReglaDeNegocioException("Ya hay una solicitud en trámite para este CUIT.", HttpStatus.CONFLICT);
 
         SolicitudOrganizacion sol = SolicitudOrganizacion.builder()
                 .cuit(cuit)
@@ -91,11 +96,10 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
     @Transactional
     public void aprobarOrganizacion(String cuit) {
         SolicitudOrganizacion sol = solicitudOrgRepo.findByCuit(cuit)
-                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada para el CUIT: " + cuit));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Solicitud no encontrada para el CUIT: " + cuit));
 
-        if (sol.getEstado() == EstadoSolicitud.Aprobada) throw new RuntimeException("Ya está aprobada.");
-        if (orgRepo.existsById(cuit)) throw new RuntimeException("Ya existe una organización activa con el CUIT: " + cuit);
-
+        if (sol.getEstado() == EstadoSolicitud.Aprobada) throw new ReglaDeNegocioException("Ya está aprobada.", HttpStatus.CONFLICT);
+        if (orgRepo.existsById(cuit)) throw new ReglaDeNegocioException("Ya existe una organización activa con el CUIT: " + cuit, HttpStatus.CONFLICT);
         Organizacion org = Organizacion.builder()
                 .cuit(sol.getCuit()).nombre(sol.getNombre()).tipo(sol.getTipo())
                 .dom_legal(sol.getDomLegal()).cpe(sol.getCpe())
@@ -137,7 +141,7 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
 
         sol.setEstado(EstadoSolicitud.Aprobada);
         sol.setFechaAprobacion(LocalDate.now());
-        sol.setMotivo("Aprobada por el Ministerio. Pasada a tablas oficiales.");
+        //sol.setMotivo("Aprobada por el Ministerio. Pasada a tablas oficiales.");
         solicitudOrgRepo.save(sol);
 
         generarUsuarioYEnviarMail(sol.getNombrePresidente(), sol.getApellidoPresidente(), sol.getCorreoPresidente(), org.getNombre());
@@ -151,9 +155,10 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
     @Transactional
     public void rechazarOrganizacion(String cuit, String motivo) {
         SolicitudOrganizacion sol = solicitudOrgRepo.findByCuit(cuit)
-                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada."));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Solicitud no encontrada."));
 
-        if (sol.getEstado() == EstadoSolicitud.Aprobada) throw new RuntimeException("No se puede rechazar una ONG ya aprobada.");
+        if (sol.getEstado() == EstadoSolicitud.Aprobada)
+            throw new ReglaDeNegocioException("No se puede rechazar una ONG ya aprobada.", HttpStatus.CONFLICT);
 
         documentoService.borrarArchivoFisico(sol.getUrlNotaSolicitud());
         documentoService.borrarArchivoFisico(sol.getUrlAltaAfip());
@@ -180,7 +185,7 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
     @Transactional
     public void marcarObservaciones(Integer idSolicitud, List<String> camposObservados, String motivo) {
         SolicitudOrganizacion sol = solicitudOrgRepo.findById(idSolicitud)
-                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Solicitud no encontrada"));
 
         sol.setEstado(EstadoSolicitud.SemiAprobada);
         sol.setMotivo(motivo);
@@ -212,10 +217,10 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
     @Override
     public SolicitudOrganizacionDTO obtenerSolicitudOrgPorToken(String token) {
         SolicitudOrganizacion sol = solicitudOrgRepo.findByTokenEdicion(token)
-                .orElseThrow(() -> new RuntimeException("Token inválido"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Token inválido"));
 
         if (sol.getEstado() != EstadoSolicitud.SemiAprobada) {
-            throw new RuntimeException("Esta solicitud no tiene observaciones pendientes");
+            throw new ReglaDeNegocioException("Esta solicitud no tiene observaciones pendientes", HttpStatus.CONFLICT);
         }
 
         return mapper.toDTO(sol);
@@ -225,10 +230,10 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
     @Transactional
     public void actualizarSolicitudOrgConToken(String token, SolicitudOrganizacionPatchDTO dto) {
         SolicitudOrganizacion sol = solicitudOrgRepo.findByTokenEdicion(token)
-                .orElseThrow(() -> new RuntimeException("Token inválido"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Token inválido"));
 
         if (sol.getEstado() != EstadoSolicitud.SemiAprobada) {
-            throw new RuntimeException("Esta solicitud no está en observaciones");
+            throw new ReglaDeNegocioException("Esta solicitud no está en observaciones", HttpStatus.CONFLICT);
         }
 
         mapper.updateFromPatchDto(dto, sol);

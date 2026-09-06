@@ -1,6 +1,8 @@
 package com.vivso.Vivso.Service;
 
 import com.vivso.Vivso.DTO.DocumentoDTO;
+import com.vivso.Vivso.Exception.RecursoNoEncontradoException;
+import com.vivso.Vivso.Exception.ReglaDeNegocioException;
 import com.vivso.Vivso.Mapper.VivsoMapper;
 import com.vivso.Vivso.Model.Documento;
 import com.vivso.Vivso.Model.EstadoDocumento;
@@ -13,6 +15,7 @@ import com.vivso.Vivso.Repository.IUsuarioRepository;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
@@ -68,11 +71,12 @@ public class DocumentoService implements IDocumentoService {
     @Override
     @Transactional
     public DocumentoDTO revisar(Integer idDoc, Integer idRevisor, EstadoDocumento nuevoEstado, String motivo) {
+
         Documento doc = docRepo.findById(idDoc)
-                .orElseThrow(() -> new RuntimeException("Documento no encontrado: " + idDoc));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Documento no encontrado: " + idDoc));
 
         Usuario revisor = usuarioRepo.findById(idRevisor)
-                .orElseThrow(() -> new RuntimeException("El revisor es obligatorio para validar"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("No se encontró el revisor: " + idRevisor));
 
         doc.setEstado(nuevoEstado);
         doc.setRevisor(revisor);
@@ -87,10 +91,10 @@ public class DocumentoService implements IDocumentoService {
     @Transactional
     public DocumentoDTO reemplazar(Integer idDoc, MultipartFile archivo) {
         Documento doc = docRepo.findById(idDoc)
-                .orElseThrow(() -> new RuntimeException("Documento no encontrado: " + idDoc));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Documento no encontrado: " + idDoc));
 
         if (doc.getEstado() != EstadoDocumento.RECHAZADO) {
-            throw new RuntimeException("Solo se pueden reemplazar documentos rechazados");
+            throw new ReglaDeNegocioException("Solo se pueden reemplazar documentos rechazados", HttpStatus.CONFLICT);
         }
 
         validarArchivo(archivo, doc.getNombre());
@@ -101,7 +105,7 @@ public class DocumentoService implements IDocumentoService {
 
             String originalName = archivo.getOriginalFilename();
             if (originalName == null || !originalName.contains("."))
-                throw new RuntimeException("El archivo no tiene extensión válida.");
+                throw new ReglaDeNegocioException("El archivo no tiene extensión válida.", HttpStatus.BAD_REQUEST);
 
             Path rutaDestino = directorio.resolve(
                     UUID.randomUUID().toString() + originalName.substring(originalName.lastIndexOf(".")));
@@ -124,7 +128,7 @@ public class DocumentoService implements IDocumentoService {
     @Override
     public List<DocumentoDTO> listarPorFamilia(Integer idFamilia) {
         if (!familiaRepo.existsById(idFamilia))
-            throw new RuntimeException("No se encontró la familia: " + idFamilia);
+            throw new RecursoNoEncontradoException("No se encontró la familia: " + idFamilia);
         return docRepo.findByFamilia_IdFamilia(idFamilia).stream()
                 .map(mapper::toDTO)
                 .toList();
@@ -133,7 +137,7 @@ public class DocumentoService implements IDocumentoService {
     @Override
     public List<DocumentoDTO> listarPorOrganizacion(String cuitOrg) {
         if (!orgRepo.existsById(cuitOrg))
-            throw new RuntimeException("No se encontró la organización: " + cuitOrg);
+            throw new RecursoNoEncontradoException("No se encontró la organización: " + cuitOrg);
         return docRepo.findByOrganizacion_Cuit(cuitOrg).stream()
                 .map(mapper::toDTO)
                 .toList();
@@ -142,7 +146,7 @@ public class DocumentoService implements IDocumentoService {
     @Override
     public List<DocumentoDTO> listarPorUsuarioRevisor(Integer idUsuario) {
         if (!usuarioRepo.existsById(idUsuario))
-            throw new RuntimeException("No se encontró el revisor: " + idUsuario);
+            throw new RecursoNoEncontradoException("No se encontró el revisor: " + idUsuario);
         return docRepo.findByRevisor_Id(idUsuario).stream()
                 .map(mapper::toDTO)
                 .toList();
@@ -152,7 +156,7 @@ public class DocumentoService implements IDocumentoService {
     @Transactional
     public void eliminar(Integer id) {
         Documento doc = docRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Documento no encontrado: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Documento no encontrado: " + id));
 
         borrarArchivoFisico(doc.getUrl());
         docRepo.deleteById(id);
@@ -163,31 +167,29 @@ public class DocumentoService implements IDocumentoService {
 
         // Validar tamaño
         if (archivo.getSize() > MAX_SIZE_BYTES) {
-            throw new RuntimeException(
-                    "El archivo '" + nombreCampo + "' supera el máximo de 20MB " +
-                            "(peso actual: " + archivo.getSize() / (1024 * 1024) + "MB)"
-            );
+            throw new ReglaDeNegocioException(
+                    "El archivo '" + nombreCampo + "' supera el máximo de 20MB (peso actual: " + archivo.getSize() / (1024 * 1024) + "MB)",
+                    HttpStatus.BAD_REQUEST);
         }
 
         // Validar extensión
         String nombreOriginal = archivo.getOriginalFilename();
         if (nombreOriginal == null || !nombreOriginal.contains(".")) {
-            throw new RuntimeException("El archivo '" + nombreCampo + "' no tiene una extensión válida");
+            throw new ReglaDeNegocioException("El archivo '" + nombreCampo + "' no tiene una extensión válida", HttpStatus.BAD_REQUEST);
         }
 
         String extension = nombreOriginal.substring(nombreOriginal.lastIndexOf('.') + 1).toLowerCase();
         if (!EXTENSIONES_PERMITIDAS.contains(extension)) {
-            throw new RuntimeException(
-                    "El archivo '" + nombreCampo + "' tiene extensión no permitida (." + extension + "). " +
-                            "Solo se aceptan: PDF, JPG, PNG"
-            );
+            throw new ReglaDeNegocioException(
+                    "El archivo '" + nombreCampo + "' tiene extensión no permitida (." + extension + "). Solo se aceptan: PDF, JPG, PNG",
+                    HttpStatus.BAD_REQUEST);
         }
     }
 
     @Override
     public String guardarArchivoFisico(MultipartFile archivo) {
         if (archivo == null || archivo.isEmpty()) {
-            throw new RuntimeException("El archivo llegó vacío o corrupto desde el frontend.");
+            throw new ReglaDeNegocioException("El archivo llegó vacío o corrupto desde el frontend.", HttpStatus.BAD_REQUEST);
         }
         validarArchivo(archivo, archivo.getOriginalFilename());
 
