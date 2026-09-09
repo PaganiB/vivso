@@ -46,18 +46,6 @@ public class SolicitudOrganizacion {
     private LocalDate fechaAltaCargoTesorero;
     private String domicilioTesorero;
 
-    // --- 4. RUTAS FÍSICAS DE LOS DOCUMENTOS ---
-    private String urlNotaSolicitud;
-    private String urlConstanciaVigencia;
-    private String urlActaCompromiso;
-    private String urlActaAsamblea;
-    private String urlConstanciaCuentaBancaria;
-    private String urlAltaAfip;
-    private String urlDniPresidente;
-    private String urlDniTesorero;
-    private String urlCertificadoResidenciaPresidente;
-    private String urlCertificadoResidenciaTesorero;
-
     // --- 5. CONTROL Y AUDITORÍA ---
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -75,6 +63,10 @@ public class SolicitudOrganizacion {
 
     @Column(name = "campos_observados", columnDefinition = "TEXT")
     private String camposObservados;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_revisor")
+    private Usuario revisor;
 
     @PrePersist
     public void prePersist() {

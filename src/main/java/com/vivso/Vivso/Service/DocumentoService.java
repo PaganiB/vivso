@@ -4,18 +4,13 @@ import com.vivso.Vivso.DTO.DocumentoDTO;
 import com.vivso.Vivso.Exception.RecursoNoEncontradoException;
 import com.vivso.Vivso.Exception.ReglaDeNegocioException;
 import com.vivso.Vivso.Mapper.VivsoMapper;
-import com.vivso.Vivso.Model.Documento;
-import com.vivso.Vivso.Model.EstadoDocumento;
-import com.vivso.Vivso.Model.TipoDocumento;
-import com.vivso.Vivso.Model.Usuario;
-import com.vivso.Vivso.Repository.IDocumentoRepository;
-import com.vivso.Vivso.Repository.IFamiliaRepository;
-import com.vivso.Vivso.Repository.IOrganizacionRepository;
-import com.vivso.Vivso.Repository.IUsuarioRepository;
+import com.vivso.Vivso.Model.*;
+import com.vivso.Vivso.Repository.*;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
@@ -36,6 +31,8 @@ public class DocumentoService implements IDocumentoService {
     @Autowired private IOrganizacionRepository orgRepo;
     @Autowired private IUsuarioRepository usuarioRepo;
     @Autowired private VivsoMapper mapper;
+    @Autowired private ISolicitudOrganizacionRepository  solicitudOrgRepo;
+
 
     private final String rootFolder = "uploads/documentos";
     private static final long MAX_SIZE_BYTES = 20 * 1024 * 1024; // 20MB
@@ -70,18 +67,22 @@ public class DocumentoService implements IDocumentoService {
 
     @Override
     @Transactional
-    public DocumentoDTO revisar(Integer idDoc, Integer idRevisor, EstadoDocumento nuevoEstado, String motivo) {
+    public DocumentoDTO marcarParaCorregir(Integer idDoc, String motivo) {
 
         Documento doc = docRepo.findById(idDoc)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Documento no encontrado: " + idDoc));
 
-        Usuario revisor = usuarioRepo.findById(idRevisor)
-                .orElseThrow(() -> new RecursoNoEncontradoException("No se encontró el revisor: " + idRevisor));
+        if (doc.getEstado() != EstadoDocumento.PENDIENTE) {
+            throw new ReglaDeNegocioException("Solo se pueden revisar documentos pendientes", HttpStatus.CONFLICT);
+        }
 
-        doc.setEstado(nuevoEstado);
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Usuario revisor = usuarioRepo.findByEmail(email)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario autenticado no encontrado"));
+
+        doc.setEstado(EstadoDocumento.A_CORREGIR);
         doc.setRevisor(revisor);
-        doc.setMotivoRechazo(nuevoEstado == EstadoDocumento.RECHAZADO ? motivo : null);
-
+        doc.setMotivoObservacion(motivo);
         doc.setFechaRevision(LocalDateTime.now());
 
         return mapper.toDTO(docRepo.save(doc));
@@ -93,8 +94,8 @@ public class DocumentoService implements IDocumentoService {
         Documento doc = docRepo.findById(idDoc)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Documento no encontrado: " + idDoc));
 
-        if (doc.getEstado() != EstadoDocumento.RECHAZADO) {
-            throw new ReglaDeNegocioException("Solo se pueden reemplazar documentos rechazados", HttpStatus.CONFLICT);
+        if (doc.getEstado() != EstadoDocumento.A_CORREGIR) {
+            throw new ReglaDeNegocioException("Solo se pueden reemplazar documentos marcados para corregir", HttpStatus.CONFLICT);
         }
 
         validarArchivo(archivo, doc.getNombre());
@@ -115,7 +116,7 @@ public class DocumentoService implements IDocumentoService {
             doc.setNombre(originalName);
             doc.setUrl(rutaDestino.toString());
             doc.setEstado(EstadoDocumento.PENDIENTE);
-            doc.setMotivoRechazo(null);
+            doc.setMotivoObservacion(null);
             doc.setRevisor(null);
 
             return mapper.toDTO(docRepo.save(doc));
@@ -234,6 +235,53 @@ public class DocumentoService implements IDocumentoService {
                 log.error("No se pudo borrar el archivo físico: {}", url);
             }
         }
+    }
+
+    @Override
+    @Transactional
+    public DocumentoDTO subirDocumentoDeSolicitudOrg(MultipartFile archivo, TipoDocumento tipo, Integer idSolicitudOrg) {
+        String ruta = guardarArchivoFisico(archivo); // reutiliza el que ya existe, valida tamaño/extensión
+
+        Documento doc = new Documento();
+        doc.setNombre(archivo.getOriginalFilename());
+        doc.setUrl(ruta);
+        doc.setTipo(tipo);
+        doc.setEstado(EstadoDocumento.PENDIENTE);
+        doc.setSolicitudOrganizacion(
+                solicitudOrgRepo.findById(idSolicitudOrg)
+                        .orElseThrow(() -> new RecursoNoEncontradoException("Solicitud de organización no encontrada: " + idSolicitudOrg))
+        );
+
+        return mapper.toDTO(docRepo.save(doc));
+    }
+
+    @Override
+    public List<DocumentoDTO> listarPorSolicitudOrg(Integer idSolicitudOrg) {
+        return docRepo.findBySolicitudOrganizacion_IdSolicitudOrg(idSolicitudOrg).stream()
+                .map(mapper::toDTO)
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public void aprobarConOrganizacion(Integer idDocumento, Organizacion org, Usuario revisor) {
+        Documento doc = docRepo.findById(idDocumento)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Documento no encontrado: " + idDocumento));
+        doc.setEstado(EstadoDocumento.APROBADO);
+        doc.setOrganizacion(org);
+        doc.setRevisor(revisor);
+        docRepo.save(doc);
+    }
+
+    @Override
+    @Transactional
+    public void rechazar(Integer idDocumento, Usuario revisor) {
+        Documento doc = docRepo.findById(idDocumento)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Documento no encontrado: " + idDocumento));
+        borrarArchivoFisico(doc.getUrl());
+        doc.setEstado(EstadoDocumento.RECHAZADO);
+        doc.setRevisor(revisor);
+        docRepo.save(doc);
     }
 
 }

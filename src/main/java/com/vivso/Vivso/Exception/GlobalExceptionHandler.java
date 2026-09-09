@@ -18,24 +18,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(ex.getStatus()).body(error);
     }
 
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<String> manejarRuntime(RuntimeException ex) {
-
-        ex.printStackTrace(); // <-- agregar esto
-
-        String mensaje = ex.getMessage().toLowerCase();
-
-        if (mensaje.contains("no encontrado")) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-        }
-
-        if (mensaje.contains("ya existe") || mensaje.contains("registrado")) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
-        }
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
-    }
-
     // 2. MANEJO DE VALIDACIONES DE DTO (@Valid)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> manejarValidaciones(MethodArgumentNotValidException ex) {
