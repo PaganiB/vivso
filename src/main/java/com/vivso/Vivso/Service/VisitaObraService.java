@@ -1,6 +1,7 @@
 package com.vivso.Vivso.Service;
 
 import com.vivso.Vivso.DTO.VisitaObraDTO;
+import com.vivso.Vivso.Exception.RecursoNoEncontradoException;
 import com.vivso.Vivso.Mapper.VivsoMapper;
 import com.vivso.Vivso.Model.Usuario;
 import com.vivso.Vivso.Model.VisitaObra;
@@ -29,10 +30,10 @@ public class VisitaObraService implements IVisitaObraService {
     public VisitaObraDTO registrarVisita(VisitaObraDTO dto) {
 
         Vivienda vivienda = viviendaRepo.findById(dto.getIdVivienda())
-                .orElseThrow(() -> new RuntimeException("Error: Vivienda no encontrada con ID " + dto.getIdVivienda()));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Vivienda no encontrada con ID " + dto.getIdVivienda()));
 
         Usuario tecnico = usuarioRepo.findById(dto.getIdTecnico())
-                .orElseThrow(() -> new RuntimeException("Error: Técnico no encontrado con ID " + dto.getIdTecnico()));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Técnico no encontrado con ID " + dto.getIdTecnico()));
 
         VisitaObra visita = mapper.toEntity(dto);
 

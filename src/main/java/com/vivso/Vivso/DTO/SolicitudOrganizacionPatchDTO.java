@@ -9,7 +9,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class SolicitudOrganizacionPatchDTO {
 
-    // --- Datos de la ONG ---
+    // --- Datos de la ORG ---
     private String nombre;
     private String tipo;
     private String domLegal;
@@ -34,16 +34,4 @@ public class SolicitudOrganizacionPatchDTO {
     private String telefonoTesorero;
     private LocalDate fechaAltaCargoTesorero;
     private String domicilioTesorero;
-
-    // --- URLs de documentos ---
-    private String urlNotaSolicitud;
-    private String urlConstanciaVigencia;
-    private String urlActaCompromiso;
-    private String urlActaAsamblea;
-    private String urlConstanciaCuentaBancaria;
-    private String urlAltaAfip;
-    private String urlDniPresidente;
-    private String urlDniTesorero;
-    private String urlCertificadoResidenciaPresidente;
-    private String urlCertificadoResidenciaTesorero;
 }

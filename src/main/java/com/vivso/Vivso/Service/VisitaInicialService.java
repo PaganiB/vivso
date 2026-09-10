@@ -1,6 +1,7 @@
 package com.vivso.Vivso.Service;
 
 import com.vivso.Vivso.DTO.VisitaInicialDTO;
+import com.vivso.Vivso.Exception.RecursoNoEncontradoException;
 import com.vivso.Vivso.Mapper.VivsoMapper;
 import com.vivso.Vivso.Model.Solicitud;
 import com.vivso.Vivso.Model.Usuario;
@@ -44,10 +45,10 @@ public class VisitaInicialService implements IVisitaInicialService {
 
         // 1. Buscamos las relaciones usando tu nueva excepción inteligente
         Usuario tecnico = usuarioRepository.findById(dto.getIdTecnico())
-                .orElseThrow(() -> new RuntimeException("Usuario técnico no encontrado con ID: " + dto.getIdTecnico()));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario técnico no encontrado con ID: " + dto.getIdTecnico()));
 
         Solicitud solicitud = solicitudRepository.findById(dto.getIdSolicitud())
-                .orElseThrow(() -> new RuntimeException("Solicitud de vivienda no encontrada con ID: " + dto.getIdSolicitud()));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Solicitud de vivienda no encontrada con ID: " + dto.getIdSolicitud()));
 
         // 2. Mapeamos el DTO a la entidad
         VisitaInicial v = vivsoMapper.toEntity(dto);
@@ -78,12 +79,12 @@ public class VisitaInicialService implements IVisitaInicialService {
     @Transactional
     public VisitaInicialDTO updateVisita(Integer idVisita, VisitaInicialDTO dto) {
         VisitaInicial v = visitaRepository.findById(idVisita)
-                .orElseThrow(() -> new RuntimeException("Visita no encontrada"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Visita no encontrada"));
 
         vivsoMapper.updateFromDto(dto, v);
 
         v.setTecnico(usuarioRepository.findById(dto.getIdTecnico())
-                .orElseThrow(() -> new RuntimeException("Tecnico no encontrado")));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Tecnico no encontrado")));
 
         return vivsoMapper.toDTO(visitaRepository.save(v));
     }
@@ -91,14 +92,14 @@ public class VisitaInicialService implements IVisitaInicialService {
     @Override
     public void deleteVisita(Integer idVisita) {
         VisitaInicial v = visitaRepository.findById(idVisita)
-                .orElseThrow(() -> new RuntimeException("Visita no encontrada"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Visita no encontrada"));
         visitaRepository.delete(v);
     }
 
     @Override
     public VisitaInicialDTO FindVisita(Integer idVisita) {
         VisitaInicial v = visitaRepository.findById(idVisita)
-                .orElseThrow(() -> new RuntimeException("Visita no encontrada"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Visita no encontrada"));
         return vivsoMapper.toDTO(v);
     }
 

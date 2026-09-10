@@ -3,6 +3,7 @@ package com.vivso.Vivso.Service;
 import com.vivso.Vivso.DTO.UsuarioLoginDTO;
 import com.vivso.Vivso.DTO.UsuarioRegistroDTO;
 import com.vivso.Vivso.DTO.UsuarioRespuestaDTO;
+import com.vivso.Vivso.Exception.RecursoNoEncontradoException;
 import com.vivso.Vivso.Model.Usuario;
 import com.vivso.Vivso.Repository.IUsuarioRepository;
 import com.vivso.Vivso.Security.JwtUtils;
@@ -34,7 +35,7 @@ public class AuthService {
 
         // Buscamos el usuario para obtener el rol
         Usuario usuario = usuarioRepository.findByEmail(loginDTO.getEmail())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
 
         String tokenGenerado = jwtUtils.generarToken(loginDTO.getEmail());
 

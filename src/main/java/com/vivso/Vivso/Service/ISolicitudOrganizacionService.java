@@ -13,4 +13,5 @@ public interface ISolicitudOrganizacionService {
     void marcarObservaciones(Integer idSolicitud, List<String> camposObservados, String motivo);
     SolicitudOrganizacionDTO obtenerSolicitudOrgPorToken(String token);
     void actualizarSolicitudOrgConToken(String token, SolicitudOrganizacionPatchDTO dto);
+    void reemplazarDocumentoConToken(String token, Integer idDoc, MultipartFile archivo);
 }

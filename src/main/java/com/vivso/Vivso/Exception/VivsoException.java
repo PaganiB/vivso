@@ -4,9 +4,14 @@ import org.springframework.http.HttpStatus;
 
 public abstract class VivsoException extends RuntimeException {
 
-    public VivsoException(String mensaje) {
+    private final HttpStatus status;
+
+    protected VivsoException(String mensaje, HttpStatus status) {
         super(mensaje);
+        this.status = status;
     }
 
-    public abstract HttpStatus getStatus();
+    public HttpStatus getStatus() {
+        return status;
+    }
 }

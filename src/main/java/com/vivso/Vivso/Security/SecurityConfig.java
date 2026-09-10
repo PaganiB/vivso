@@ -58,7 +58,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/solicitud-organizacion").permitAll()
                         .requestMatchers(HttpMethod.GET, "/solicitud-organizacion/token/**").permitAll()
-                        .requestMatchers(HttpMethod.PATCH, "/solicitud-organizacion/editar-token").permitAll()
+                        .requestMatchers(HttpMethod.PATCH, "/solicitud-organizacion/editar-token/**").permitAll()
 
                         // ── INTEGRANTE (solo accede a sus cosas) ─────────────────────────────
                         .requestMatchers(HttpMethod.POST, "/solicitud/familia").hasAnyRole("ADMIN", "INTEGRANTE")
@@ -71,8 +71,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/solicitud/*/aprobar").hasAnyRole("ADMIN", "OPERADOR")
                         .requestMatchers(HttpMethod.DELETE, "/solicitud/*/rechazar").hasAnyRole("ADMIN", "OPERADOR")
                         .requestMatchers(HttpMethod.POST, "/solicitud/**").hasAnyRole("ADMIN", "OPERADOR")
-                        .requestMatchers(HttpMethod.PATCH, "/documento/*/revisar").hasAnyRole("ADMIN", "OPERADOR")
+                        .requestMatchers(HttpMethod.PATCH, "/documento/*/marcar-corregir").hasAnyRole("ADMIN", "OPERADOR")
                         .requestMatchers("/usuario/**").hasAnyRole("ADMIN", "OPERADOR")
+                        .requestMatchers(HttpMethod.POST, "/solicitud-organizacion/**").hasAnyRole("ADMIN", "OPERADOR")
+                        .requestMatchers(HttpMethod.PUT, "/solicitud-organizacion/**").hasAnyRole("ADMIN", "OPERADOR")
 
                         // ── TECNICO (visitas) ─────────────────────────────────────────────────
                         .requestMatchers(HttpMethod.POST, "/visita-inicial/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO")

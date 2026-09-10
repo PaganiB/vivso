@@ -2,6 +2,7 @@ package com.vivso.Vivso.DTO;
 
 import lombok.*;
 import java.time.LocalDate;
+import java.util.List;
 
 @Getter @Setter
 @Builder
@@ -35,16 +36,7 @@ public class SolicitudOrganizacionDTO {
     private LocalDate fechaAltaCargoTesorero;
     private String domicilioTesorero;
 
-    private String urlNotaSolicitud;
-    private String urlConstanciaVigencia;
-    private String urlActaCompromiso;
-    private String urlActaAsamblea;
-    private String urlConstanciaCuentaBancaria;
-    private String urlAltaAfip;
-    private String urlDniPresidente;
-    private String urlDniTesorero;
-    private String urlCertificadoResidenciaPresidente;
-    private String urlCertificadoResidenciaTesorero;
+    private List<DocumentoDTO> documentos;
 
     private String estado;
     private String motivo;
