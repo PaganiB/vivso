@@ -30,9 +30,6 @@ public class VisitaInicial {
     @JoinColumn(name = "id_tecnico", nullable = false)
     private Usuario tecnico; // Relación con el técnico que realizó el relevamiento
 
-    @Column(name = "avance_registrado")
-    private Integer avanceRegistrado; // El AFO (0-100) en ese momento específico
-
     @Enumerated(EnumType.STRING)
     @Column(name = "clasificacion_preliminar")
     private ClasificacionVivienda clasificacionPreliminar; // 1A, 2A, Derrumbe, etc.

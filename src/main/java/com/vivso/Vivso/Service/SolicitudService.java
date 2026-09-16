@@ -15,6 +15,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -139,6 +140,34 @@ public class SolicitudService implements ISolicitudService {
     @Override
     public List<SolicitudDTO> getSolicitudes() {
         return solicitudRepo.findAll().stream().map(mapper::toDTO).toList();
+    }
+
+    @Override
+    public List<ExpedienteMovilDTO> getSolicitudesParaMovil() {
+        // 1. Buscamos todas las solicitudes
+        List<Solicitud> solicitudes = solicitudRepo.findAll();
+
+        // 2. Transformamos y FILTRAMOS
+        return solicitudes.stream()
+                .filter(solicitud -> solicitud.getEstado() == EstadoSolicitud.Pendiente)
+                .map(solicitud -> {
+
+                    String nombreFamilia = (solicitud.getFamiliaBeneficiaria() != null)
+                            ? solicitud.getFamiliaBeneficiaria().getNombreRepresentante()
+                            : "Sin asignar";
+
+                    String nombreOng = (solicitud.getCuitOrg() != null)
+                            ? solicitud.getCuitOrg().getNombre()
+                            : "Sin asignar";
+
+                    return ExpedienteMovilDTO.builder()
+                            .idSolicitud(solicitud.getIdSolicitud())
+                            .numExp(solicitud.getNumExp())
+                            .nombreRepresentanteFamilia(nombreFamilia)
+                            .nombreOrganizacion(nombreOng)
+                            .build();
+
+                }).collect(Collectors.toList());
     }
 
     @Override

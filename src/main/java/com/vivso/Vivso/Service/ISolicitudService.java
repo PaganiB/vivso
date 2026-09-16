@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface ISolicitudService {
     List<SolicitudDTO> getSolicitudes();
-
+    List<ExpedienteMovilDTO> getSolicitudesParaMovil();
     void deleteSolicitud(Integer id);
 
     SolicitudDTO findSolicitud(Integer id);

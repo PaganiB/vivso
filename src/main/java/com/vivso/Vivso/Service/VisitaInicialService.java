@@ -11,6 +11,7 @@ import com.vivso.Vivso.Repository.IUsuarioRepository;
 import com.vivso.Vivso.Repository.IVisitaInicialRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -43,14 +44,17 @@ public class VisitaInicialService implements IVisitaInicialService {
     @Transactional // Recomendado al guardar entidad + procesar archivos
     public VisitaInicialDTO saveVisita(VisitaInicialDTO dto, List<MultipartFile> fotos) {
 
-        // 1. Buscamos las relaciones usando tu nueva excepción inteligente
-        Usuario tecnico = usuarioRepository.findById(dto.getIdTecnico())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario técnico no encontrado con ID: " + dto.getIdTecnico()));
+        String emailAutenticado = SecurityContextHolder.getContext().getAuthentication().getName();
 
+        // 2. Buscamos al técnico por su email real, sin depender de lo que envíe el celular
+        Usuario tecnico = usuarioRepository.findByEmail(emailAutenticado)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Técnico no encontrado con email: " + emailAutenticado));
+
+        // 3. Buscamos la solicitud (Esto queda igual que antes)
         Solicitud solicitud = solicitudRepository.findById(dto.getIdSolicitud())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Solicitud de vivienda no encontrada con ID: " + dto.getIdSolicitud()));
 
-        // 2. Mapeamos el DTO a la entidad
+        // 4. Mapeamos el DTO a la entidad
         VisitaInicial v = vivsoMapper.toEntity(dto);
         v.setTecnico(tecnico);
         v.setSolicitud(solicitud);
