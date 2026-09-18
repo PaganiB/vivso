@@ -26,4 +26,5 @@ public interface IDocumentoRepository extends JpaRepository<Documento, Integer> 
 
     boolean existsByTipoAndOrganizacion(TipoDocumento tipo, Organizacion organizacion);
     boolean existsByTipoAndFamilia(TipoDocumento tipo, Familia familia);
+    List<Documento> findBySolicitudOrganizacion_IdSolicitudOrg(Integer id);
 }

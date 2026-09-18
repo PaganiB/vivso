@@ -35,7 +35,7 @@ public class Documento {
     private EstadoDocumento estado;
 
     @Column(length = 500)
-    private String motivoRechazo;
+    private String motivoObservacion;
 
     // --- Auditoría Automática ---
 
@@ -59,6 +59,10 @@ public class Documento {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_usuario_revisor")
     private Usuario revisor; // El administrativo que lo aprobó o rechazó
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_solicitud_org")
+    private SolicitudOrganizacion solicitudOrganizacion;
 
     // Metodo para inicializar el estado por defecto si viene nulo
     @PrePersist

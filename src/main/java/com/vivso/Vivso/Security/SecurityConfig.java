@@ -18,13 +18,17 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-public class SecurityConfig {
+public class SecurityConfig implements WebMvcConfigurer {
 
     @Autowired private UserDetailsService userDetailsService;
     @Autowired private JwtAuthenticationFilter jwtAuthFilter;
@@ -56,10 +60,12 @@ public class SecurityConfig {
                         // ── PÚBLICO ──────────────────────────────────────────────────────────
                         //En realidad solo el login tiene acceso público, el registrar usuario no.
                         .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/solicitud/organizacion").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/solicitud-organizacion").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/solicitud-organizacion/token/**").permitAll()
+                        .requestMatchers(HttpMethod.PATCH, "/solicitud-organizacion/editar-token/**").permitAll()
 
                         // ── INTEGRANTE (solo accede a sus cosas) ─────────────────────────────
-                        .requestMatchers(HttpMethod.POST, "/solicitud/familia").hasRole("INTEGRANTE")
+                        .requestMatchers(HttpMethod.POST, "/solicitud/familia").hasAnyRole("ADMIN", "INTEGRANTE")
                         .requestMatchers(HttpMethod.GET, "/solicitud/organizacion/**").hasAnyRole("ADMIN", "OPERADOR", "INTEGRANTE")
                         .requestMatchers(HttpMethod.GET, "/documento/organizacion/**").hasAnyRole("ADMIN", "OPERADOR", "INTEGRANTE")
                         .requestMatchers(HttpMethod.PATCH, "/documento/*/reemplazar").hasAnyRole("ADMIN", "INTEGRANTE")
@@ -68,26 +74,31 @@ public class SecurityConfig {
                         // ── OPERADOR (bandeja de entrada, aprueba/rechaza) ────────────────────
                         .requestMatchers(HttpMethod.PUT, "/solicitud/*/aprobar").hasAnyRole("ADMIN", "OPERADOR")
                         .requestMatchers(HttpMethod.DELETE, "/solicitud/*/rechazar").hasAnyRole("ADMIN", "OPERADOR")
-                        .requestMatchers(HttpMethod.PUT, "/solicitud/**").hasAnyRole("ADMIN", "OPERADOR")
-                        .requestMatchers(HttpMethod.PATCH, "/documento/*/revisar").hasAnyRole("ADMIN", "OPERADOR")
+                        .requestMatchers(HttpMethod.POST, "/solicitud/**").hasAnyRole("ADMIN", "OPERADOR")
+                        .requestMatchers(HttpMethod.PATCH, "/documento/*/marcar-corregir").hasAnyRole("ADMIN", "OPERADOR")
                         .requestMatchers("/usuario/**").hasAnyRole("ADMIN", "OPERADOR")
+                        .requestMatchers(HttpMethod.POST, "/solicitud-organizacion/**").hasAnyRole("ADMIN", "OPERADOR")
+                        .requestMatchers(HttpMethod.PUT, "/solicitud-organizacion/**").hasAnyRole("ADMIN", "OPERADOR")
 
                         // ── TECNICO (visitas) ─────────────────────────────────────────────────
-                        .requestMatchers(HttpMethod.POST, "/visita/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO")
-                        .requestMatchers(HttpMethod.PUT, "/visita/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO")
-                        .requestMatchers(HttpMethod.GET, "/visita/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO", "ARQUITECTO")
+                        .requestMatchers(HttpMethod.POST, "/visita-inicial/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO")
+                        .requestMatchers(HttpMethod.PUT, "/visita-inicial/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO")
+                        .requestMatchers(HttpMethod.GET, "/visita-inicial/**", "/visita-obra/**", "/historial-visitas").hasAnyRole("ADMIN", "TECNICO", "ARQUITECTO")
 
                         // ── ARQUITECTO (revisión y decisiones) ───────────────────────────────
                         .requestMatchers(HttpMethod.PUT, "/vivienda/**").hasAnyRole("ADMIN", "ARQUITECTO")
                         .requestMatchers(HttpMethod.GET, "/vivienda/**").hasAnyRole("ADMIN", "ARQUITECTO", "TECNICO", "OPERADOR")
 
                         // ── LECTURA GENERAL (OPERADOR y ARQUITECTO ven expedientes completos) ─
-                        .requestMatchers(HttpMethod.GET, "/solicitud/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO")
+                        .requestMatchers(HttpMethod.GET, "/solicitud/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO", "TECNICO")
                         .requestMatchers(HttpMethod.GET, "/familia/**", "/familiar/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO", "TECNICO")
                         .requestMatchers(HttpMethod.GET, "/organizacion/**", "/integrante/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO")
                         .requestMatchers(HttpMethod.GET, "/documento/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO")
+                        .requestMatchers(HttpMethod.GET, "/organizacion/**", "/integrante/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO", "TECNICO")
 
                         // ── ESCRITURA GENERAL (solo OPERADOR registra datos) ─────────────────
+                        .requestMatchers(HttpMethod.POST, "/solicitud", "/organizacion/**", "/familia/**",
+                                "/familiar/**", "/integrante/**").hasAnyRole("ADMIN", "OPERADOR")
                         .requestMatchers(HttpMethod.POST, "/organizacion/**", "/familia/**",
                                 "/familiar/**", "/integrante/**").hasAnyRole("ADMIN", "OPERADOR")
                         .requestMatchers(HttpMethod.PUT, "/organizacion/**", "/familia/**",
@@ -108,7 +119,9 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:5173",
-                "https://fetch-reproduce-eatery.ngrok-free.dev"
+                "https://fetch-reproduce-eatery.ngrok-free.dev",
+                "http://localhost:8081",
+                "http://192.168.100.6:8081"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
@@ -117,5 +130,14 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
+    }
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        Path uploadDir = Paths.get("uploads");
+        String uploadPath = uploadDir.toFile().getAbsolutePath();
+
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations("file:" + uploadPath + "/");
     }
 }

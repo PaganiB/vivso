@@ -15,8 +15,9 @@ import java.time.LocalDate;
 @Table(name = "vivienda", schema = "vivso3")
 public class Vivienda{
     @Id
-    @Column(name = "numExp", nullable = false, length = 50)
-    private String numExp;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_vivienda", nullable = false)
+    private Integer idVivienda;
 
     @Column(name = "departamento", length = 100)
     private String departamento;

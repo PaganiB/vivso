@@ -10,7 +10,7 @@ import java.util.List;
 public interface IVisitaObraRepository extends JpaRepository<VisitaObra, Integer> {
 
     // Trae todas las visitas de una vivienda, ordenadas de la más nueva a la más vieja
-    List<VisitaObra> findByVivienda_NumExpOrderByFechaDesc(String numExp);
+    List<VisitaObra> findByVivienda_IdViviendaOrderByFechaDesc(Integer idVivienda);
 
     // Trae todas las inspecciones que hizo un técnico específico
     List<VisitaObra> findByTecnico_Id(Integer idTecnico);

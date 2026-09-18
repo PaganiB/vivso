@@ -35,9 +35,4 @@ public class Familiar {
     @JoinColumn(name = "id_familia", nullable = false)
     private Familia familia;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_usuario")
-    private Usuario usuario;
-
-
 }

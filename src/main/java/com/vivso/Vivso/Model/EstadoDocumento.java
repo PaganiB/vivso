@@ -7,7 +7,7 @@ import lombok.Getter;
 @Getter
 public enum EstadoDocumento {
     PENDIENTE("Pendiente"),
-    EN_REVISION("En revisión"),
+    A_CORREGIR("A corregir"),
     APROBADO("Aprobado"),
     RECHAZADO("Rechazado");
 

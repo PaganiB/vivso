@@ -22,7 +22,7 @@ public class ViviendaController {
     @PostMapping
     public ResponseEntity<ViviendaDTO> crear(@Valid @RequestBody ViviendaDTO dto) {
         ViviendaDTO created = viviendaService.guardar(dto);
-        return ResponseEntity.created(URI.create("/vivienda" + created.getNumExp())).body(created);
+        return ResponseEntity.created(URI.create("/vivienda/" + created.getIdVivienda())).body(created);
     }
 
     // GET /vivienda -> LISTAR TODAS
@@ -31,17 +31,17 @@ public class ViviendaController {
         return ResponseEntity.ok(viviendaService.listarTodas());
     }
 
-    // GET /vivienda/{numExp} -> BUSCAR POR ID
-    @GetMapping("/{numExp}")
-    public ResponseEntity<ViviendaDTO> buscarPorExpediente(@PathVariable String numExp) {
-        return ResponseEntity.ok(viviendaService.buscarPorExpediente(numExp));
+    // GET /vivienda/{idVivienda}
+    @GetMapping("/{idVivienda}")
+    public ResponseEntity<ViviendaDTO> buscarPorId(@PathVariable Integer idVivienda) {
+        return ResponseEntity.ok(viviendaService.buscarPorId(idVivienda));
     }
 
     // DELETE /vivienda/{numExp} -> ELIMINAR
-    @DeleteMapping("/{numExp}")
-    public ResponseEntity<String> eliminar(@PathVariable String numExp) {
-        viviendaService.eliminar(numExp);
-        return ResponseEntity.ok("Vivienda con expediente " + numExp + " eliminada con éxito.");
+    @DeleteMapping("/{idVivienda}")
+    public ResponseEntity<String> eliminar(@PathVariable Integer idVivienda) {
+        viviendaService.eliminar(idVivienda);
+        return ResponseEntity.ok("Vivienda con ID " + idVivienda + " eliminada con éxito.");
     }
 
     // Estos mantienen un sub-path porque filtran por criterios específicos
@@ -58,9 +58,9 @@ public class ViviendaController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PutMapping("/{numExp}")
-    public ResponseEntity<ViviendaDTO> actualizar(@PathVariable String numExp, @Valid @RequestBody ViviendaDTO dto) {
-        ViviendaDTO actualizado = viviendaService.actualizar(numExp, dto);
+    @PutMapping("/{idVivienda}")
+    public ResponseEntity<ViviendaDTO> actualizar(@PathVariable Integer idVivienda, @Valid @RequestBody ViviendaDTO dto) {
+        ViviendaDTO actualizado = viviendaService.actualizar(idVivienda, dto);
         return ResponseEntity.ok(actualizado);
     }
 }

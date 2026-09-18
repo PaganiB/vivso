@@ -1,10 +1,13 @@
 package com.vivso.Vivso.Service;
 
 import com.vivso.Vivso.DTO.OrganizacionDTO;
+import com.vivso.Vivso.Exception.RecursoNoEncontradoException;
+import com.vivso.Vivso.Exception.ReglaDeNegocioException;
 import com.vivso.Vivso.Mapper.VivsoMapper;
 import com.vivso.Vivso.Model.Organizacion;
 import com.vivso.Vivso.Repository.IOrganizacionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -25,15 +28,14 @@ public class OrganizacionService implements IOrganizacionService {
     @Override
     public OrganizacionDTO saveOrganizacion(OrganizacionDTO dto) {
         if (orgRepo.existsById(dto.getCuit()))
-            throw new RuntimeException("Ese CUIT ya existe: " + dto.getCuit());
-
+            throw new ReglaDeNegocioException("Ese CUIT ya existe: " + dto.getCuit(), HttpStatus.CONFLICT);
         return mapper.toDTO(orgRepo.save(mapper.toEntity(dto)));
     }
 
     @Override
     public OrganizacionDTO updateOrganizacion(String cuit, OrganizacionDTO dto) {
         Organizacion o = orgRepo.findById(cuit)
-                .orElseThrow(() -> new RuntimeException("Organización no encontrada: " + cuit));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Organización no encontrada: " + cuit));
 
         // Aplica solo los campos no nulos — sin if por campo, el CUIT (PK) está ignorado en el mapper
         mapper.updateFromDto(dto, o);
@@ -44,7 +46,7 @@ public class OrganizacionService implements IOrganizacionService {
     @Override
     public void deleteOrganizacion(String cuit) {
         Organizacion o = orgRepo.findById(cuit)
-                .orElseThrow(() -> new RuntimeException("Organización no encontrada: " + cuit));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Organización no encontrada: " + cuit));
         orgRepo.delete(o);
     }
 
@@ -52,20 +54,20 @@ public class OrganizacionService implements IOrganizacionService {
     public OrganizacionDTO buscarPorCuit(String cuit) {
         return orgRepo.findById(cuit)
                 .map(mapper::toDTO)
-                .orElseThrow(() -> new RuntimeException("Organización no encontrada: " + cuit));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Organización no encontrada: " + cuit));
     }
 
+    // buscarPorTipo
     @Override
     public List<OrganizacionDTO> buscarPorTipo(String tipo) {
         List<Organizacion> result = orgRepo.findOrganizacionByTipo(tipo);
-        if (result.isEmpty()) throw new RuntimeException("Ninguna organización pertenece a este tipo");
         return result.stream().map(mapper::toDTO).toList();
     }
 
+    // buscarPorNombre
     @Override
     public List<OrganizacionDTO> buscarPorNombre(String nombre) {
         List<Organizacion> result = orgRepo.findByNombreContainingIgnoreCase(nombre);
-        if (result.isEmpty()) throw new RuntimeException("Ninguna organización tiene o contiene ese nombre");
         return result.stream().map(mapper::toDTO).toList();
     }
 }

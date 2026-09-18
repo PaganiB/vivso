@@ -5,6 +5,7 @@ import jakarta.validation.constraints.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter @Setter
 @NoArgsConstructor
@@ -40,10 +41,15 @@ public class VisitaInicialDTO {
     @Size(max = 150)
     private String observaciones;
 
+    private String localidad;
+    private String departamento;
+
     @NotNull(message = "Se debe indicar la cantidad de habitantes")
     @Positive(message = "La cantidad de habitantes no puede ser negativa")
     private Integer cantHabitantesReal;
 
     @NotNull(message = "Debe indicar si tiene prioridad social o no")
     private Boolean tienePrioridadSocial;
+
+    private List<String> urlsFotos;
 }

@@ -16,9 +16,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class ViviendaDTO {
 
-    @NotBlank(message = "El número de expediente es obligatorio")
-    @Size(max = 50, message = "El número de expediente no puede superar los 50 caracteres")
-    private String numExp;
+    private Integer idVivienda;
 
     @NotBlank(message = "El departamento es obligatorio")
     private String departamento;
@@ -27,7 +25,6 @@ public class ViviendaDTO {
     private String localidad;
 
     private String barrio;
-
     private String direccion;
 
     @NotNull(message = "La superficie es obligatoria")
@@ -38,7 +35,7 @@ public class ViviendaDTO {
     private LocalDate fechaInic;
 
     @JsonFormat(pattern = "dd-MM-yyyy")
-    private LocalDate fechaFin; // Opcional si sigue en obra
+    private LocalDate fechaFin;
 
     @NotNull(message = "El estado de la vivienda es obligatorio")
     private EstadoVivienda estado;
@@ -61,7 +58,7 @@ public class ViviendaDTO {
     private String representante;
 
     @Min(0) @Max(100)
-    private Integer avanceObra; // El AFO
+    private Integer avanceObra;
 
     @NotNull(message = "La clasificación es obligatoria")
     private ClasificacionVivienda clasificacion;

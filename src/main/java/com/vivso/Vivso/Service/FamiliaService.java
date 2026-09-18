@@ -1,6 +1,7 @@
 package com.vivso.Vivso.Service;
 
 import com.vivso.Vivso.DTO.FamiliaDTO;
+import com.vivso.Vivso.Exception.RecursoNoEncontradoException;
 import com.vivso.Vivso.Mapper.VivsoMapper;
 import com.vivso.Vivso.Model.Familia;
 import com.vivso.Vivso.Model.Organizacion;
@@ -15,7 +16,6 @@ import java.util.List;
 public class FamiliaService implements IFamiliaService {
 
     @Autowired private IFamiliaRepository familiaRepo;
-    @Autowired private IOrganizacionRepository orgRepo;
     @Autowired private VivsoMapper mapper;
 
     @Override
@@ -35,7 +35,7 @@ public class FamiliaService implements IFamiliaService {
     @Override
     public FamiliaDTO updateFamilia(Integer idFamilia, FamiliaDTO dto) {
         Familia f = familiaRepo.findById(idFamilia)
-                .orElseThrow(() -> new RuntimeException("Familia no encontrada: " + idFamilia));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Familia no encontrada: " + idFamilia));
 
         // MapStruct aplica solo los campos no nulos del DTO sobre la entidad existente
         mapper.updateFromDto(dto, f);
@@ -46,7 +46,7 @@ public class FamiliaService implements IFamiliaService {
     @Override
     public void deleteFamilia(Integer id) {
         Familia f = familiaRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Familia no encontrada: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Familia no encontrada: " + id));
         familiaRepo.delete(f);
     }
 
@@ -54,6 +54,6 @@ public class FamiliaService implements IFamiliaService {
     public FamiliaDTO findFamilia(Integer id) {
         return familiaRepo.findById(id)
                 .map(mapper::toDTO)
-                .orElseThrow(() -> new RuntimeException("Familia no encontrada: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Familia no encontrada: " + id));
     }
 }

@@ -12,41 +12,10 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // 1. MANEJO DE EXCEPCIONES DE LÓGICA (RuntimeException)
-    /*@ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<String> manejarRuntime(RuntimeException ex) {
-        String mensaje = ex.getMessage().toLowerCase();
-
-        // Si en el Service pusiste "no encontrado"
-        if (mensaje.contains("no encontrado")) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-        }
-
-        // Si en el Service pusiste "ya existe" o "ya está registrado"
-        if (mensaje.contains("ya existe") || mensaje.contains("registrado")) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
-        }
-
-        // Para cualquier otro error de lógica de negocio
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
-    }*/
-
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<String> manejarRuntime(RuntimeException ex) {
-
-        ex.printStackTrace(); // <-- agregar esto
-
-        String mensaje = ex.getMessage().toLowerCase();
-
-        if (mensaje.contains("no encontrado")) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-        }
-
-        if (mensaje.contains("ya existe") || mensaje.contains("registrado")) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
-        }
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    @ExceptionHandler(VivsoException.class)
+    public ResponseEntity<ErrorResponse> manejarVivsoException(VivsoException ex) {
+        ErrorResponse error = new ErrorResponse(ex.getStatus().value(), ex.getMessage());
+        return ResponseEntity.status(ex.getStatus()).body(error);
     }
 
     // 2. MANEJO DE VALIDACIONES DE DTO (@Valid)

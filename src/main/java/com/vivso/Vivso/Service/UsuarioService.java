@@ -3,10 +3,13 @@ package com.vivso.Vivso.Service;
 import com.vivso.Vivso.DTO.PasswordUpdateDTO;
 import com.vivso.Vivso.DTO.UsuarioRegistroDTO;
 import com.vivso.Vivso.DTO.UsuarioRespuestaDTO;
+import com.vivso.Vivso.Exception.RecursoNoEncontradoException;
+import com.vivso.Vivso.Exception.ReglaDeNegocioException;
 import com.vivso.Vivso.Mapper.VivsoMapper;
 import com.vivso.Vivso.Model.Usuario;
 import com.vivso.Vivso.Repository.IUsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -30,15 +33,15 @@ public class UsuarioService implements IUsuarioService {
     public UsuarioRespuestaDTO buscarPorId(Integer id) {
         return usuarioRepo.findById(id)
                 .map(mapper::toRespuestaDTO)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado: " + id));
     }
 
     @Override
     public Usuario buscarPorUsername(String username) {
         if (username == null || username.trim().isEmpty())
-            throw new IllegalArgumentException("El nombre de usuario no puede estar vacío");
+            throw new ReglaDeNegocioException("El nombre de usuario no puede estar vacío", HttpStatus.BAD_REQUEST);
         return usuarioRepo.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + username));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado: " + username));
     }
 
     @Override
@@ -62,10 +65,10 @@ public class UsuarioService implements IUsuarioService {
     public Usuario registrarNuevoUsuario(UsuarioRegistroDTO dto) {
 
         if (existePorEmail(dto.getEmail()))
-            throw new RuntimeException("El email ya está registrado.");
+            throw new ReglaDeNegocioException("El email ya está registrado.", HttpStatus.CONFLICT);
 
         if (existePorUsername(dto.getUsername()))
-            throw new RuntimeException("El nombre de usuario ya existe.");
+            throw new ReglaDeNegocioException("El nombre de usuario ya existe.", HttpStatus.CONFLICT);
 
         Usuario usuario = new Usuario();
         usuario.setUsername(dto.getUsername());
@@ -82,7 +85,7 @@ public class UsuarioService implements IUsuarioService {
     @Override
     public void desactivar(Integer id) {
         Usuario u = usuarioRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado: " + id));
         u.setActivo(false);
         usuarioRepo.save(u);
     }
@@ -90,18 +93,17 @@ public class UsuarioService implements IUsuarioService {
     @Override
     public void activar(Integer id) {
         Usuario u = usuarioRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + id));
-        u.setActivo(true);
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado: " + id));        u.setActivo(true);
         usuarioRepo.save(u);
     }
 
     @Override
     public UsuarioRespuestaDTO actualizar(Integer id, UsuarioRegistroDTO dto) {
         Usuario u = usuarioRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado: " + id));
 
         if (!u.getEmail().equals(dto.getEmail()) && usuarioRepo.existsByEmail(dto.getEmail()))
-            throw new RuntimeException("El nuevo email ya está registrado por otro usuario.");
+            throw new ReglaDeNegocioException("El nuevo email ya está registrado por otro usuario.", HttpStatus.CONFLICT);
 
         u.setUsername(dto.getUsername());
         u.setEmail(dto.getEmail());
@@ -113,13 +115,12 @@ public class UsuarioService implements IUsuarioService {
     @Override
     public void actualizarPassword(Integer id, PasswordUpdateDTO dto) {
         Usuario u = usuarioRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado: " + id));
 
-        // TODO: reemplazar por BCrypt cuando se implemente JWT
-        if (!u.getPassword_hash().equals(dto.getPasswordActual()))
-            throw new RuntimeException("La contraseña actual es incorrecta");
+        if (!passwordEncoder.matches(dto.getPasswordActual(), u.getPassword_hash()))
+            throw new ReglaDeNegocioException("La contraseña actual es incorrecta", HttpStatus.UNAUTHORIZED);
 
-        u.setPassword_hash(dto.getPasswordNueva());
+        u.setPassword_hash(passwordEncoder.encode(dto.getPasswordNueva()));
         usuarioRepo.save(u);
     }
 }

@@ -7,21 +7,20 @@ import java.util.List;
 import java.util.Optional;
 
 public interface IViviendaService {
-    List<ViviendaDTO> listarTodas();
 
-    ViviendaDTO buscarPorExpediente(String numExp);
+    List<ViviendaDTO> listarTodas();
 
     ViviendaDTO guardar(ViviendaDTO viviendaDTO);
 
-    void eliminar(String numExp);
-
-    // Filtrar por estado (Iniciada, Avanzada, Finalizada)
-    List<ViviendaDTO> buscarPorEstado(EstadoVivienda estado);
-
-    // Buscar la vivienda adjudicada a una familia
     Optional<ViviendaDTO> buscarPorFamilia(Integer idFamilia);
 
-    ViviendaDTO actualizar(String numExp, ViviendaDTO viviendaDTO);
+    ViviendaDTO actualizar(Integer idVivienda, ViviendaDTO viviendaDTO);
+
+    void eliminar(Integer idVivienda);
+
+    ViviendaDTO buscarPorId(Integer idVivienda);
+
+    List<ViviendaDTO> buscarPorEstado(EstadoVivienda estado);
 
     List<ViviendaDTO> filtrarPorLocalidad(String localidad);
 

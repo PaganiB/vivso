@@ -1,6 +1,5 @@
 package com.vivso.Vivso.DTO;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.vivso.Vivso.Model.EstadoSolicitud;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -16,13 +15,10 @@ public class SolicitudDTO {
 
     private Integer idSolicitud;
 
-    //@NotBlank(message = "El Codigo del GDE es obligatorio")
-    private String GDE;
-
-    @NotNull(message = "Fecha de solicitud obligatoria")
+    //@NotNull(message = "Fecha de solicitud obligatoria")
     private LocalDate fechaSolicitud;
 
-    @NotBlank(message = "El CUIT de la organización es obligatorio")
+    //@NotBlank(message = "El CUIT de la organización es obligatorio")
     private String cuitOrg;
 
     private String numExp;
@@ -33,6 +29,12 @@ public class SolicitudDTO {
     @Size(max = 200, message = "Los caracteres máximos son 200")
     private String observacion;
 
-    @NotNull(message = "Debe indicar el ID de la familia solicitante")
+    //@NotNull(message = "Debe indicar el ID de la familia solicitante")
     private Integer idFamilia;
+
+    private Integer idVivienda;
+
+    private String nombreRepresentanteFamilia;
+
+    private String nombreOrganizacion;
 }

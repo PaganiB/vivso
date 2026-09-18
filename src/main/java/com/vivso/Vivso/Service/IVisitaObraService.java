@@ -7,6 +7,6 @@ public interface IVisitaObraService {
 
     VisitaObraDTO registrarVisita(VisitaObraDTO dto);
 
-    List<VisitaObraDTO> obtenerHistorialPorVivienda(String numExp);
+    List<VisitaObraDTO> obtenerHistorialPorVivienda(Integer idVivienda);
 
 }

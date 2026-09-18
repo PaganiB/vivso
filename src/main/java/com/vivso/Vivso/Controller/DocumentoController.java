@@ -1,8 +1,6 @@
 package com.vivso.Vivso.Controller;
 
 import com.vivso.Vivso.DTO.DocumentoDTO;
-import com.vivso.Vivso.DTO.RevisionDocumentoDTO;
-import com.vivso.Vivso.Model.EstadoDocumento;
 import com.vivso.Vivso.Model.TipoDocumento;
 import com.vivso.Vivso.Service.IDocumentoService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,19 +32,12 @@ public class DocumentoController {
         return ResponseEntity.created(URI.create("/documento/" + created.getIdDocumento())).body(created);
     }
 
-    // 2. REVISAR DOCUMENTO (Aprobar o Rechazar)
-    @PatchMapping("/{idDoc}/revisar")
-    public ResponseEntity<DocumentoDTO> revisarDocumento(
+    @PatchMapping("/{idDoc}/marcar-corregir")
+    public ResponseEntity<DocumentoDTO> marcarParaCorregir(
             @PathVariable Integer idDoc,
-            @RequestBody RevisionDocumentoDTO request) {
+            @RequestParam String motivo) {
 
-        // Sacamos los datos del JSON
-        Integer idRevisor = request.getIdRevisor();
-        EstadoDocumento nuevoEstado = request.getNuevoEstado();
-        String motivo = request.getMotivo();
-
-        // Llamamos al service igual que antes
-        DocumentoDTO actualizado = documentoService.revisar(idDoc, idRevisor, nuevoEstado, motivo);
+        DocumentoDTO actualizado = documentoService.marcarParaCorregir(idDoc, motivo);
         return ResponseEntity.ok(actualizado);
     }
 

@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "visitaInicial", schema = "vivso3")
@@ -28,9 +30,6 @@ public class VisitaInicial {
     @JoinColumn(name = "id_tecnico", nullable = false)
     private Usuario tecnico; // Relación con el técnico que realizó el relevamiento
 
-    @Column(name = "avance_registrado")
-    private Integer avanceRegistrado; // El AFO (0-100) en ese momento específico
-
     @Enumerated(EnumType.STRING)
     @Column(name = "clasificacion_preliminar")
     private ClasificacionVivienda clasificacionPreliminar; // 1A, 2A, Derrumbe, etc.
@@ -41,6 +40,12 @@ public class VisitaInicial {
     @Column(name = "longitud")
     private Double lng;
 
+    @Column(name = "localidad", length = 100)
+    private String localidad;
+
+    @Column(name = "departamento", length = 100)
+    private String departamento;
+
     @Column(columnDefinition = "TEXT")
     private String observaciones; // Para detallar riesgos o situaciones familiares
 
@@ -48,4 +53,9 @@ public class VisitaInicial {
     private Integer cantHabitantesReal;
     private Boolean tienePrioridadSocial; // Marcador para casos de Chagas, discapacidad o incendio
 
+    //URLs de las fotos
+    @ElementCollection
+    @CollectionTable(name = "visita_fotos", joinColumns = @JoinColumn(name = "id_visita"))
+    @Column(name = "url_foto")
+    private List<String> urlsFotos = new ArrayList<>();
 }
