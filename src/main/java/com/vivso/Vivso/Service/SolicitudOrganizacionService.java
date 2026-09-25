@@ -120,8 +120,9 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
                 .build();
         integranteRepo.save(presidente);
 
+        Integrante tesorero = null;
         if (sol.getDniTesorero() != null) {
-            Integrante tesorero = Integrante.builder()
+            tesorero = Integrante.builder()
                     .dni(sol.getDniTesorero()).nombre(sol.getNombreTesorero())
                     .apellido(sol.getApellidoTesorero()).correo(sol.getCorreoTesorero())
                     .telefono(sol.getTelefonoTesorero()).domicilio(sol.getDomicilioTesorero())
@@ -141,10 +142,18 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
         sol.setRevisor(revisor);
         solicitudOrgRepo.save(sol);
 
-        generarUsuarioYEnviarMail(sol.getNombrePresidente(), sol.getApellidoPresidente(), sol.getCorreoPresidente(), org.getNombre());
+        Usuario usuarioPresidente = generarUsuarioYEnviarMail(sol.getNombrePresidente(), sol.getApellidoPresidente(), sol.getCorreoPresidente(), org.getNombre());
+        if (usuarioPresidente != null) {
+            presidente.setUsuario(usuarioPresidente);
+            integranteRepo.save(presidente);
+        }
 
         if (sol.getDniTesorero() != null) {
-            generarUsuarioYEnviarMail(sol.getNombreTesorero(), sol.getApellidoTesorero(), sol.getCorreoTesorero(), org.getNombre());
+            Usuario usuarioTesorero = generarUsuarioYEnviarMail(sol.getNombreTesorero(), sol.getApellidoTesorero(), sol.getCorreoTesorero(), org.getNombre());
+            if (usuarioTesorero != null) {
+                tesorero.setUsuario(usuarioTesorero);
+                integranteRepo.save(tesorero);
+            }
         }
     }
 
@@ -265,7 +274,7 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
     }
 
     //METODO PARA GENERAR LAS CREDENCIALES
-    private void generarUsuarioYEnviarMail(String nombre, String apellido, String correo, String nombreOrg) {
+    private Usuario generarUsuarioYEnviarMail(String nombre, String apellido, String correo, String nombreOrg) {
         // Validamos que tenga un correo válido
         if (correo != null && correo.contains("@")) {
 
@@ -295,16 +304,15 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
                     .rol("INTEGRANTE") // Ambos tendrán el mismo rol en el sistema
                     .build();
 
-            usuarioService.registrarNuevoUsuario(nuevoUsuario);
+            Usuario usuarioCreado = usuarioService.registrarNuevoUsuario(nuevoUsuario);
 
-            // 4. Disparamos el correo usando el EmailService de Marian
             emailService.enviarCredencialesYAprobacion(
-                    correo,
-                    username,
-                    password.toString(),
-                    nombreOrg
+                    correo, username, password.toString(), nombreOrg
             );
+
+            return usuarioCreado;
         }
+        return null;
     }
 
     @Override

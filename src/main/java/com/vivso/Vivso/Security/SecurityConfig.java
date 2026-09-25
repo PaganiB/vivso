@@ -62,6 +62,7 @@ public class SecurityConfig {
 
                         // ── INTEGRANTE (solo accede a sus cosas) ─────────────────────────────
                         .requestMatchers(HttpMethod.POST, "/solicitud/familia").hasAnyRole("ADMIN", "INTEGRANTE")
+                        .requestMatchers(HttpMethod.PUT, "/solicitud/*/confirmar-correccion").hasAnyRole("ADMIN", "INTEGRANTE")
                         .requestMatchers(HttpMethod.GET, "/solicitud/organizacion/**").hasAnyRole("ADMIN", "OPERADOR", "INTEGRANTE")
                         .requestMatchers(HttpMethod.GET, "/documento/organizacion/**").hasAnyRole("ADMIN", "OPERADOR", "INTEGRANTE")
                         .requestMatchers(HttpMethod.PATCH, "/documento/*/reemplazar").hasAnyRole("ADMIN", "INTEGRANTE")

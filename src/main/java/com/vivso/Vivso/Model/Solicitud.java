@@ -28,10 +28,6 @@ public class Solicitud {
     @Column(name = "numExp")
     private String numExp;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_vivienda")
-    private Vivienda vivienda;
-
     @Lob
     @Enumerated(EnumType.STRING)
     @Column(name = "estado")
@@ -40,12 +36,19 @@ public class Solicitud {
     @Column(name = "observacion", length = 200)
     private String observacion;
 
+    @Column(name = "camposObservados")
+    private String camposObservados;
+
     @Column(name = "fechaActivacion")
     private LocalDate fechaActivacion;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "id_familia", nullable = false)
     private Familia familiaBeneficiaria;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_revisor")
+    private Usuario revisor;
 
     @PrePersist
     public void prePersist() {

@@ -25,5 +25,6 @@ public interface ISolicitudService {
     SolicitudDTO registrarSolicitudFamilia(RegistroFamiliaDTO dto, MultiValueMap<String, MultipartFile> mapaArchivos);
     SolicitudDTO aprobarSolicitudVivienda(Integer idSolicitud);
     void rechazarSolicitudVivienda(Integer idSolicitud, String motivo);
-    SolicitudDTO semiAprobarSolicitud(Integer idSolicitud, String motivo);
+    SolicitudDTO semiAprobarSolicitud(Integer idSolicitud, List<String> camposObservados, String motivo);
+    void confirmarCorreccion(Integer idSolicitud);
 }
