@@ -9,6 +9,7 @@ import com.vivso.Vivso.Repository.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.MultiValueMap;
@@ -28,6 +29,8 @@ public class SolicitudService implements ISolicitudService {
     @Autowired private IFamiliarRepository familiarRepo;
     @Autowired private IDocumentoService documentoService;
     @Autowired private VivsoMapper mapper;
+    @Autowired private IIntegranteRepository integranteRepo;
+    @Autowired private IUsuarioRepository usuarioRepo;
 
     @Override
     @Transactional
@@ -94,17 +97,22 @@ public class SolicitudService implements ISolicitudService {
         if (s.getNumExp() == null || s.getNumExp().isBlank())
             throw new ReglaDeNegocioException("La solicitud no tiene número de expediente asignado. Debe cargarlo antes de aprobar.", HttpStatus.CONFLICT);
 
-        Vivienda vivienda = Vivienda.builder()
-                .familia(s.getFamiliaBeneficiaria())
-                .estado(EstadoVivienda.INICIADA)
-                .build();
-        vivienda = viviendaRepo.save(vivienda);
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Usuario revisor = usuarioRepo.findByEmail(email)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario autenticado no encontrado"));
 
         s.setEstado(EstadoSolicitud.Aprobada);
-        s.setVivienda(vivienda);
         s.setFechaActivacion(LocalDate.now());
+        s.setRevisor(revisor);
+        solicitudRepo.save(s);
 
-        return mapper.toDTO(solicitudRepo.save(s));
+        Vivienda vivienda = Vivienda.builder()
+                .familia(s.getFamiliaBeneficiaria())
+                .solicitud(s)
+                .build();
+        viviendaRepo.save(vivienda);
+
+        return mapper.toDTO(s);
     }
 
     @Override
@@ -116,14 +124,19 @@ public class SolicitudService implements ISolicitudService {
         if (s.getEstado() == EstadoSolicitud.Aprobada)
             throw new ReglaDeNegocioException("No se puede rechazar una solicitud ya aprobada", HttpStatus.CONFLICT);
 
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Usuario revisor = usuarioRepo.findByEmail(email)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario autenticado no encontrado"));
+
         s.setEstado(EstadoSolicitud.Rechazada);
         s.setObservacion(motivo);
+        s.setRevisor(revisor);
         solicitudRepo.save(s);
     }
 
     @Override
     @Transactional
-    public SolicitudDTO semiAprobarSolicitud(Integer idSolicitud, String motivo) {
+    public SolicitudDTO semiAprobarSolicitud(Integer idSolicitud, List<String> camposObservados, String motivo) {
         Solicitud s = solicitudRepo.findById(idSolicitud)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Solicitud no encontrada: " + idSolicitud));
 
@@ -132,9 +145,51 @@ public class SolicitudService implements ISolicitudService {
         if (s.getEstado() == EstadoSolicitud.Rechazada)
             throw new ReglaDeNegocioException("No se puede modificar una solicitud ya rechazada", HttpStatus.CONFLICT);
 
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Usuario revisor = usuarioRepo.findByEmail(email)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario autenticado no encontrado"));
+
         s.setEstado(EstadoSolicitud.SemiAprobada);
         s.setObservacion(motivo);
+        s.setCamposObservados(String.join(",", camposObservados));
+        s.setRevisor(revisor);
         return mapper.toDTO(solicitudRepo.save(s));
+    }
+
+    @Override
+    @Transactional
+    public void confirmarCorreccion(Integer idSolicitud) {
+        Solicitud s = solicitudRepo.findById(idSolicitud)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Solicitud no encontrada: " + idSolicitud));
+
+        if (s.getEstado() != EstadoSolicitud.SemiAprobada)
+            throw new ReglaDeNegocioException("Esta solicitud no está en observaciones", HttpStatus.CONFLICT);
+
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Usuario usuarioAutenticado = usuarioRepo.findByEmail(email)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario autenticado no encontrado"));
+
+        Integrante integrante = integranteRepo.findByUsuario(usuarioAutenticado)
+                .orElseThrow(() -> new ReglaDeNegocioException("El usuario no tiene un integrante asociado", HttpStatus.FORBIDDEN));
+
+        if (!integrante.getOrganizacion().getCuit().equals(s.getCuitOrg().getCuit()))
+            throw new ReglaDeNegocioException("No tenés permiso para editar esta solicitud", HttpStatus.FORBIDDEN);
+
+        boolean quedanDocumentosSinCorregir = documentoService.listarPorFamilia(s.getFamiliaBeneficiaria().getIdFamilia())
+                .stream()
+                .anyMatch(d -> d.getEstado() == EstadoDocumento.A_CORREGIR);
+
+        if (quedanDocumentosSinCorregir)
+            throw new ReglaDeNegocioException(
+                    "Todavía hay documentos marcados para corregir sin reemplazar. Reemplazalos antes de enviar.",
+                    HttpStatus.CONFLICT);
+
+        s.setEstado(EstadoSolicitud.Pendiente);
+        s.setObservacion(null);
+        s.setCamposObservados(null);
+        solicitudRepo.save(s);
+
+        log.info("Solicitud {} confirmada por el solicitante, vuelve a estado Pendiente", idSolicitud);
     }
 
     @Override

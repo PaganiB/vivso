@@ -48,8 +48,15 @@ public class SolicitudController {
 
     @PutMapping("/{id}/semiAprobar")
     public ResponseEntity<SolicitudDTO> semiAprobar(@PathVariable Integer id,
-                                                    @RequestBody Map<String, String> body) {
-        return ResponseEntity.ok(solicitudService.semiAprobarSolicitud(id, body.get("motivo")));
+                                                    @RequestParam List<String> camposObservados,
+                                                    @RequestParam String motivo) {
+        return ResponseEntity.ok(solicitudService.semiAprobarSolicitud(id, camposObservados, motivo));
+    }
+
+    @PutMapping("/{id}/confirmar-correccion")
+    public ResponseEntity<Void> confirmarCorreccion(@PathVariable Integer id) {
+        solicitudService.confirmarCorreccion(id);
+        return ResponseEntity.noContent().build();
     }
 
     // ── CRUD básico ───────────────────────────────────────────────────────

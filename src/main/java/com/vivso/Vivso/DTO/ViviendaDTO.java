@@ -2,7 +2,6 @@ package com.vivso.Vivso.DTO;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.vivso.Vivso.Model.ClasificacionVivienda;
-import com.vivso.Vivso.Model.EstadoVivienda;
 import com.vivso.Vivso.Model.TipoVivienda;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -36,9 +35,6 @@ public class ViviendaDTO {
 
     @JsonFormat(pattern = "dd-MM-yyyy")
     private LocalDate fechaFin;
-
-    @NotNull(message = "El estado de la vivienda es obligatorio")
-    private EstadoVivienda estado;
 
     private String observacion;
 

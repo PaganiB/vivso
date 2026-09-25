@@ -13,7 +13,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "vivienda", schema = "vivso3")
-public class Vivienda{
+public class Vivienda {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_vivienda", nullable = false)
@@ -45,11 +45,6 @@ public class Vivienda{
     @Column(name = "longitud")
     private Double lng;
 
-    @Lob
-    @Column(name = "estado")
-    @Enumerated(EnumType.STRING)
-    private EstadoVivienda estado;
-
     @Column(name = "observacion", length = 200)
     private String observacion;
 
@@ -57,8 +52,13 @@ public class Vivienda{
     @JoinColumn(name = "id_familia", nullable = false)
     private Familia familia;
 
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "id_solicitud", nullable = false, unique = true)
+    private Solicitud solicitud;
+
     @Column(name = "avance_obra")
-    private Integer avanceObra = 0; // Valor por defecto 0
+    @Builder.Default
+    private Integer avanceObra = 0;
 
     @Enumerated(EnumType.STRING)
     private ClasificacionVivienda clasificacion;
