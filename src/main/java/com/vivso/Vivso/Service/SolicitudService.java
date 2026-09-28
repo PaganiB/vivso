@@ -15,6 +15,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -27,6 +28,7 @@ public class SolicitudService implements ISolicitudService {
     @Autowired private IFamiliaRepository familiaRepo;
     @Autowired private IFamiliarRepository familiarRepo;
     @Autowired private IDocumentoService documentoService;
+    @Autowired private IVisitaInicialRepository visitaInicialRepository;
     @Autowired private VivsoMapper mapper;
 
     @Override
@@ -169,6 +171,59 @@ public class SolicitudService implements ISolicitudService {
 
                 }).collect(Collectors.toList());
     }
+
+    /*@Override
+    public List<ExpedienteWebDTO> obtenerDashboardWebTecnico(Integer idTecnico) {
+
+        List<Solicitud> asignadas = solicitudRepo.findByTecnicoAsignado_Id(idTecnico);
+
+        return asignadas.stream().map(s -> {
+            ExpedienteWebDTO dto = new ExpedienteWebDTO();
+            dto.setIdSolicitud(s.getIdSolicitud());
+            dto.setNumExp(s.getNumExp());
+            dto.setBeneficiario(s.getFamiliaBeneficiaria() != null ? s.getFamiliaBeneficiaria().getNombreRepresentante() : "No registrado");
+
+            // 1. EVALUAR FASE DE OBRA (Ya tiene una Vivienda vinculada)
+            if (s.getVivienda() != null) {
+                Vivienda v = s.getVivienda();
+
+                dto.setEstadoRelevamiento("En Construcción");
+                dto.setUltimaVisita("Fase de obra");
+                dto.setProgreso(v.getAvanceObra() != null ? v.getAvanceObra() : 0); // Avance directo de la vivienda
+
+
+                // 2. EVALUAR FASE INICIAL (Traemos TODAS las visitas de esta solicitud)
+            } else {
+                List<VisitaInicial> historialVisitas = visitaInicialRepository.findBySolicitud_IdSolicitudOrderByFechaVisitaDesc(s.getIdSolicitud());
+
+                if (!historialVisitas.isEmpty()) {
+                    dto.setEstadoRelevamiento("Relevamiento en proceso");
+                    dto.setUltimaVisita(historialVisitas.get(0).getFechaVisita().toLocalDate().toString());
+
+                    // Evaluamos el esfuerzo COMBINADO de todas las visitas para la barra de progreso
+                    boolean tieneCoords = historialVisitas.stream().anyMatch(v -> v.getLat() != null && v.getLng() != null);
+                    boolean tieneObs = historialVisitas.stream().anyMatch(v -> v.getObservaciones() != null && !v.getObservaciones().trim().isEmpty());
+                    boolean tieneClasif = historialVisitas.stream().anyMatch(v -> v.getClasificacionPreliminar() != null);
+                    boolean tieneFotos = historialVisitas.stream().anyMatch(v -> v.getUrlsFotos() != null && !v.getUrlsFotos().isEmpty());
+
+                    int progreso = 0;
+                    if (tieneCoords) progreso += 25;
+                    if (tieneObs) progreso += 25;
+                    if (tieneClasif) progreso += 25;
+                    if (tieneFotos) progreso += 25;
+                    dto.setProgreso(progreso);
+
+                } else {
+                    // 3. SIN NINGÚN RELEVAMIENTO
+                    dto.setEstadoRelevamiento("Sin relevamiento");
+                    dto.setUltimaVisita("Sin relevamiento");
+                    dto.setProgreso(0);
+                }
+            }
+
+            return dto;
+        }).collect(Collectors.toList());
+    }*/
 
     @Override
     public SolicitudDTO findSolicitud(Integer id) {

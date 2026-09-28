@@ -58,6 +58,13 @@ public class SolicitudController {
         return ResponseEntity.ok(solicitudService.getSolicitudes());
     }
 
+    //Metodo para obtener lista de solicitudes relacionadas al tecnico
+    /*@GetMapping("/tecnico/{idTecnico}")
+    public ResponseEntity<List<ExpedienteWebDTO>> obtenerDashboardTecnicoWeb(@PathVariable Integer idTecnico) {
+        List<ExpedienteWebDTO> dashboard = solicitudService.obtenerDashboardWebTecnico(idTecnico);
+        return ResponseEntity.ok(dashboard);
+    }*/
+
     //Metodo para obtener la lista de DTO a la app movil
     @GetMapping("/movil")
     public ResponseEntity<List<ExpedienteMovilDTO>> getSolicitudesMovil() {

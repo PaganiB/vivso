@@ -12,6 +12,7 @@ public interface ISolicitudService {
     void deleteSolicitud(Integer id);
 
     SolicitudDTO findSolicitud(Integer id);
+    //List<ExpedienteWebDTO> obtenerDashboardWebTecnico(Integer idTecnico);
 
     // Buscar por estado (Pendiente, Aprobada, Rechazada)
     List<SolicitudDTO> buscarPorEstado(EstadoSolicitud estado);

@@ -12,4 +12,5 @@ import java.util.List;
 public interface ISolicitudRepository extends JpaRepository<Solicitud, Integer> {
     List<Solicitud> findByEstado(EstadoSolicitud estado);
     List<Solicitud> findByCuitOrg_Cuit(String cuit);
+    List<Solicitud> findByTecnicoAsignado_Id(Integer idTecnico);
 }

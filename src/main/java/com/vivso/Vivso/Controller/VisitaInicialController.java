@@ -1,8 +1,10 @@
 package com.vivso.Vivso.Controller;
 import com.vivso.Vivso.DTO.VisitaInicialDTO;
 import com.vivso.Vivso.Service.IVisitaInicialService;
+import org.springframework.core.io.Resource;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -10,7 +12,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import tools.jackson.databind.ObjectMapper;
-
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 @RestController
@@ -74,4 +77,5 @@ public class VisitaInicialController {
     public ResponseEntity<List<VisitaInicialDTO>> findVisitasTecnico(@PathVariable Integer idVisita){
         return ResponseEntity.ok(visitaService.FindVisitaPorTecnico(idVisita));
     }
+
 }

@@ -28,6 +28,7 @@ public class AuthService {
     @Autowired
     private IUsuarioService usuarioService;
 
+    @Transactional
     public Map<String, String> iniciarSesion(UsuarioLoginDTO loginDTO) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword())

@@ -40,6 +40,12 @@ public class VisitaInicial {
     @Column(name = "longitud")
     private Double lng;
 
+    @Column(name = "localidad", length = 100)
+    private String localidad;
+
+    @Column(name = "departamento", length = 100)
+    private String departamento;
+
     @Column(columnDefinition = "TEXT")
     private String observaciones; // Para detallar riesgos o situaciones familiares
 

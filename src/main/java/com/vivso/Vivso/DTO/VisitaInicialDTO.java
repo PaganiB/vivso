@@ -41,6 +41,9 @@ public class VisitaInicialDTO {
     @Size(max = 150)
     private String observaciones;
 
+    private String localidad;
+    private String departamento;
+
     @NotNull(message = "Se debe indicar la cantidad de habitantes")
     @Positive(message = "La cantidad de habitantes no puede ser negativa")
     private Integer cantHabitantesReal;
