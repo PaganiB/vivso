@@ -1,6 +1,6 @@
 package com.vivso.Vivso.DTO;
 
-import com.vivso.Vivso.Model.ClasificacionVivienda;
+import com.vivso.Vivso.Model.ClasificacionPreeliminar;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
@@ -26,7 +26,7 @@ public class VisitaInicialDTO {
     private Integer idTecnico;
 
     @NotNull(message = "Se debe otorgar una clasificacion a la vivienda")
-    private ClasificacionVivienda clasificacionPreliminar;
+    private ClasificacionPreeliminar clasificacionPreliminar;
 
     @NotNull(message = "la Latitud es obligatoria")
     @DecimalMin(value = "-90.0", message = "La latitud mínima es -90")

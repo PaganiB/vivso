@@ -8,11 +8,13 @@ import java.util.List;
 
 public interface ISolicitudService {
     List<SolicitudDTO> getSolicitudes();
-    List<ExpedienteMovilDTO> getSolicitudesParaMovil();
     void deleteSolicitud(Integer id);
 
     SolicitudDTO findSolicitud(Integer id);
-    //List<ExpedienteWebDTO> obtenerDashboardWebTecnico(Integer idTecnico);
+
+    //Buscar por tecnico
+    List<ExpedienteWebDTO> obtenerDashboardWebTecnico();
+    List<ExpedienteMovilDTO> getSolicitudesParaMovil();
 
     // Buscar por estado (Pendiente, Aprobada, Rechazada)
     List<SolicitudDTO> buscarPorEstado(EstadoSolicitud estado);
@@ -26,5 +28,6 @@ public interface ISolicitudService {
     SolicitudDTO registrarSolicitudFamilia(RegistroFamiliaDTO dto, MultiValueMap<String, MultipartFile> mapaArchivos);
     SolicitudDTO aprobarSolicitudVivienda(Integer idSolicitud);
     void rechazarSolicitudVivienda(Integer idSolicitud, String motivo);
-    SolicitudDTO semiAprobarSolicitud(Integer idSolicitud, String motivo);
+    SolicitudDTO semiAprobarSolicitud(Integer idSolicitud, List<String> camposObservados, String motivo);
+    void confirmarCorreccion(Integer idSolicitud);
 }

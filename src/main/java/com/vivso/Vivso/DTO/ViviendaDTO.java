@@ -1,8 +1,6 @@
 package com.vivso.Vivso.DTO;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.vivso.Vivso.Model.ClasificacionVivienda;
-import com.vivso.Vivso.Model.EstadoVivienda;
 import com.vivso.Vivso.Model.TipoVivienda;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -37,11 +35,6 @@ public class ViviendaDTO {
     @JsonFormat(pattern = "dd-MM-yyyy")
     private LocalDate fechaFin;
 
-    @NotNull(message = "El estado de la vivienda es obligatorio")
-    private EstadoVivienda estado;
-
-    private String observacion;
-
     @NotNull(message = "Debe ingresar la familia asociada")
     private Integer idFamilia;
 
@@ -60,12 +53,11 @@ public class ViviendaDTO {
     @Min(0) @Max(100)
     private Integer avanceObra;
 
-    @NotNull(message = "La clasificación es obligatoria")
-    private ClasificacionVivienda clasificacion;
-
     @NotNull(message = "El tipo de vivienda es obligatorio")
     private TipoVivienda tipoVivienda;
 
     @Min(0)
     private Integer cantDormitorios;
+
+    private Integer solicitud;
 }

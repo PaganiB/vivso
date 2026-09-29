@@ -70,28 +70,29 @@ public interface VivsoMapper {
     // ======================== VIVIENDA ========================
 
     @Mapping(source = "familia.idFamilia",           target = "idFamilia")
+    @Mapping(source = "solicitud.idSolicitud",       target = "solicitud")
     @Mapping(source = "familia.nombreRepresentante", target = "representante", defaultValue = "Sin asignar")
     ViviendaDTO toDTO(Vivienda vivienda);
 
     @Mapping(target = "familia", ignore = true)
+    @Mapping(target = "solicitud", ignore = true)
     Vivienda toEntity(ViviendaDTO dto);
 
     @Mapping(target = "idVivienda", ignore = true)  // PK
     @Mapping(target = "familia",    ignore = true)
+    @Mapping(target = "solicitud",  ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateFromDto(ViviendaDTO dto, @MappingTarget Vivienda vivienda);
 
 
-    // ======================== SOLICITUD ========================
+// ======================== SOLICITUD ========================
 
     @Mapping(source = "cuitOrg.cuit",               target = "cuitOrg")
     @Mapping(source = "familiaBeneficiaria.idFamilia", target = "idFamilia")
-    @Mapping(source = "vivienda.idVivienda",        target = "idVivienda")
     SolicitudDTO toDTO(Solicitud solicitud);
 
     @Mapping(target = "cuitOrg",             ignore = true)
     @Mapping(target = "familiaBeneficiaria", ignore = true)
-    @Mapping(target = "vivienda",            ignore = true)
     @Mapping(target = "fechaActivacion",     ignore = true)
     Solicitud toEntity(SolicitudDTO dto);
 

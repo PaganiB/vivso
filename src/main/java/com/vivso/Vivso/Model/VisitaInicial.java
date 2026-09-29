@@ -32,7 +32,7 @@ public class VisitaInicial {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "clasificacion_preliminar")
-    private ClasificacionVivienda clasificacionPreliminar; // 1A, 2A, Derrumbe, etc.
+    private ClasificacionPreeliminar clasificacionPreliminar; // 1A, 2A, Derrumbe, etc.
 
     // Campos GPS separados
     @Column(name = "latitud")

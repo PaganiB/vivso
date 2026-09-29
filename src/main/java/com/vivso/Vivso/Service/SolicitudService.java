@@ -9,6 +9,7 @@ import com.vivso.Vivso.Repository.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.MultiValueMap;
@@ -30,6 +31,8 @@ public class SolicitudService implements ISolicitudService {
     @Autowired private IDocumentoService documentoService;
     @Autowired private IVisitaInicialRepository visitaInicialRepository;
     @Autowired private VivsoMapper mapper;
+    @Autowired private IIntegranteRepository integranteRepo;
+    @Autowired private IUsuarioRepository usuarioRepo;
 
     @Override
     @Transactional
@@ -96,17 +99,22 @@ public class SolicitudService implements ISolicitudService {
         if (s.getNumExp() == null || s.getNumExp().isBlank())
             throw new ReglaDeNegocioException("La solicitud no tiene número de expediente asignado. Debe cargarlo antes de aprobar.", HttpStatus.CONFLICT);
 
-        Vivienda vivienda = Vivienda.builder()
-                .familia(s.getFamiliaBeneficiaria())
-                .estado(EstadoVivienda.INICIADA)
-                .build();
-        vivienda = viviendaRepo.save(vivienda);
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Usuario revisor = usuarioRepo.findByEmail(email)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario autenticado no encontrado"));
 
         s.setEstado(EstadoSolicitud.Aprobada);
-        s.setVivienda(vivienda);
         s.setFechaActivacion(LocalDate.now());
+        s.setRevisor(revisor);
+        solicitudRepo.save(s);
 
-        return mapper.toDTO(solicitudRepo.save(s));
+        Vivienda vivienda = Vivienda.builder()
+                .familia(s.getFamiliaBeneficiaria())
+                .solicitud(s)
+                .build();
+        viviendaRepo.save(vivienda);
+
+        return mapper.toDTO(s);
     }
 
     @Override
@@ -118,14 +126,19 @@ public class SolicitudService implements ISolicitudService {
         if (s.getEstado() == EstadoSolicitud.Aprobada)
             throw new ReglaDeNegocioException("No se puede rechazar una solicitud ya aprobada", HttpStatus.CONFLICT);
 
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Usuario revisor = usuarioRepo.findByEmail(email)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario autenticado no encontrado"));
+
         s.setEstado(EstadoSolicitud.Rechazada);
         s.setObservacion(motivo);
+        s.setRevisor(revisor);
         solicitudRepo.save(s);
     }
 
     @Override
     @Transactional
-    public SolicitudDTO semiAprobarSolicitud(Integer idSolicitud, String motivo) {
+    public SolicitudDTO semiAprobarSolicitud(Integer idSolicitud, List<String> camposObservados, String motivo) {
         Solicitud s = solicitudRepo.findById(idSolicitud)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Solicitud no encontrada: " + idSolicitud));
 
@@ -134,9 +147,51 @@ public class SolicitudService implements ISolicitudService {
         if (s.getEstado() == EstadoSolicitud.Rechazada)
             throw new ReglaDeNegocioException("No se puede modificar una solicitud ya rechazada", HttpStatus.CONFLICT);
 
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Usuario revisor = usuarioRepo.findByEmail(email)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario autenticado no encontrado"));
+
         s.setEstado(EstadoSolicitud.SemiAprobada);
         s.setObservacion(motivo);
+        s.setCamposObservados(String.join(",", camposObservados));
+        s.setRevisor(revisor);
         return mapper.toDTO(solicitudRepo.save(s));
+    }
+
+    @Override
+    @Transactional
+    public void confirmarCorreccion(Integer idSolicitud) {
+        Solicitud s = solicitudRepo.findById(idSolicitud)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Solicitud no encontrada: " + idSolicitud));
+
+        if (s.getEstado() != EstadoSolicitud.SemiAprobada)
+            throw new ReglaDeNegocioException("Esta solicitud no está en observaciones", HttpStatus.CONFLICT);
+
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Usuario usuarioAutenticado = usuarioRepo.findByEmail(email)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario autenticado no encontrado"));
+
+        Integrante integrante = integranteRepo.findByUsuario(usuarioAutenticado)
+                .orElseThrow(() -> new ReglaDeNegocioException("El usuario no tiene un integrante asociado", HttpStatus.FORBIDDEN));
+
+        if (!integrante.getOrganizacion().getCuit().equals(s.getCuitOrg().getCuit()))
+            throw new ReglaDeNegocioException("No tenés permiso para editar esta solicitud", HttpStatus.FORBIDDEN);
+
+        boolean quedanDocumentosSinCorregir = documentoService.listarPorFamilia(s.getFamiliaBeneficiaria().getIdFamilia())
+                .stream()
+                .anyMatch(d -> d.getEstado() == EstadoDocumento.A_CORREGIR);
+
+        if (quedanDocumentosSinCorregir)
+            throw new ReglaDeNegocioException(
+                    "Todavía hay documentos marcados para corregir sin reemplazar. Reemplazalos antes de enviar.",
+                    HttpStatus.CONFLICT);
+
+        s.setEstado(EstadoSolicitud.Pendiente);
+        s.setObservacion(null);
+        s.setCamposObservados(null);
+        solicitudRepo.save(s);
+
+        log.info("Solicitud {} confirmada por el solicitante, vuelve a estado Pendiente", idSolicitud);
     }
 
     @Override
@@ -145,15 +200,24 @@ public class SolicitudService implements ISolicitudService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ExpedienteMovilDTO> getSolicitudesParaMovil() {
-        // 1. Buscamos todas las solicitudes
-        List<Solicitud> solicitudes = solicitudRepo.findAll();
 
-        // 2. Transformamos y FILTRAMOS
+        // 1. Identidad segura desde el Token
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Usuario tecnico = usuarioRepo.findByEmail(email)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Técnico no encontrado"));
+
+        Integer idSeguro = tecnico.getId();
+
+        // 2. LA LÍNEA QUE FALTA: Buscar en la base de datos usando el ID seguro
+        List<Solicitud> solicitudes = solicitudRepo.buscarPorTecnicoAsignado(idSeguro);
+
+        // 3. Ahora sí, el return con el stream ya tiene una lista de dónde leer
         return solicitudes.stream()
-                .filter(solicitud -> solicitud.getEstado() == EstadoSolicitud.Pendiente)
+                // Filtramos para que solo lleguen al celular las Pendientes (relevamiento) o Aprobadas (obra)
+                .filter(s -> s.getEstado() == EstadoSolicitud.Pendiente || s.getEstado() == EstadoSolicitud.Aprobada)
                 .map(solicitud -> {
-
                     String nombreFamilia = (solicitud.getFamiliaBeneficiaria() != null)
                             ? solicitud.getFamiliaBeneficiaria().getNombreRepresentante()
                             : "Sin asignar";
@@ -167,63 +231,76 @@ public class SolicitudService implements ISolicitudService {
                             .numExp(solicitud.getNumExp())
                             .nombreRepresentanteFamilia(nombreFamilia)
                             .nombreOrganizacion(nombreOng)
+                            .estado(solicitud.getEstado()) // El frontend móvil usará esto para habilitar la Visita de Obra
                             .build();
 
                 }).collect(Collectors.toList());
     }
 
-    /*@Override
-    public List<ExpedienteWebDTO> obtenerDashboardWebTecnico(Integer idTecnico) {
+    @Override
+    @Transactional(readOnly = true)
+    public List<ExpedienteWebDTO> obtenerDashboardWebTecnico() {
 
-        List<Solicitud> asignadas = solicitudRepo.findByTecnicoAsignado_Id(idTecnico);
+        // 1. Identidad segura desde el Token
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Usuario tecnico = usuarioRepo.findByEmail(email)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Técnico no encontrado"));
 
-        return asignadas.stream().map(s -> {
+        Integer idSeguro = tecnico.getId();
+
+        // 2. LA LÍNEA QUE FALTA: Buscar en la base de datos usando el ID seguro
+        List<Solicitud> solicitudes = solicitudRepo.buscarPorTecnicoAsignado(idSeguro);
+
+        return solicitudes.stream().map(s -> {
             ExpedienteWebDTO dto = new ExpedienteWebDTO();
             dto.setIdSolicitud(s.getIdSolicitud());
             dto.setNumExp(s.getNumExp());
-            dto.setBeneficiario(s.getFamiliaBeneficiaria() != null ? s.getFamiliaBeneficiaria().getNombreRepresentante() : "No registrado");
+            dto.setEstadoSolicitud(s.getEstado()); // Clave para "desbloquear" la vista en React
 
-            // 1. EVALUAR FASE DE OBRA (Ya tiene una Vivienda vinculada)
-            if (s.getVivienda() != null) {
-                Vivienda v = s.getVivienda();
-
-                dto.setEstadoRelevamiento("En Construcción");
-                dto.setUltimaVisita("Fase de obra");
-                dto.setProgreso(v.getAvanceObra() != null ? v.getAvanceObra() : 0); // Avance directo de la vivienda
-
-
-                // 2. EVALUAR FASE INICIAL (Traemos TODAS las visitas de esta solicitud)
+            // Datos del beneficiario
+            if (s.getFamiliaBeneficiaria() != null) {
+                dto.setBeneficiario(s.getFamiliaBeneficiaria().getNombreRepresentante());
+                dto.setDni(s.getFamiliaBeneficiaria().getDniRepresentante() != null ? s.getFamiliaBeneficiaria().getDniRepresentante() : "S/D");
             } else {
+                dto.setBeneficiario("Sin asignar");
+                dto.setDni("S/D");
+            }
+
+            // 1. FASE DE OBRA (Solicitud Aprobada)
+            if (s.getEstado() == EstadoSolicitud.Aprobada) {
+                Optional<Vivienda> viviendaOpt = viviendaRepo.findBySolicitud_IdSolicitud(s.getIdSolicitud());
+
+                if (viviendaOpt.isPresent()) {
+                    Vivienda v = viviendaOpt.get();
+                    dto.setEstadoRelevamiento("En Construcción");
+                    dto.setUltimaVisita(v.getFechaInic() != null ? v.getFechaInic().toString() : "Fase de obra");
+
+                    // Acá le pasamos el porcentaje exacto que el técnico marcó en el celular
+                    dto.setProgreso(v.getAvanceObra() != null ? v.getAvanceObra() : 0);
+                } else {
+                    dto.setEstadoRelevamiento("Aprobada - Esperando inicio");
+                    dto.setUltimaVisita("-");
+                    dto.setProgreso(0);
+                }
+            }
+            // 2. FASE INICIAL (Solicitud Pendiente)
+            else {
                 List<VisitaInicial> historialVisitas = visitaInicialRepository.findBySolicitud_IdSolicitudOrderByFechaVisitaDesc(s.getIdSolicitud());
 
                 if (!historialVisitas.isEmpty()) {
                     dto.setEstadoRelevamiento("Relevamiento en proceso");
                     dto.setUltimaVisita(historialVisitas.get(0).getFechaVisita().toLocalDate().toString());
-
-                    // Evaluamos el esfuerzo COMBINADO de todas las visitas para la barra de progreso
-                    boolean tieneCoords = historialVisitas.stream().anyMatch(v -> v.getLat() != null && v.getLng() != null);
-                    boolean tieneObs = historialVisitas.stream().anyMatch(v -> v.getObservaciones() != null && !v.getObservaciones().trim().isEmpty());
-                    boolean tieneClasif = historialVisitas.stream().anyMatch(v -> v.getClasificacionPreliminar() != null);
-                    boolean tieneFotos = historialVisitas.stream().anyMatch(v -> v.getUrlsFotos() != null && !v.getUrlsFotos().isEmpty());
-
-                    int progreso = 0;
-                    if (tieneCoords) progreso += 25;
-                    if (tieneObs) progreso += 25;
-                    if (tieneClasif) progreso += 25;
-                    if (tieneFotos) progreso += 25;
-                    dto.setProgreso(progreso);
-
                 } else {
-                    // 3. SIN NINGÚN RELEVAMIENTO
                     dto.setEstadoRelevamiento("Sin relevamiento");
                     dto.setUltimaVisita("Sin relevamiento");
-                    dto.setProgreso(0);
                 }
+                // En esta fase mandamos 0, total React oculta la barra porque el estado es Pendiente
+                dto.setProgreso(0);
             }
 
             return dto;
         }).collect(Collectors.toList());
-    }*/
+    }
 
     @Override
     public SolicitudDTO findSolicitud(Integer id) {

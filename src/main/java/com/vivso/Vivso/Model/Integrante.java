@@ -46,8 +46,8 @@ public class Integrante {
     @Column(name = "fecha_alta_cargo")
     private LocalDate fechaAltaCargo;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_usuario")
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_usuario", unique = true)
     private Usuario usuario;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

@@ -45,6 +45,7 @@ public class HistorialService {
                         .fecha(v.getFechaVisita() != null ? v.getFechaVisita().format(formatter) : "")
                         .clasificacion(v.getClasificacionPreliminar() != null ? v.getClasificacionPreliminar().name() : "-")
                         .estado("sincronizada")
+                        .estadoSolicitud(v.getSolicitud() != null && v.getSolicitud().getEstado() != null ? v.getSolicitud().getEstado().name() : "Pendiente")
                         .avanceActual(0)
                         .cantHabitantesReal(v.getCantHabitantesReal())
                         .tienePrioridadSocial(v.getTienePrioridadSocial())

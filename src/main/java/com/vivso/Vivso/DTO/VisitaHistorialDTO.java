@@ -16,7 +16,8 @@ public class VisitaHistorialDTO {
     private String departamento;
     private String fecha;            // Formateada como "DD/MM/YYYY"
     private String clasificacion;    // Ej: "2A" (para inicial) o "-" (para obra)
-    private String estado;           // "sincronizada" (vienen de la BD)
+    private String estado;           // "sincronizada"
+    private String estadoSolicitud;
     private Integer avanceActual;    // 0% para inicial, o el % de AFO para obra
 
     // --- CAMPOS DETALLADOS PARA LA VISTA DE DETALLE ---

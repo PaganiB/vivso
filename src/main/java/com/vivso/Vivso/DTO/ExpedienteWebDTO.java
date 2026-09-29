@@ -1,5 +1,6 @@
 package com.vivso.Vivso.DTO;
 
+import com.vivso.Vivso.Model.EstadoSolicitud;
 import lombok.*;
 
 @Getter @Setter
@@ -9,11 +10,14 @@ import lombok.*;
 public class ExpedienteWebDTO {
     private Integer idSolicitud;
     private String numExp;
+    private String estadoRelevamiento;
     private String beneficiario;
     private String dni;
 
-    // Datos dinámicos para las tarjetas de la web
-    private String estadoRelevamiento; // "Sin relevamiento" o "Relevamiento en proceso"
-    private String ultimaVisita;       // Fecha o "Sin relevamiento"
-    private Integer progreso;          // 0 a 100
+    // Este valor ahora vendrá estrictamente del celular (0 a 100)
+    private Integer progreso;
+    private String ultimaVisita;
+
+    // El frontend lee este estado para saber si dibuja la barra (Aprobada) o no (Pendiente)
+    private EstadoSolicitud estadoSolicitud;
 }
