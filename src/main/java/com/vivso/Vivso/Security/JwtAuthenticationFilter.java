@@ -30,18 +30,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // 1. Buscamos el token en la mochila de la petición (el header 'Authorization')
         final String authHeader = request.getHeader("Authorization");
-        final String jwt;
+        String jwt = null;
         final String username;
 
-        // 2. Si no trae token, o el token no arranca con "Bearer ", lo dejamos pasar.
-        // (Spring Security se encargará de rebotarlo más adelante si la ruta era privada).
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        // 2. Extraemos el JWT ya sea del Header o del parámetro de la URL
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            // Le sacamos la palabra "Bearer " (que tiene 7 caracteres) para quedarnos con el token puro
+            jwt = authHeader.substring(7);
+        } else if (request.getParameter("token") != null) {
+            // Si viene desde el componente Image de React Native en la URL (?token=...)
+            jwt = request.getParameter("token");
+        }
+
+        // 3. Si no encontramos el token por ningún lado, lo dejamos pasar sin autenticar.
+        if (jwt == null) {
             filterChain.doFilter(request, response);
             return;
         }
-
-        // 3. Le sacamos la palabra "Bearer " (que tiene 7 caracteres) para quedarnos con el token puro
-        jwt = authHeader.substring(7);
 
         // 4. Extraemos el nombre de usuario de adentro del token
         username = jwtUtils.extraerUsername(jwt);

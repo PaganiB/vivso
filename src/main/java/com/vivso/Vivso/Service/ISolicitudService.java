@@ -8,10 +8,13 @@ import java.util.List;
 
 public interface ISolicitudService {
     List<SolicitudDTO> getSolicitudes();
-    List<ExpedienteMovilDTO> getSolicitudesParaMovil();
     void deleteSolicitud(Integer id);
 
     SolicitudDTO findSolicitud(Integer id);
+
+    //Buscar por tecnico
+    List<ExpedienteWebDTO> obtenerDashboardWebTecnico();
+    List<ExpedienteMovilDTO> getSolicitudesParaMovil();
 
     // Buscar por estado (Pendiente, Aprobada, Rechazada)
     List<SolicitudDTO> buscarPorEstado(EstadoSolicitud estado);

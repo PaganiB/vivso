@@ -32,13 +32,19 @@ public class VisitaInicial {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "clasificacion_preliminar")
-    private ClasificacionVivienda clasificacionPreliminar; // 1A, 2A, Derrumbe, etc.
+    private ClasificacionPreeliminar clasificacionPreliminar; // 1A, 2A, Derrumbe, etc.
 
     // Campos GPS separados
     @Column(name = "latitud")
     private Double lat;
     @Column(name = "longitud")
     private Double lng;
+
+    @Column(name = "localidad", length = 100)
+    private String localidad;
+
+    @Column(name = "departamento", length = 100)
+    private String departamento;
 
     @Column(columnDefinition = "TEXT")
     private String observaciones; // Para detallar riesgos o situaciones familiares

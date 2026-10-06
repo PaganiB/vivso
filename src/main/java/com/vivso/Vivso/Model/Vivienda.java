@@ -45,9 +45,6 @@ public class Vivienda {
     @Column(name = "longitud")
     private Double lng;
 
-    @Column(name = "observacion", length = 200)
-    private String observacion;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_familia", nullable = false)
     private Familia familia;
@@ -59,9 +56,6 @@ public class Vivienda {
     @Column(name = "avance_obra")
     @Builder.Default
     private Integer avanceObra = 0;
-
-    @Enumerated(EnumType.STRING)
-    private ClasificacionVivienda clasificacion;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "tipoVivienda")

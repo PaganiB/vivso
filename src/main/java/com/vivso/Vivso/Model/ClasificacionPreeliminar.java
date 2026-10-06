@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 
 @Getter
-public enum ClasificacionVivienda {
+public enum ClasificacionPreeliminar {
     TIPO_1A("1a"), //Estandar
     TIPO_2A("2a"), //Economica
     TIPO_2B("2b"), // Aparece en el reporte del VISOC
@@ -22,7 +22,7 @@ public enum ClasificacionVivienda {
 
     private final String valor;
 
-    ClasificacionVivienda(String valor) {
+    ClasificacionPreeliminar(String valor) {
         this.valor = valor;
     }
 
@@ -32,10 +32,10 @@ public enum ClasificacionVivienda {
     }
 
     @JsonCreator // Para que acepte "1a", "1A" o "tipo_1a" desde el frontend
-    public static ClasificacionVivienda fromString(String value) {
+    public static ClasificacionPreeliminar fromString(String value) {
         if (value == null) return null;
 
-        for (ClasificacionVivienda clasif : ClasificacionVivienda.values()) {
+        for (ClasificacionPreeliminar clasif : ClasificacionPreeliminar.values()) {
             if (clasif.valor.equalsIgnoreCase(value) || clasif.name().equalsIgnoreCase(value)) {
                 return clasif;
             }

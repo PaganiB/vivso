@@ -50,6 +50,10 @@ public class Solicitud {
     @JoinColumn(name = "id_revisor")
     private Usuario revisor;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_tecnico_asignado")
+    private Usuario tecnicoAsignado;
+
     @PrePersist
     public void prePersist() {
         if (this.estado == null) {

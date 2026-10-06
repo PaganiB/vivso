@@ -55,5 +55,4 @@ public class IntegranteDTO {
 
     private String nombreOrganizacion; // Solo para lectura en el front
 
-
 }

@@ -21,4 +21,6 @@ public interface IIntegranteRepository extends JpaRepository<Integrante, Integer
             "AND i.activo = true " +
             "AND i.organizacion.cuit != :cuitOrg")
     boolean existsByDniAndActivoTrueAndOrganizacion_CuitNot(String dni, String cuitOrg);
+
+    Optional<Integrante> findByUsuario_Email(String email);
 }

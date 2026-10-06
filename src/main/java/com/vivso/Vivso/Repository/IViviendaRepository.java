@@ -23,4 +23,7 @@ public interface IViviendaRepository extends JpaRepository<Vivienda, Integer> {
     @Query("SELECT v FROM Vivienda v WHERE YEAR(v.fechaFin) = :anio")
     List<Vivienda> findByAnioFin(@Param("anio") int anio);
 
+    // Busca la vivienda que le pertenece a una solicitud específica
+    Optional<Vivienda> findBySolicitud_IdSolicitud(Integer idSolicitud);
+
 }

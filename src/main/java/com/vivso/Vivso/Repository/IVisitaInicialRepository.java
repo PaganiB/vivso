@@ -10,5 +10,5 @@ import java.util.List;
 public interface IVisitaInicialRepository extends JpaRepository<VisitaInicial,Integer> {
 
     List<VisitaInicial> findByTecnico_Id(Integer idTecnico);
-
+    List<VisitaInicial> findBySolicitud_IdSolicitudOrderByFechaVisitaDesc(Integer idSolicitud);
 }

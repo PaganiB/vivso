@@ -16,6 +16,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -28,6 +29,7 @@ public class SolicitudService implements ISolicitudService {
     @Autowired private IFamiliaRepository familiaRepo;
     @Autowired private IFamiliarRepository familiarRepo;
     @Autowired private IDocumentoService documentoService;
+    @Autowired private IVisitaInicialRepository visitaInicialRepository;
     @Autowired private VivsoMapper mapper;
     @Autowired private IIntegranteRepository integranteRepo;
     @Autowired private IUsuarioRepository usuarioRepo;
@@ -198,15 +200,24 @@ public class SolicitudService implements ISolicitudService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ExpedienteMovilDTO> getSolicitudesParaMovil() {
-        // 1. Buscamos todas las solicitudes
-        List<Solicitud> solicitudes = solicitudRepo.findAll();
 
-        // 2. Transformamos y FILTRAMOS
+        // 1. Identidad segura desde el Token
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Usuario tecnico = usuarioRepo.findByEmail(email)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Técnico no encontrado"));
+
+        Integer idSeguro = tecnico.getId();
+
+        // 2. LA LÍNEA QUE FALTA: Buscar en la base de datos usando el ID seguro
+        List<Solicitud> solicitudes = solicitudRepo.buscarPorTecnicoAsignado(idSeguro);
+
+        // 3. Ahora sí, el return con el stream ya tiene una lista de dónde leer
         return solicitudes.stream()
-                .filter(solicitud -> solicitud.getEstado() == EstadoSolicitud.Pendiente)
+                // Filtramos para que solo lleguen al celular las Pendientes (relevamiento) o Aprobadas (obra)
+                .filter(s -> s.getEstado() == EstadoSolicitud.Pendiente || s.getEstado() == EstadoSolicitud.Aprobada)
                 .map(solicitud -> {
-
                     String nombreFamilia = (solicitud.getFamiliaBeneficiaria() != null)
                             ? solicitud.getFamiliaBeneficiaria().getNombreRepresentante()
                             : "Sin asignar";
@@ -220,9 +231,75 @@ public class SolicitudService implements ISolicitudService {
                             .numExp(solicitud.getNumExp())
                             .nombreRepresentanteFamilia(nombreFamilia)
                             .nombreOrganizacion(nombreOng)
+                            .estado(solicitud.getEstado()) // El frontend móvil usará esto para habilitar la Visita de Obra
                             .build();
 
                 }).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ExpedienteWebDTO> obtenerDashboardWebTecnico() {
+
+        // 1. Identidad segura desde el Token
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Usuario tecnico = usuarioRepo.findByEmail(email)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Técnico no encontrado"));
+
+        Integer idSeguro = tecnico.getId();
+
+        // 2. LA LÍNEA QUE FALTA: Buscar en la base de datos usando el ID seguro
+        List<Solicitud> solicitudes = solicitudRepo.buscarPorTecnicoAsignado(idSeguro);
+
+        return solicitudes.stream().map(s -> {
+            ExpedienteWebDTO dto = new ExpedienteWebDTO();
+            dto.setIdSolicitud(s.getIdSolicitud());
+            dto.setNumExp(s.getNumExp());
+            dto.setEstadoSolicitud(s.getEstado()); // Clave para "desbloquear" la vista en React
+
+            // Datos del beneficiario
+            if (s.getFamiliaBeneficiaria() != null) {
+                dto.setBeneficiario(s.getFamiliaBeneficiaria().getNombreRepresentante());
+                dto.setDni(s.getFamiliaBeneficiaria().getDniRepresentante() != null ? s.getFamiliaBeneficiaria().getDniRepresentante() : "S/D");
+            } else {
+                dto.setBeneficiario("Sin asignar");
+                dto.setDni("S/D");
+            }
+
+            // 1. FASE DE OBRA (Solicitud Aprobada)
+            if (s.getEstado() == EstadoSolicitud.Aprobada) {
+                Optional<Vivienda> viviendaOpt = viviendaRepo.findBySolicitud_IdSolicitud(s.getIdSolicitud());
+
+                if (viviendaOpt.isPresent()) {
+                    Vivienda v = viviendaOpt.get();
+                    dto.setEstadoRelevamiento("En Construcción");
+                    dto.setUltimaVisita(v.getFechaInic() != null ? v.getFechaInic().toString() : "Fase de obra");
+
+                    // Acá le pasamos el porcentaje exacto que el técnico marcó en el celular
+                    dto.setProgreso(v.getAvanceObra() != null ? v.getAvanceObra() : 0);
+                } else {
+                    dto.setEstadoRelevamiento("Aprobada - Esperando inicio");
+                    dto.setUltimaVisita("-");
+                    dto.setProgreso(0);
+                }
+            }
+            // 2. FASE INICIAL (Solicitud Pendiente)
+            else {
+                List<VisitaInicial> historialVisitas = visitaInicialRepository.findBySolicitud_IdSolicitudOrderByFechaVisitaDesc(s.getIdSolicitud());
+
+                if (!historialVisitas.isEmpty()) {
+                    dto.setEstadoRelevamiento("Relevamiento en proceso");
+                    dto.setUltimaVisita(historialVisitas.get(0).getFechaVisita().toLocalDate().toString());
+                } else {
+                    dto.setEstadoRelevamiento("Sin relevamiento");
+                    dto.setUltimaVisita("Sin relevamiento");
+                }
+                // En esta fase mandamos 0, total React oculta la barra porque el estado es Pendiente
+                dto.setProgreso(0);
+            }
+
+            return dto;
+        }).collect(Collectors.toList());
     }
 
     @Override

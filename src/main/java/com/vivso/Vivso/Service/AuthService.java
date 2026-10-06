@@ -28,6 +28,7 @@ public class AuthService {
     @Autowired
     private IUsuarioService usuarioService;
 
+    @Transactional(readOnly = true)
     public Map<String, String> iniciarSesion(UsuarioLoginDTO loginDTO) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword())
@@ -43,6 +44,7 @@ public class AuthService {
         respuesta.put("token", tokenGenerado);
         respuesta.put("mensaje", "Login exitoso");
         respuesta.put("rol", usuario.getRol());
+        respuesta.put("id", String.valueOf(usuario.getId()));
 
         return respuesta;
     }
