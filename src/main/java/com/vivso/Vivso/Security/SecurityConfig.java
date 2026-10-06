@@ -66,16 +66,18 @@ public class SecurityConfig implements WebMvcConfigurer {
                         .requestMatchers(HttpMethod.GET, "/solicitud-organizacion/token/**").permitAll()
                         .requestMatchers(HttpMethod.PATCH, "/solicitud-organizacion/editar-token/**").permitAll()
 
-                        // ── INTEGRANTE (solo accede a sus cosas) ─────────────────────────────
+                        // ── INTEGRANTE (sus datos y registro de etapas) ─────────────────────────────
                         .requestMatchers(HttpMethod.POST, "/solicitud/familia").hasAnyRole("ADMIN", "INTEGRANTE")
                         .requestMatchers(HttpMethod.PUT, "/solicitud/*/confirmar-correccion").hasAnyRole("ADMIN", "INTEGRANTE")
                         .requestMatchers(HttpMethod.GET, "/solicitud/organizacion/**").hasAnyRole("ADMIN", "OPERADOR", "INTEGRANTE")
                         .requestMatchers(HttpMethod.GET, "/documento/organizacion/**").hasAnyRole("ADMIN", "OPERADOR", "INTEGRANTE")
                         .requestMatchers(HttpMethod.PATCH, "/documento/*/reemplazar").hasAnyRole("ADMIN", "INTEGRANTE")
                         .requestMatchers(HttpMethod.POST, "/documento/**").hasAnyRole("ADMIN", "OPERADOR", "INTEGRANTE")
+                        .requestMatchers(HttpMethod.POST, "/etapa/*/enviar").hasRole("INTEGRANTE")
 
                         // ── OPERADOR (bandeja de entrada, aprueba/rechaza) ────────────────────
                         .requestMatchers(HttpMethod.PUT, "/solicitud/*/aprobar").hasAnyRole("ADMIN", "OPERADOR")
+                        .requestMatchers(HttpMethod.GET, "/etapa/solicitud/**").hasAnyRole("INTEGRANTE", "TECNICO", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/solicitud/*/rechazar").hasAnyRole("ADMIN", "OPERADOR")
                         .requestMatchers(HttpMethod.POST, "/solicitud/**").hasAnyRole("ADMIN", "OPERADOR")
                         .requestMatchers(HttpMethod.PATCH, "/documento/*/marcar-corregir").hasAnyRole("ADMIN", "OPERADOR")
@@ -83,10 +85,12 @@ public class SecurityConfig implements WebMvcConfigurer {
                         .requestMatchers(HttpMethod.POST, "/solicitud-organizacion/**").hasAnyRole("ADMIN", "OPERADOR")
                         .requestMatchers(HttpMethod.PUT, "/solicitud-organizacion/**").hasAnyRole("ADMIN", "OPERADOR")
 
-                        // ── TECNICO (visitas) ─────────────────────────────────────────────────
+                        // ── TECNICO (visita inicial y aprobacion de etapas) ─────────────────────────────────────────────────
                         .requestMatchers(HttpMethod.GET, "/archivos/**").hasAnyRole("ADMIN", "TECNICO", "ARQUITECTO")
                         .requestMatchers(HttpMethod.POST, "/visita-inicial/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO")
                         .requestMatchers(HttpMethod.POST, "/visita-inicial/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO")
+                        .requestMatchers(HttpMethod.POST, "/etapa/solicitud/*/iniciar").hasRole("TECNICO")
+                        .requestMatchers(HttpMethod.POST, "/etapa/*/aprobar", "/etapa/*/observar", "/etapa/*/prorroga").hasRole("TECNICO")
                         .requestMatchers(HttpMethod.PUT, "/visita-inicial/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO")
                         .requestMatchers(HttpMethod.GET, "/visita-inicial/**", "/visita-obra/**", "/historial-visitas").hasAnyRole("ADMIN", "TECNICO", "ARQUITECTO")
 
