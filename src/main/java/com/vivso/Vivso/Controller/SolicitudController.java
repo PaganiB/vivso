@@ -82,6 +82,12 @@ public class SolicitudController {
         return ResponseEntity.ok(solicitudService.getSolicitudesParaMovil());
     }
 
+    // Endpoint exclusivo para el rol INTEGRANTE en la app móvil
+    @GetMapping("/mis-obras")
+    public ResponseEntity<List<ExpedienteMovilDTO>> getObrasParaOngMovil() {
+        return ResponseEntity.ok(solicitudService.getObrasAsignadasParaOng());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<SolicitudDTO> findSolicitud(@PathVariable Integer id) {
         return ResponseEntity.ok(solicitudService.findSolicitud(id));

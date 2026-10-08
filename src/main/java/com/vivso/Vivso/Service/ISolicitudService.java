@@ -24,6 +24,9 @@ public interface ISolicitudService {
 
     SolicitudDTO asignarNumeroExpediente(Integer idSolicitud, String numExp);
 
+    //Enviar obras al Integrante de la ONG en la app movil
+    List<ExpedienteMovilDTO> getObrasAsignadasParaOng();
+
     // Formulario Familia
     SolicitudDTO registrarSolicitudFamilia(RegistroFamiliaDTO dto, MultiValueMap<String, MultipartFile> mapaArchivos);
     SolicitudDTO aprobarSolicitudVivienda(Integer idSolicitud);

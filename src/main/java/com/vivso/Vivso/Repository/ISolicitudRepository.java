@@ -22,4 +22,8 @@ public interface ISolicitudRepository extends JpaRepository<Solicitud, Integer> 
     // 2. Para la App Móvil (Ya filtrado por estado desde la Base de Datos)
     @Query("SELECT s FROM Solicitud s WHERE s.tecnicoAsignado.id = :idTecnico AND s.estado IN ('Pendiente', 'Aprobada')")
     List<Solicitud> buscarParaAppMovil(@Param("idTecnico") Integer idTecnico);
+
+    // 3. Para la App Móvil del Integrante ONG (Filtra por ONG y estado Aprobada)
+    @Query("SELECT s FROM Solicitud s WHERE s.cuitOrg.cuit = :cuit AND s.estado = 'Aprobada'")
+    List<Solicitud> buscarObrasParaOng(@Param("cuit") String cuit);
 }
