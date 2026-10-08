@@ -170,4 +170,10 @@ public interface VivsoMapper {
     @Mapping(source = "revisadoPor.id",       target = "idUsuarioRevisor")
     @Mapping(source = "revisadoPor.username", target = "nombreRevisor",  defaultValue = "Sin revisar")
     EtapaObraDTO toDTO(EtapaObra etapa);
+
+    // ======================== FOTO ETAPA ========================
+    @Mapping(source = "etapa.idEtapaObra", target = "idEtapa")
+    @Mapping(source = "subidaPor.id", target = "idUsuarioSubida")
+    @Mapping(source = "subidaPor.username", target = "nombreUsuarioSubida", defaultValue = "Desconocido")
+    FotoEtapaDTO toDTO(FotoEtapa foto);
 }

@@ -303,6 +303,40 @@ public class SolicitudService implements ISolicitudService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<ExpedienteMovilDTO> getObrasAsignadasParaOng() {
+
+        // 1. Identidad segura desde el Token
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Usuario usuario = usuarioRepo.findByEmail(email)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
+
+        // 2. Buscar al integrante para conocer a qué ONG pertenece
+        Integrante integrante = integranteRepo.findByUsuario(usuario)
+                .orElseThrow(() -> new ReglaDeNegocioException("El usuario autenticado no está asociado a ninguna organización", HttpStatus.FORBIDDEN));
+
+        String cuitOng = integrante.getOrganizacion().getCuit();
+
+        // 3. Buscar solo los expedientes en fase de obra para esa ONG
+        List<Solicitud> obrasAsignadas = solicitudRepo.buscarObrasParaOng(cuitOng);
+
+        // 4. Mapear a DTO para la app móvil
+        return obrasAsignadas.stream().map(solicitud -> {
+            String nombreFamilia = (solicitud.getFamiliaBeneficiaria() != null)
+                    ? solicitud.getFamiliaBeneficiaria().getNombreRepresentante()
+                    : "Sin asignar";
+
+            return ExpedienteMovilDTO.builder()
+                    .idSolicitud(solicitud.getIdSolicitud())
+                    .numExp(solicitud.getNumExp())
+                    .nombreRepresentanteFamilia(nombreFamilia)
+                    .nombreOrganizacion(integrante.getOrganizacion().getNombre())
+                    .estado(solicitud.getEstado())
+                    .build();
+        }).collect(Collectors.toList());
+    }
+
+    @Override
     public SolicitudDTO findSolicitud(Integer id) {
         return solicitudRepo.findById(id)
                 .map(mapper::toDTO)
