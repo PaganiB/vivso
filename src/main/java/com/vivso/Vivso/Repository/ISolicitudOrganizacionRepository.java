@@ -14,4 +14,5 @@ public interface ISolicitudOrganizacionRepository extends JpaRepository<Solicitu
     boolean existsByCuit(String cuit);
     boolean existsByCuitAndEstadoIn(String cuit, List<EstadoSolicitud> estados);
     Optional<SolicitudOrganizacion> findByTokenEdicion(String tokenEdicion);
+    List<SolicitudOrganizacion> findByEstado(EstadoSolicitud estado);
 }

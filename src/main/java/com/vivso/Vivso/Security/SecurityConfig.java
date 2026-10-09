@@ -84,6 +84,8 @@ public class SecurityConfig implements WebMvcConfigurer {
                         .requestMatchers("/usuario/**").hasAnyRole("ADMIN", "OPERADOR")
                         .requestMatchers(HttpMethod.POST, "/solicitud-organizacion/**").hasAnyRole("ADMIN", "OPERADOR")
                         .requestMatchers(HttpMethod.PUT, "/solicitud-organizacion/**").hasAnyRole("ADMIN", "OPERADOR")
+                        .requestMatchers(HttpMethod.GET, "/solicitud-organizacion").hasAnyRole("ADMIN", "OPERADOR")
+                        .requestMatchers(HttpMethod.GET, "/solicitud-organizacion/pendientes").hasAnyRole("ADMIN", "OPERADOR")
 
                         // ── TECNICO (visita inicial y aprobacion de etapas) ─────────────────────────────────────────────────
                         .requestMatchers(HttpMethod.GET, "/archivos/**").hasAnyRole("ADMIN", "TECNICO", "ARQUITECTO")
@@ -126,19 +128,32 @@ public class SecurityConfig implements WebMvcConfigurer {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:5173",
-                //"https://fetch-reproduce-eatery.ngrok-free.dev",
+                "https://fetch-reproduce-eatery.ngrok-free.dev",
                 "http://localhost:8081",
-                "http://192.168.100.6:8081",
-                "https://blade-pretty-obstruct.ngrok-free.dev"
+                "http://192.168.100.6:8081"
+                //"https://blade-pretty-obstruct.ngrok-free.dev"
         ));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+
+        configuration.setAllowedMethods(Arrays.asList(
+                "GET",
+                "POST",
+                "PUT",
+                "PATCH",
+                "DELETE",
+                "OPTIONS"
+        ));
+
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        UrlBasedCorsConfigurationSource source =
+                new UrlBasedCorsConfigurationSource();
+
         source.registerCorsConfiguration("/**", configuration);
+
         return source;
     }
 
