@@ -12,8 +12,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "etapa_obra", schema = "vivso3",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"id_solicitud", "etapa"}))
+@Table(name = "etapa_obra", uniqueConstraints = @UniqueConstraint(columnNames = {"id_solicitud", "etapa"}))
 public class EtapaObra {
 
     @Id

@@ -78,8 +78,12 @@ public class EtapaObraController {
             @RequestBody @Valid ProrrogaEtapaDTO dto,
             Authentication authentication) {
 
+        // Extraemos la identidad del técnico directamente del token JWT por seguridad
         String emailTecnico = authentication.getName();
+
+        // Llamamos al motor del Service que valida el tope de 14 días y que no caiga en fin de semana
         EtapaObraDTO etapaActualizada = etapaObraService.prorrogarEtapa(idEtapa, dto, emailTecnico);
+
         return ResponseEntity.ok(etapaActualizada);
     }
 }

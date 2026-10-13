@@ -8,7 +8,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
+import org.springframework.beans.factory.annotation.Value;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -16,10 +17,13 @@ import java.nio.file.Paths;
 @RequestMapping("/archivos")
 public class ArchivoController {
 
+    @Value("${vivso.upload.dir}")
+    private String uploadDir;
+
     @GetMapping("/visitas/foto/{nombreArchivo:.+}")
     public ResponseEntity<Resource> obtenerFotoVisita(@PathVariable String nombreArchivo) {
         try {
-            Path rutaFisica = Paths.get("uploads/visitas").resolve(nombreArchivo).normalize();
+            Path rutaFisica = Paths.get("uploadDir, visitas").resolve(nombreArchivo).normalize();
             Resource recurso = new UrlResource(rutaFisica.toUri());
 
             if (recurso.exists() && recurso.isReadable()) {
@@ -34,5 +38,27 @@ public class ArchivoController {
         }
     }
 
-    // El día de mañana, si necesitas servir PDFs de manera segura, agregas otro méttodo acá:
+    @GetMapping("/documentos/{nombreArchivo:.+}")
+    public ResponseEntity<Resource> obtenerDocumento(@PathVariable String nombreArchivo) {
+        try {
+            Path rutaFisica = Paths.get("uploadDir, documentos").resolve(nombreArchivo).normalize();
+            Resource recurso = new UrlResource(rutaFisica.toUri());
+
+            if (recurso.exists() && recurso.isReadable()) {
+                // Detecta inteligentemente si es JPG, PNG o PDF
+                String tipoMime = Files.probeContentType(rutaFisica);
+                if (tipoMime == null) {
+                    tipoMime = MediaType.APPLICATION_OCTET_STREAM_VALUE;
+                }
+
+                return ResponseEntity.ok()
+                        .contentType(MediaType.parseMediaType(tipoMime))
+                        .body(recurso);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 }

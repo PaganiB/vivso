@@ -12,7 +12,7 @@ import java.time.LocalDate;
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "vivienda", schema = "vivso3")
+@Table(name = "vivienda")
 public class Vivienda {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -52,10 +52,6 @@ public class Vivienda {
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "id_solicitud", nullable = false, unique = true)
     private Solicitud solicitud;
-
-    @Column(name = "avance_obra")
-    @Builder.Default
-    private Integer avanceObra = 0;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "tipoVivienda")

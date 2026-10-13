@@ -147,25 +147,28 @@ public class EtapaObraService implements IEtapaObraService {
         EtapaObra etapa = buscarEtapa(idEtapa);
         validarTecnicoAsignado(etapa.getSolicitud(), email);
 
-        if (etapa.getEstado() != EstadoEtapa.EN_CURSO && etapa.getEstado() != EstadoEtapa.OBSERVADA) {
-            throw conflicto("Solo se puede prorrogar una etapa en curso u observada. Estado actual: " + etapa.getEstado());
+        if (etapa.getEstado() != EstadoEtapa.EN_CURSO &&
+                etapa.getEstado() != EstadoEtapa.OBSERVADA &&
+                etapa.getEstado() != EstadoEtapa.PRORROGADA) {
+            throw conflicto("Solo se puede prorrogar una etapa en curso, observada o en revisión. Estado actual: " + etapa.getEstado());
         }
 
         LocalDate nueva = dto.getNuevaFechaLimite();
+
+        // 1. Validar que la prórroga sume tiempo (no puede ser menor o igual al vencimiento actual)
         if (!nueva.isAfter(etapa.getFechaLimite())) {
             throw conflicto("La nueva fecha debe ser posterior al vencimiento actual (" + etapa.getFechaLimite() + ").");
         }
+
+        // 2. Validar que el técnico no haya seleccionado un fin de semana o feriado por error
         if (!calendario.esDiaHabil(nueva)) {
             throw conflicto("La nueva fecha de vencimiento debe ser un día hábil.");
-        }
-        LocalDate tope = etapa.getFechaLimiteOriginal().plusDays(TOPE_PRORROGA_DIAS);
-        if (nueva.isAfter(tope)) {
-            throw conflicto("La prórroga no puede superar los " + TOPE_PRORROGA_DIAS
-                    + " días desde el vencimiento original (hasta el " + tope + ").");
         }
 
         etapa.setFechaLimite(nueva);
         etapa.setMotivoProrroga(dto.getMotivoProrroga());
+        etapa.setEstado(EstadoEtapa.PRORROGADA);
+
         return mapper.toDTO(etapaRepo.save(etapa));
     }
 
