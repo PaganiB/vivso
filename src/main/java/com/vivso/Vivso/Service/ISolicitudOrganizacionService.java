@@ -14,4 +14,6 @@ public interface ISolicitudOrganizacionService {
     SolicitudOrganizacionDTO obtenerSolicitudOrgPorToken(String token);
     void actualizarSolicitudOrgConToken(String token, SolicitudOrganizacionPatchDTO dto);
     void reemplazarDocumentoConToken(String token, Integer idDoc, MultipartFile archivo);
+    List<SolicitudOrganizacionDTO> listarSolicitudes();
+    List<SolicitudOrganizacionDTO> listarPendientes();
 }

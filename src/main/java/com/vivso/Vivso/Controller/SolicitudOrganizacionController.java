@@ -2,6 +2,7 @@ package com.vivso.Vivso.Controller;
 
 import com.vivso.Vivso.DTO.*;
 import com.vivso.Vivso.Service.ISolicitudOrganizacionService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -68,6 +69,16 @@ public class SolicitudOrganizacionController {
             @RequestParam("archivo") MultipartFile archivo) {
         solicitudOrgService.reemplazarDocumentoConToken(token, idDoc, archivo);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping
+    public ResponseEntity<List<SolicitudOrganizacionDTO>> listarSolicitudes() {
+        return ResponseEntity.ok(solicitudOrgService.listarSolicitudes());
+    }
+
+    @GetMapping("/pendientes")
+    public ResponseEntity<List<SolicitudOrganizacionDTO>> listarPendientes() {
+        return ResponseEntity.ok(solicitudOrgService.listarPendientes());
     }
 
 }

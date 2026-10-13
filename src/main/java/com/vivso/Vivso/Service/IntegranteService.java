@@ -10,6 +10,7 @@ import com.vivso.Vivso.Model.Usuario;
 import com.vivso.Vivso.Repository.IIntegranteRepository;
 import com.vivso.Vivso.Repository.IOrganizacionRepository;
 import com.vivso.Vivso.Repository.IUsuarioRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -79,9 +80,17 @@ public class IntegranteService implements IIntegranteService {
     }
 
     @Override
+    @Transactional
     public void deleteIntegrantes(Integer id) {
         Integrante i = integranteRepo.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Integrante no encontrado: " + id));
+
+        Usuario usuario = i.getUsuario();
+        if (usuario != null) {
+            usuario.setActivo(false);
+            usuarioRepo.save(usuario);
+        }
+
         integranteRepo.delete(i);
     }
 
