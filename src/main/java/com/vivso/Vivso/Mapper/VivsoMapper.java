@@ -86,10 +86,12 @@ public interface VivsoMapper {
     void updateFromDto(ViviendaDTO dto, @MappingTarget Vivienda vivienda);
 
 
-// ======================== SOLICITUD ========================
+    // ======================== SOLICITUD ========================
 
-    @Mapping(source = "cuitOrg.cuit",               target = "cuitOrg")
-    @Mapping(source = "familiaBeneficiaria.idFamilia", target = "idFamilia")
+    @Mapping(source = "cuitOrg.cuit",                            target = "cuitOrg")
+    @Mapping(source = "cuitOrg.nombre",                          target = "nombreOrganizacion")
+    @Mapping(source = "familiaBeneficiaria.idFamilia",           target = "idFamilia")
+    @Mapping(source = "familiaBeneficiaria.nombreRepresentante", target = "nombreRepresentanteFamilia")
     SolicitudDTO toDTO(Solicitud solicitud);
 
     @Mapping(target = "cuitOrg",             ignore = true)
