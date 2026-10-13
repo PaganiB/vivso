@@ -8,6 +8,7 @@ import com.vivso.Vivso.Model.*;
 import com.vivso.Vivso.Repository.*;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -34,7 +35,8 @@ public class DocumentoService implements IDocumentoService {
     @Autowired private ISolicitudOrganizacionRepository  solicitudOrgRepo;
 
 
-    private final String rootFolder = "uploads/documentos";
+    @Value("${vivso.upload.dir}/documentos")
+    private String rootFolder;
     private static final long MAX_SIZE_BYTES = 20 * 1024 * 1024; // 20MB
     private static final List<String> EXTENSIONES_PERMITIDAS = List.of("pdf", "jpg", "jpeg", "png");
 

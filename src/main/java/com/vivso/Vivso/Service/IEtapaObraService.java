@@ -24,5 +24,4 @@ public interface IEtapaObraService {
 
     EtapaObraDTO prorrogarEtapa(Integer idEtapa, ProrrogaEtapaDTO dto, String email);
 
-
 }

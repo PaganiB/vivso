@@ -34,3 +34,7 @@ uploads/
 ### VS Code ###
 .vscode/
 
+### Variables de entorno ###
+.env
+.env.*
+*.env

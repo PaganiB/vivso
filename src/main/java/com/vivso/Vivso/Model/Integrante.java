@@ -10,7 +10,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "integrante", schema = "vivso3")
+@Table(name = "integrante")
 public class Integrante {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -53,6 +53,5 @@ public class Integrante {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "CUIT_org", nullable = false)
     private Organizacion organizacion;
-
 
 }

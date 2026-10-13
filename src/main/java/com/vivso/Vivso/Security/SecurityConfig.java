@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
@@ -33,6 +34,9 @@ public class SecurityConfig implements WebMvcConfigurer {
 
     @Autowired private UserDetailsService userDetailsService;
     @Autowired private JwtAuthenticationFilter jwtAuthFilter;
+
+    @Value("${cors.origins}")
+    private List<String> allowedOrigins;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -75,7 +79,7 @@ public class SecurityConfig implements WebMvcConfigurer {
                         .requestMatchers(HttpMethod.POST, "/documento/**").hasAnyRole("ADMIN", "OPERADOR", "INTEGRANTE")
                         .requestMatchers(HttpMethod.POST, "/etapa/*/enviar").hasRole("INTEGRANTE")
                         .requestMatchers(HttpMethod.POST, "/etapa/*/fotos").hasRole("INTEGRANTE")
-                        .requestMatchers(HttpMethod.GET, "/solicitud/mis-obras").hasAnyAuthority("ROLE_INTEGRANTE", "ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/solicitud/mis-obras").hasAnyRole("INTEGRANTE", "ADMIN")
 
                         // ── OPERADOR (bandeja de entrada, aprueba/rechaza) ────────────────────
                         .requestMatchers(HttpMethod.PUT, "/solicitud/*/aprobar").hasAnyRole("ADMIN", "OPERADOR")
@@ -88,7 +92,6 @@ public class SecurityConfig implements WebMvcConfigurer {
                         .requestMatchers(HttpMethod.PUT, "/solicitud-organizacion/**").hasAnyRole("ADMIN", "OPERADOR")
 
                         // ── TECNICO (visita inicial y aprobacion de etapas) ─────────────────────────────────────────────────
-                        .requestMatchers(HttpMethod.GET, "/archivos/**").hasAnyRole("ADMIN", "TECNICO", "ARQUITECTO")
                         .requestMatchers(HttpMethod.POST, "/visita-inicial/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO")
                         .requestMatchers(HttpMethod.POST, "/visita-inicial/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO")
                         .requestMatchers(HttpMethod.POST, "/etapa/solicitud/*/iniciar").hasRole("TECNICO")
@@ -106,6 +109,8 @@ public class SecurityConfig implements WebMvcConfigurer {
                         .requestMatchers(HttpMethod.GET, "/organizacion/**", "/integrante/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO")
                         .requestMatchers(HttpMethod.GET, "/documento/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO")
                         .requestMatchers(HttpMethod.GET, "/organizacion/**", "/integrante/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO", "TECNICO")
+                        .requestMatchers(HttpMethod.GET, "/etapa/*/fotos").hasAnyRole("INTEGRANTE", "TECNICO", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/archivos/**").hasAnyRole("ADMIN", "TECNICO", "ARQUITECTO", "INTEGRANTE","OPERADOR")
 
                         // ── ESCRITURA GENERAL (solo OPERADOR registra datos) ─────────────────
                         .requestMatchers(HttpMethod.POST, "/solicitud", "/organizacion/**", "/familia/**",
@@ -128,13 +133,7 @@ public class SecurityConfig implements WebMvcConfigurer {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:5173",
-                //"https://fetch-reproduce-eatery.ngrok-free.dev",
-                "http://localhost:8081",
-                "http://192.168.100.6:8081",
-                "https://blade-pretty-obstruct.ngrok-free.dev"
-        ));
+        configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
