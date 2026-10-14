@@ -46,7 +46,6 @@ public class VisitaObraService implements IVisitaObraService {
         visita.setVivienda(vivienda);
         visita.setTecnico(tecnico);
 
-        vivienda.setAvanceObra(dto.getAfo());
         viviendaRepo.save(vivienda);
 
         VisitaObra visitaGuardada = visitaObraRepo.save(visita);
@@ -82,8 +81,6 @@ public class VisitaObraService implements IVisitaObraService {
         Vivienda vivienda = viviendaRepo.findBySolicitud_IdSolicitud(idSolicitud)
                 .orElseThrow(() -> new ReglaDeNegocioException("El expediente aún no tiene una vivienda generada", HttpStatus.CONFLICT));
 
-        // 4. Actualizamos el progreso
-        vivienda.setAvanceObra(avanceFisico);
         viviendaRepo.save(vivienda);
 
         // 5. Registramos la visita histórica

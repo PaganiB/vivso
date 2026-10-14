@@ -14,9 +14,8 @@ public class ExpedienteWebDTO {
     private String beneficiario;
     private String dni;
 
-    // Este valor ahora vendrá estrictamente del celular (0 a 100)
-    private Integer progreso;
-    private String ultimaVisita;
+    private String etapaActual;
+    private String ultimoRegistro;
 
     // El frontend lee este estado para saber si dibuja la barra (Aprobada) o no (Pendiente)
     private EstadoSolicitud estadoSolicitud;

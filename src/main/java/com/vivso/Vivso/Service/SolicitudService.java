@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -33,6 +34,7 @@ public class SolicitudService implements ISolicitudService {
     @Autowired private VivsoMapper mapper;
     @Autowired private IIntegranteRepository integranteRepo;
     @Autowired private IUsuarioRepository usuarioRepo;
+    @Autowired private IEtapaObraRepository etapaObraRepo;
 
     @Override
     @Transactional
@@ -241,23 +243,20 @@ public class SolicitudService implements ISolicitudService {
     @Transactional(readOnly = true)
     public List<ExpedienteWebDTO> obtenerDashboardWebTecnico() {
 
-        // 1. Identidad segura desde el Token
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Usuario tecnico = usuarioRepo.findByEmail(email)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Técnico no encontrado"));
 
         Integer idSeguro = tecnico.getId();
 
-        // 2. LA LÍNEA QUE FALTA: Buscar en la base de datos usando el ID seguro
         List<Solicitud> solicitudes = solicitudRepo.buscarPorTecnicoAsignado(idSeguro);
 
         return solicitudes.stream().map(s -> {
             ExpedienteWebDTO dto = new ExpedienteWebDTO();
             dto.setIdSolicitud(s.getIdSolicitud());
             dto.setNumExp(s.getNumExp());
-            dto.setEstadoSolicitud(s.getEstado()); // Clave para "desbloquear" la vista en React
+            dto.setEstadoSolicitud(s.getEstado());
 
-            // Datos del beneficiario
             if (s.getFamiliaBeneficiaria() != null) {
                 dto.setBeneficiario(s.getFamiliaBeneficiaria().getNombreRepresentante());
                 dto.setDni(s.getFamiliaBeneficiaria().getDniRepresentante() != null ? s.getFamiliaBeneficiaria().getDniRepresentante() : "S/D");
@@ -266,36 +265,79 @@ public class SolicitudService implements ISolicitudService {
                 dto.setDni("S/D");
             }
 
-            // 1. FASE DE OBRA (Solicitud Aprobada)
+            // 1. FASE DE OBRA
             if (s.getEstado() == EstadoSolicitud.Aprobada) {
                 Optional<Vivienda> viviendaOpt = viviendaRepo.findBySolicitud_IdSolicitud(s.getIdSolicitud());
 
                 if (viviendaOpt.isPresent()) {
                     Vivienda v = viviendaOpt.get();
                     dto.setEstadoRelevamiento("En Construcción");
-                    dto.setUltimaVisita(v.getFechaInic() != null ? v.getFechaInic().toString() : "Fase de obra");
+                    dto.setUltimoRegistro(v.getFechaInic() != null ? v.getFechaInic().toString() : "Fase de obra");
 
-                    // Acá le pasamos el porcentaje exacto que el técnico marcó en el celular
-                    dto.setProgreso(v.getAvanceObra() != null ? v.getAvanceObra() : 0);
+                    // 👇 LÓGICA DE ETAPA ACTUAL CON ÚLTIMO REGISTRO
+                    List<EtapaObra> etapas = etapaObraRepo.findBySolicitud_IdSolicitud(s.getIdSolicitud());
+
+                    if (etapas != null && !etapas.isEmpty()) {
+                        // Buscamos cuál es la etapa activa
+                        Optional<EtapaObra> etapaActiva = etapas.stream()
+                                .filter(e -> e.getEstado() == EstadoEtapa.EN_CURSO ||
+                                        e.getEstado() == EstadoEtapa.OBSERVADA ||
+                                        e.getEstado() == EstadoEtapa.PRORROGADA ||
+                                        e.getEstado() == EstadoEtapa.EN_REVISION)
+                                .findFirst();
+
+                        if (etapaActiva.isPresent()) {
+                            EtapaObra e = etapaActiva.get();
+
+                            int numero = e.getEtapa().getNumero();
+                            String nombre = e.getEtapa().getNombre();
+
+                            dto.setEtapaActual("Etapa " + numero + ": " + nombre + " (" + e.getEstado() + ")");
+
+                            // 👇 ASIGNAR LA FECHA DE ENVÍO DE LA ONG (ultimoRegistro)
+                            if (e.getFechaEnvio() != null) {
+                                // Formateamos el LocalDateTime a algo legible: "dd/MM/yyyy HH:mm"
+                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+                                dto.setUltimoRegistro(e.getFechaEnvio().format(formatter));
+                            } else {
+                                // Si la etapa está EN_CURSO pero la ONG todavía no mandó nada a revisión
+                                dto.setUltimoRegistro("Sin envíos a revisión");
+                            }
+
+                        } else {
+                            // Si no hay ninguna activa, verificamos si ya terminaron todas
+                            boolean todasAprobadas = etapas.stream().allMatch(e -> e.getEstado() == EstadoEtapa.APROBADA);
+                            if (todasAprobadas) {
+                                dto.setEtapaActual("Obra Finalizada");
+                                dto.setUltimoRegistro("-");
+                            } else {
+                                dto.setEtapaActual("Esperando habilitación de etapa");
+                                dto.setUltimoRegistro("-");
+                            }
+                        }
+                    } else {
+                        dto.setEtapaActual("Sin etapas generadas");
+                        dto.setUltimoRegistro("-");
+                    }
                 } else {
                     dto.setEstadoRelevamiento("Aprobada - Esperando inicio");
-                    dto.setUltimaVisita("-");
-                    dto.setProgreso(0);
+                    dto.setUltimoRegistro("-");
+                    dto.setEtapaActual("Sin iniciar");
                 }
             }
-            // 2. FASE INICIAL (Solicitud Pendiente)
+            // 2. FASE INICIAL
             else {
                 List<VisitaInicial> historialVisitas = visitaInicialRepository.findBySolicitud_IdSolicitudOrderByFechaVisitaDesc(s.getIdSolicitud());
 
                 if (!historialVisitas.isEmpty()) {
                     dto.setEstadoRelevamiento("Relevamiento en proceso");
-                    dto.setUltimaVisita(historialVisitas.get(0).getFechaVisita().toLocalDate().toString());
+                    dto.setUltimoRegistro(historialVisitas.get(0).getFechaVisita().toLocalDate().toString());
                 } else {
                     dto.setEstadoRelevamiento("Sin relevamiento");
-                    dto.setUltimaVisita("Sin relevamiento");
+                    dto.setUltimoRegistro("Sin relevamiento");
                 }
-                // En esta fase mandamos 0, total React oculta la barra porque el estado es Pendiente
-                dto.setProgreso(0);
+
+                dto.setEtapaActual("Fase Previa");
             }
 
             return dto;
