@@ -3,7 +3,6 @@ package com.vivso.Vivso.Service;
 import com.vivso.Vivso.DTO.ViviendaDTO;
 import com.vivso.Vivso.Exception.RecursoNoEncontradoException;
 import com.vivso.Vivso.Mapper.VivsoMapper;
-import com.vivso.Vivso.Model.EstadoVivienda;
 import com.vivso.Vivso.Model.Familia;
 import com.vivso.Vivso.Model.Vivienda;
 import com.vivso.Vivso.Repository.IFamiliaRepository;
@@ -33,33 +32,14 @@ public class ViviendaService implements IViviendaService {
     @Transactional
     public void eliminar(Integer idVivienda) {
         if (!viviendaRepo.existsById(idVivienda))
-            throw new RecursoNoEncontradoException("No se puede eliminar: la vivienda " + idVivienda + " no existe.");        viviendaRepo.deleteById(idVivienda);
-    }
-
-    @Override
-    public List<ViviendaDTO> buscarPorEstado(EstadoVivienda estado) {
-        return viviendaRepo.findViviendaByEstado(estado).stream()
-                .map(mapper::toDTO)
-                .toList();
+            throw new RecursoNoEncontradoException("No se puede eliminar: la vivienda " + idVivienda + " no existe.");
+        viviendaRepo.deleteById(idVivienda);
     }
 
     @Override
     public Optional<ViviendaDTO> buscarPorFamilia(Integer idFamilia) {
         return viviendaRepo.findByFamilia_IdFamilia(idFamilia)
                 .map(mapper::toDTO);
-    }
-
-    @Override
-    @Transactional
-    public ViviendaDTO guardar(ViviendaDTO dto) {
-        Familia fam = familiaRepo.findById(dto.getIdFamilia())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Familia no encontrada: " + dto.getIdFamilia()));
-
-        Vivienda v = mapper.toEntity(dto);
-        v.setFamilia(fam);
-        if (v.getAvanceObra() == null) v.setAvanceObra(0);
-
-        return mapper.toDTO(viviendaRepo.saveAndFlush(v));
     }
 
     @Override
@@ -72,7 +52,8 @@ public class ViviendaService implements IViviendaService {
 
         if (dto.getIdFamilia() != null) {
             v.setFamilia(familiaRepo.findById(dto.getIdFamilia())
-                    .orElseThrow(() -> new RecursoNoEncontradoException("Familia no encontrada: " + dto.getIdFamilia())));        }
+                    .orElseThrow(() -> new RecursoNoEncontradoException("Familia no encontrada: " + dto.getIdFamilia())));
+        }
 
         return mapper.toDTO(viviendaRepo.saveAndFlush(v));
     }
@@ -104,5 +85,4 @@ public class ViviendaService implements IViviendaService {
                 .map(mapper::toDTO)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Vivienda no encontrada: " + idVivienda));
     }
-
 }

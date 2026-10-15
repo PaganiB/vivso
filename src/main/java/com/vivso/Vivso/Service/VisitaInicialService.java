@@ -10,6 +10,7 @@ import com.vivso.Vivso.Repository.ISolicitudRepository;
 import com.vivso.Vivso.Repository.IUsuarioRepository;
 import com.vivso.Vivso.Repository.IVisitaInicialRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,9 @@ public class VisitaInicialService implements IVisitaInicialService {
     @Autowired ISolicitudRepository solicitudRepository;
     @Autowired IUsuarioRepository usuarioRepository;
     @Autowired VivsoMapper vivsoMapper;
+
+    @Value("${vivso.upload.dir}/visitas")
+    private String carpetaVisitas;
 
     @Override
     public List<VisitaInicialDTO> getVisitas() {
@@ -125,7 +129,7 @@ public class VisitaInicialService implements IVisitaInicialService {
             String nombreArchivo = UUID.randomUUID().toString() + "_" + archivo.getOriginalFilename();
 
             // Definimos la carpeta donde se guardarán (ej: uploads/visitas)
-            Path rutaDirectorio = Paths.get("uploads/visitas");
+            Path rutaDirectorio = Paths.get(carpetaVisitas);
 
             // Si la carpeta no existe, la crea automáticamente
             if (!Files.exists(rutaDirectorio)) {

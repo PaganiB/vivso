@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.MultiValueMap;
@@ -20,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 @Slf4j
@@ -34,6 +36,7 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
     @Autowired private IEmailService emailService;
     @Autowired private IDocumentoService documentoService;
     @Autowired private IUsuarioRepository usuarioRepo;
+    @Autowired private PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
@@ -120,8 +123,9 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
                 .build();
         integranteRepo.save(presidente);
 
+        Integrante tesorero = null;
         if (sol.getDniTesorero() != null) {
-            Integrante tesorero = Integrante.builder()
+            tesorero = Integrante.builder()
                     .dni(sol.getDniTesorero()).nombre(sol.getNombreTesorero())
                     .apellido(sol.getApellidoTesorero()).correo(sol.getCorreoTesorero())
                     .telefono(sol.getTelefonoTesorero()).domicilio(sol.getDomicilioTesorero())
@@ -141,10 +145,18 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
         sol.setRevisor(revisor);
         solicitudOrgRepo.save(sol);
 
-        generarUsuarioYEnviarMail(sol.getNombrePresidente(), sol.getApellidoPresidente(), sol.getCorreoPresidente(), org.getNombre());
+        Usuario usuarioPresidente = generarUsuarioYEnviarMail(sol.getNombrePresidente(), sol.getApellidoPresidente(), sol.getCorreoPresidente(), org.getNombre());
+        if (usuarioPresidente != null) {
+            presidente.setUsuario(usuarioPresidente);
+            integranteRepo.save(presidente);
+        }
 
         if (sol.getDniTesorero() != null) {
-            generarUsuarioYEnviarMail(sol.getNombreTesorero(), sol.getApellidoTesorero(), sol.getCorreoTesorero(), org.getNombre());
+            Usuario usuarioTesorero = generarUsuarioYEnviarMail(sol.getNombreTesorero(), sol.getApellidoTesorero(), sol.getCorreoTesorero(), org.getNombre());
+            if (usuarioTesorero != null) {
+                tesorero.setUsuario(usuarioTesorero);
+                integranteRepo.save(tesorero);
+            }
         }
     }
 
@@ -265,21 +277,10 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
     }
 
     //METODO PARA GENERAR LAS CREDENCIALES
-    private void generarUsuarioYEnviarMail(String nombre, String apellido, String correo, String nombreOrg) {
-        // Validamos que tenga un correo válido
+    private Usuario generarUsuarioYEnviarMail(String nombre, String apellido, String correo, String nombreOrg) {
         if (correo != null && correo.contains("@")) {
 
-            // 1. Fabricamos el nombre de usuario (Ej: maria.gomez)
-            String usernameBase = nombre.toLowerCase() + "." + apellido.toLowerCase();
-            String username = usernameBase.replaceAll("[^a-z0-9.]", "");
-            int contador = 1;
-
-            // Verificamos que no exista en la BD
-            while (usuarioService.existePorUsername(username)) {
-                username = usernameBase + contador++;
-            }
-
-            // 2. Fabricamos la contraseña temporal
+            // Generamos la contraseña temporal (se usa en ambos casos: reactivación o creación)
             String caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%";
             StringBuilder password = new StringBuilder();
             Random random = new Random();
@@ -287,24 +288,41 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
                 password.append(caracteres.charAt(random.nextInt(caracteres.length())));
             }
 
-            // 3. Guardamos el nuevo usuario
-            UsuarioRegistroDTO nuevoUsuario = UsuarioRegistroDTO.builder()
-                    .username(username)
-                    .email(correo)
-                    .password(password.toString())
-                    .rol("INTEGRANTE") // Ambos tendrán el mismo rol en el sistema
-                    .build();
+            Optional<Usuario> usuarioExistente = usuarioRepo.findByEmail(correo);
 
-            usuarioService.registrarNuevoUsuario(nuevoUsuario);
+            Usuario usuarioCreado;
+            if (usuarioExistente.isPresent() && !usuarioExistente.get().getActivo()) {
+                Usuario u = usuarioExistente.get();
+                u.setActivo(true);
+                u.setPassword_hash(passwordEncoder.encode(password.toString()));
+                usuarioCreado = usuarioRepo.save(u);
+            } else if (usuarioExistente.isPresent()) {
+                throw new ReglaDeNegocioException("El correo " + correo + " ya está en uso por un usuario activo.", HttpStatus.CONFLICT);
+            } else {
+                String usernameBase = nombre.toLowerCase() + "." + apellido.toLowerCase();
+                String username = usernameBase.replaceAll("[^a-z0-9.]", "");
+                int contador = 1;
+                while (usuarioService.existePorUsername(username)) {
+                    username = usernameBase + contador++;
+                }
 
-            // 4. Disparamos el correo usando el EmailService de Marian
+                UsuarioRegistroDTO nuevoUsuario = UsuarioRegistroDTO.builder()
+                        .username(username)
+                        .email(correo)
+                        .password(password.toString())
+                        .rol("INTEGRANTE")
+                        .build();
+
+                usuarioCreado = usuarioService.registrarNuevoUsuario(nuevoUsuario);
+            }
+
             emailService.enviarCredencialesYAprobacion(
-                    correo,
-                    username,
-                    password.toString(),
-                    nombreOrg
+                    correo, password.toString(), nombreOrg
             );
+
+            return usuarioCreado;
         }
+        return null;
     }
 
     @Override
@@ -327,4 +345,19 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
 
         documentoService.reemplazar(idDoc, archivo);
     }
+
+    @Override
+    public List<SolicitudOrganizacionDTO> listarSolicitudes() {
+        return solicitudOrgRepo.findAll().stream()
+                .map(mapper::toDTO)
+                .toList();
+    }
+
+    @Override
+    public List<SolicitudOrganizacionDTO> listarPendientes() {
+        return solicitudOrgRepo.findByEstado(EstadoSolicitud.Pendiente).stream()
+                .map(mapper::toDTO)
+                .toList();
+    }
+
 }
