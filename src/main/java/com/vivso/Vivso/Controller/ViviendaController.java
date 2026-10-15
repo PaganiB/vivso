@@ -1,14 +1,12 @@
 package com.vivso.Vivso.Controller;
 
 import com.vivso.Vivso.DTO.ViviendaDTO;
-import com.vivso.Vivso.Model.EstadoVivienda;
 import com.vivso.Vivso.Service.IViviendaService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -17,13 +15,6 @@ public class ViviendaController {
 
     @Autowired
     private IViviendaService viviendaService;
-
-    // POST /vivienda -> CREAR
-    @PostMapping
-    public ResponseEntity<ViviendaDTO> crear(@Valid @RequestBody ViviendaDTO dto) {
-        ViviendaDTO created = viviendaService.guardar(dto);
-        return ResponseEntity.created(URI.create("/vivienda/" + created.getIdVivienda())).body(created);
-    }
 
     // GET /vivienda -> LISTAR TODAS
     @GetMapping
@@ -45,11 +36,6 @@ public class ViviendaController {
     }
 
     // Estos mantienen un sub-path porque filtran por criterios específicos
-
-    @GetMapping("/estado/{estado}")
-    public ResponseEntity<List<ViviendaDTO>> buscarPorEstado(@PathVariable EstadoVivienda estado) {
-        return ResponseEntity.ok(viviendaService.buscarPorEstado(estado));
-    }
 
     @GetMapping("/familia/{idFamilia}")
     public ResponseEntity<ViviendaDTO> buscarPorFamilia(@PathVariable Integer idFamilia) {

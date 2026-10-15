@@ -1,13 +1,16 @@
 package com.vivso.Vivso.Controller;
 
 import com.vivso.Vivso.DTO.*;
+import com.vivso.Vivso.Exception.RecursoNoEncontradoException;
 import com.vivso.Vivso.Model.EstadoSolicitud;
+import com.vivso.Vivso.Model.Usuario;
+import com.vivso.Vivso.Repository.IUsuarioRepository;
 import com.vivso.Vivso.Service.ISolicitudService;
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import java.util.List;
@@ -19,7 +22,8 @@ public class SolicitudController {
 
     @Autowired
     private ISolicitudService solicitudService;
-
+    @Autowired
+    private IUsuarioRepository usuarioRepo;
     @PostMapping(value = "/familia", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<SolicitudDTO> registrarSolicitudFamilia(
             @RequestPart("datos") RegistroFamiliaDTO dto,
@@ -48,8 +52,15 @@ public class SolicitudController {
 
     @PutMapping("/{id}/semiAprobar")
     public ResponseEntity<SolicitudDTO> semiAprobar(@PathVariable Integer id,
-                                                    @RequestBody Map<String, String> body) {
-        return ResponseEntity.ok(solicitudService.semiAprobarSolicitud(id, body.get("motivo")));
+                                                    @RequestParam List<String> camposObservados,
+                                                    @RequestParam String motivo) {
+        return ResponseEntity.ok(solicitudService.semiAprobarSolicitud(id, camposObservados, motivo));
+    }
+
+    @PutMapping("/{id}/confirmar-correccion")
+    public ResponseEntity<Void> confirmarCorreccion(@PathVariable Integer id) {
+        solicitudService.confirmarCorreccion(id);
+        return ResponseEntity.noContent().build();
     }
 
     // ── CRUD básico ───────────────────────────────────────────────────────
@@ -58,10 +69,23 @@ public class SolicitudController {
         return ResponseEntity.ok(solicitudService.getSolicitudes());
     }
 
-    //Metodo para obtener la lista de DTO a la app movil
+    //Metodo para obtener lista de solicitudes del tecnico
+    @GetMapping("/tecnico/mis-expedientes")
+    public ResponseEntity<List<ExpedienteWebDTO>> obtenerDashboardTecnicoWeb() {
+
+        return ResponseEntity.ok(solicitudService.obtenerDashboardWebTecnico());
+    }
+
+    // Metodo para obtener la lista de DTO a la app movil
     @GetMapping("/movil")
     public ResponseEntity<List<ExpedienteMovilDTO>> getSolicitudesMovil() {
         return ResponseEntity.ok(solicitudService.getSolicitudesParaMovil());
+    }
+
+    // Endpoint exclusivo para el rol INTEGRANTE en la app móvil
+    @GetMapping("/mis-obras")
+    public ResponseEntity<List<ExpedienteMovilDTO>> getObrasParaOngMovil() {
+        return ResponseEntity.ok(solicitudService.getObrasAsignadasParaOng());
     }
 
     @GetMapping("/{id}")
