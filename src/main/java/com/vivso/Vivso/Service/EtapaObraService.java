@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -95,7 +96,7 @@ public class EtapaObraService implements IEtapaObraService {
         // TODO: exigir al menos una foto cargada cuando exista FotoEtapa
 
         etapa.setEstado(EstadoEtapa.EN_REVISION);
-        etapa.setFechaEnvio(LocalDateTime.now(ZONA));
+        etapa.setFechaEnvio(LocalDateTime.now(ZONA).truncatedTo(ChronoUnit.MINUTES));
         etapa.setEnviadoPor(buscarUsuario(email));
         etapa.setObservacionOrganizacion(dto != null ? dto.getObservacionOrganizacion() : null);
         return mapper.toDTO(etapaRepo.save(etapa));
@@ -111,7 +112,7 @@ public class EtapaObraService implements IEtapaObraService {
 
         etapa.setEstado(EstadoEtapa.APROBADA);
         etapa.setRevisadoPor(buscarUsuario(email));
-        etapa.setFechaRevision(LocalDateTime.now(ZONA));
+        etapa.setFechaRevision(LocalDateTime.now(ZONA).truncatedTo(ChronoUnit.MINUTES));
 
         // Habilita la siguiente: desde este momento corre su plazo
         EtapaConstruccion siguiente = etapa.getEtapa().obtenerSiguienteEtapa();
@@ -136,7 +137,7 @@ public class EtapaObraService implements IEtapaObraService {
         etapa.setEstado(EstadoEtapa.OBSERVADA);
         etapa.setObservacionTecnico(dto.getObservacionTecnico());
         etapa.setRevisadoPor(buscarUsuario(email));
-        etapa.setFechaRevision(LocalDateTime.now(ZONA));
+        etapa.setFechaRevision(LocalDateTime.now(ZONA).truncatedTo(ChronoUnit.MINUTES));
         return mapper.toDTO(etapaRepo.save(etapa));
     }
 

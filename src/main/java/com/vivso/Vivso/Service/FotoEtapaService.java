@@ -86,12 +86,20 @@ public class FotoEtapaService implements IFotoEtapaService {
         EtapaObra etapa = etapaRepo.findById(idEtapa)
                 .orElseThrow(() -> noEncontrado("Etapa no encontrada"));
 
-        if (!esAdmin && !esTecnicoAsignado(etapa.getSolicitud(), email) && !esIntegranteDeLaOrganizacion(etapa.getSolicitud(), email)) {
+        boolean esTecnico = esTecnicoAsignado(etapa.getSolicitud(), email);
+        boolean esOng = esIntegranteDeLaOrganizacion(etapa.getSolicitud(), email);
+
+        if (!esAdmin && !esTecnico && !esOng) {
             throw prohibido("No tenés permiso para ver las fotos de esta etapa.");
         }
-
-        // ACÁ ESTÁ LA CORRECCIÓN: findByEtapa_IdEtapaObra
         return fotoRepo.findByEtapa_IdEtapaObra(idEtapa).stream()
+                .filter(foto -> {
+                    // El Admin y el Técnico asignado tienen acceso total
+                    if (esAdmin || esTecnico) return true;
+
+                    // El integrante de la ONG solo ve las fotos donde su usuario sea el autor
+                    return foto.getSubidaPor() != null && foto.getSubidaPor().getEmail().equals(email);
+                })
                 .map(mapper::toDTO)
                 .collect(Collectors.toList());
     }

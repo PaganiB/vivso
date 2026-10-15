@@ -90,7 +90,6 @@ public class SecurityConfig implements WebMvcConfigurer {
                         .requestMatchers(HttpMethod.GET, "/solicitud-organizacion/pendientes").hasAnyRole("ADMIN", "OPERADOR")
 
                         // ── TECNICO (visita inicial y aprobacion de etapas) ─────────────────────────────────────────────────
-                        .requestMatchers(HttpMethod.GET, "/archivos/**").hasAnyRole("ADMIN", "TECNICO", "ARQUITECTO")
                         .requestMatchers(HttpMethod.POST, "/visita-inicial/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO")
                         .requestMatchers(HttpMethod.POST, "/visita-inicial/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO")
                         .requestMatchers(HttpMethod.POST, "/etapa/solicitud/*/iniciar").hasRole("TECNICO")
@@ -103,11 +102,13 @@ public class SecurityConfig implements WebMvcConfigurer {
                         .requestMatchers(HttpMethod.GET, "/vivienda/**").hasAnyRole("ADMIN", "ARQUITECTO", "TECNICO", "OPERADOR")
 
                         // ── LECTURA GENERAL (OPERADOR y ARQUITECTO ven expedientes completos) ─
+                        .requestMatchers(HttpMethod.GET, "/archivos/documentos/**").hasAnyRole("ADMIN", "INTEGRANTE", "ARQUITECTO", "TECNICO")
                         .requestMatchers(HttpMethod.GET, "/solicitud/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO", "TECNICO")
                         .requestMatchers(HttpMethod.GET, "/familia/**", "/familiar/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO", "TECNICO")
                         .requestMatchers(HttpMethod.GET, "/organizacion/**", "/integrante/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO")
                         .requestMatchers(HttpMethod.GET, "/documento/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO")
                         .requestMatchers(HttpMethod.GET, "/organizacion/**", "/integrante/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO", "TECNICO")
+                        .requestMatchers(HttpMethod.GET, "/etapa/*/fotos").hasAnyRole("ADMIN", "INTEGRANTE", "ARQUITECTO","TECNICO")
 
                         // ── ESCRITURA GENERAL (solo OPERADOR registra datos) ─────────────────
                         .requestMatchers(HttpMethod.POST, "/solicitud", "/organizacion/**", "/familia/**",
@@ -159,12 +160,4 @@ public class SecurityConfig implements WebMvcConfigurer {
         return source;
     }
 
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        Path uploadDir = Paths.get("uploads");
-        String uploadPath = uploadDir.toFile().getAbsolutePath();
-
-        registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:" + uploadPath + "/");
-    }
 }
