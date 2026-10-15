@@ -15,26 +15,24 @@ public class SolicitudDTO {
 
     private Integer idSolicitud;
 
-    //@NotNull(message = "Fecha de solicitud obligatoria")
     private LocalDate fechaSolicitud;
 
-    //@NotBlank(message = "El CUIT de la organización es obligatorio")
     private String cuitOrg;
 
     private String numExp;
 
-    //@NotNull(message = "Debe indicar el estado de la solicitud (Pendiente, Aprobada o Rechazada)")
     private EstadoSolicitud estado;
 
     @Size(max = 200, message = "Los caracteres máximos son 200")
     private String observacion;
 
-    //@NotNull(message = "Debe indicar el ID de la familia solicitante")
-    private Integer idFamilia;
+    private String camposObservados;
 
-    private Integer idVivienda;
+    private Integer idFamilia;
 
     private String nombreRepresentanteFamilia;
 
     private String nombreOrganizacion;
+
+    private Integer idTecnico;
 }

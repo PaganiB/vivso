@@ -27,6 +27,8 @@ public enum TipoDocumento {
     CERTIFICADO_RESIDENCIA_FAMILIA("Certificado de Residencia  de familia"),
     DECLARACION_JURADA("Declaración Jurada"),
 
+    //Obra
+    FOTO_OBRA("Foto de avance de obra"),
     OTRO("Otro");
 
     private final String valor;

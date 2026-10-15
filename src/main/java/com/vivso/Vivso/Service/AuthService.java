@@ -28,6 +28,7 @@ public class AuthService {
     @Autowired
     private IUsuarioService usuarioService;
 
+    @Transactional(readOnly = true)
     public Map<String, String> iniciarSesion(UsuarioLoginDTO loginDTO) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword())
@@ -37,12 +38,13 @@ public class AuthService {
         Usuario usuario = usuarioRepository.findByEmail(loginDTO.getEmail())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
 
-        String tokenGenerado = jwtUtils.generarToken(loginDTO.getEmail());
+        String tokenGenerado = jwtUtils.generarToken(usuario.getEmail());
 
         Map<String, String> respuesta = new HashMap<>();
         respuesta.put("token", tokenGenerado);
         respuesta.put("mensaje", "Login exitoso");
         respuesta.put("rol", usuario.getRol());
+        respuesta.put("id", String.valueOf(usuario.getId()));
 
         return respuesta;
     }

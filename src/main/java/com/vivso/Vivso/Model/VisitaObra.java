@@ -24,12 +24,6 @@ public class VisitaObra {
     @Column(nullable = false)
     private Integer afo; // Avance Físico de Obra (0 a 100)
 
-    @Column(nullable = false)
-    private Double lat;
-
-    @Column(nullable = false)
-    private Double lng;
-
     @Column(length = 500)
     private String observaciones;
 

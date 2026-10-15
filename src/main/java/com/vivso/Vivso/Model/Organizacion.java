@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "organizacion", schema = "vivso3")
+@Table(name = "organizacion")
 public class Organizacion {
     @Id
     @Column(name = "CUIT", nullable = false, length = 13)

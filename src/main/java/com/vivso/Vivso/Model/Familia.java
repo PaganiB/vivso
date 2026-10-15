@@ -12,7 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "familia", schema = "vivso3")
+@Table(name = "familia")
 public class Familia {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,6 +21,9 @@ public class Familia {
 
     @Column(name = "nombreRepresentante", length = 50)
     private String nombreRepresentante;
+
+    @Column(name = "dniRepresentante", length = 8)
+    private String dniRepresentante;
 
     @Column(name = "contacto", length = 100)
     private String contacto;
@@ -31,6 +34,4 @@ public class Familia {
     @Column(name = "coordenadasRancho", length = 150)
     private String coordenadasRancho;
 
-    @OneToMany(mappedBy = "familia", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Familiar> familiares;
 }

@@ -10,7 +10,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "integrante", schema = "vivso3")
+@Table(name = "integrante")
 public class Integrante {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -46,13 +46,12 @@ public class Integrante {
     @Column(name = "fecha_alta_cargo")
     private LocalDate fechaAltaCargo;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_usuario")
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_usuario", unique = true)
     private Usuario usuario;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "CUIT_org", nullable = false)
     private Organizacion organizacion;
-
 
 }

@@ -6,7 +6,8 @@ import org.mapstruct.*;
 
 @Mapper(
     componentModel = "spring",
-    unmappedSourcePolicy = ReportingPolicy.IGNORE
+    unmappedSourcePolicy = ReportingPolicy.IGNORE,
+    unmappedTargetPolicy = ReportingPolicy.IGNORE
 )
 public interface VivsoMapper {
 
@@ -70,28 +71,31 @@ public interface VivsoMapper {
     // ======================== VIVIENDA ========================
 
     @Mapping(source = "familia.idFamilia",           target = "idFamilia")
+    @Mapping(source = "solicitud.idSolicitud",       target = "solicitud")
     @Mapping(source = "familia.nombreRepresentante", target = "representante", defaultValue = "Sin asignar")
     ViviendaDTO toDTO(Vivienda vivienda);
 
     @Mapping(target = "familia", ignore = true)
+    @Mapping(target = "solicitud", ignore = true)
     Vivienda toEntity(ViviendaDTO dto);
 
     @Mapping(target = "idVivienda", ignore = true)  // PK
     @Mapping(target = "familia",    ignore = true)
+    @Mapping(target = "solicitud",  ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateFromDto(ViviendaDTO dto, @MappingTarget Vivienda vivienda);
 
 
     // ======================== SOLICITUD ========================
 
-    @Mapping(source = "cuitOrg.cuit",               target = "cuitOrg")
-    @Mapping(source = "familiaBeneficiaria.idFamilia", target = "idFamilia")
-    @Mapping(source = "vivienda.idVivienda",        target = "idVivienda")
+    @Mapping(source = "cuitOrg.cuit",                            target = "cuitOrg")
+    @Mapping(source = "cuitOrg.nombre",                          target = "nombreOrganizacion")
+    @Mapping(source = "familiaBeneficiaria.idFamilia",           target = "idFamilia")
+    @Mapping(source = "familiaBeneficiaria.nombreRepresentante", target = "nombreRepresentanteFamilia")
     SolicitudDTO toDTO(Solicitud solicitud);
 
     @Mapping(target = "cuitOrg",             ignore = true)
     @Mapping(target = "familiaBeneficiaria", ignore = true)
-    @Mapping(target = "vivienda",            ignore = true)
     @Mapping(target = "fechaActivacion",     ignore = true)
     Solicitud toEntity(SolicitudDTO dto);
 
@@ -156,4 +160,22 @@ public interface VivsoMapper {
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateFromPatchDto(SolicitudOrganizacionPatchDTO dto, @MappingTarget SolicitudOrganizacion solicitudOrganizacion);
 
+    // ======================== ETAPA OBRA ========================
+    @Mapping(source = "solicitud.idSolicitud", target = "idSolicitud")
+    @Mapping(source = "solicitud.numExp", target = "numExp")
+    @Mapping(source = "etapa.numero", target = "numeroEtapa")
+    @Mapping(source = "etapa.nombre", target = "nombreEtapa")
+    @Mapping(source = "etapa.descripcion", target = "descripcionEtapa")
+    @Mapping(source = "etapa.diasEstimados", target = "diasEstimados")
+    @Mapping(source = "enviadoPor.id",        target = "idUsuarioEnvio")
+    @Mapping(source = "enviadoPor.username",  target = "nombreEnvio",    defaultValue = "Sin enviar")
+    @Mapping(source = "revisadoPor.id",       target = "idUsuarioRevisor")
+    @Mapping(source = "revisadoPor.username", target = "nombreRevisor",  defaultValue = "Sin revisar")
+    EtapaObraDTO toDTO(EtapaObra etapa);
+
+    // ======================== FOTO ETAPA ========================
+    @Mapping(source = "etapa.idEtapaObra", target = "idEtapa")
+    @Mapping(source = "subidaPor.id", target = "idUsuarioSubida")
+    @Mapping(source = "subidaPor.username", target = "nombreUsuarioSubida", defaultValue = "Desconocido")
+    FotoEtapaDTO toDTO(FotoEtapa foto);
 }

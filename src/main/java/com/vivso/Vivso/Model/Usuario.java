@@ -13,7 +13,7 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
-@Table(name = "usuario", schema = "vivso3")
+@Table(name = "usuario")
 public class Usuario implements UserDetails {
 
     @Id
@@ -78,4 +78,5 @@ public class Usuario implements UserDetails {
     public boolean isEnabled() {
         return this.activo != null ? this.activo : false;
     }
+
 }

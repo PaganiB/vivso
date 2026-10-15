@@ -11,7 +11,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "solicitud", schema = "vivso3")
+@Table(name = "solicitud")
 public class Solicitud {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,10 +28,6 @@ public class Solicitud {
     @Column(name = "numExp")
     private String numExp;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_vivienda")
-    private Vivienda vivienda;
-
     @Lob
     @Enumerated(EnumType.STRING)
     @Column(name = "estado")
@@ -40,12 +36,23 @@ public class Solicitud {
     @Column(name = "observacion", length = 200)
     private String observacion;
 
+    @Column(name = "camposObservados")
+    private String camposObservados;
+
     @Column(name = "fechaActivacion")
     private LocalDate fechaActivacion;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "id_familia", nullable = false)
     private Familia familiaBeneficiaria;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_revisor")
+    private Usuario revisor;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_tecnico_asignado")
+    private Usuario tecnicoAsignado;
 
     @PrePersist
     public void prePersist() {

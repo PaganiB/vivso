@@ -1,5 +1,6 @@
 package com.vivso.Vivso.DTO;
 
+import com.vivso.Vivso.Model.EstadoSolicitud;
 import lombok.*;
 
 @Getter @Setter
@@ -11,4 +12,5 @@ public class ExpedienteMovilDTO {
     private String numExp;
     private String nombreRepresentanteFamilia;
     private String nombreOrganizacion;
+    private EstadoSolicitud estado;
 }

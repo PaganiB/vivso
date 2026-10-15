@@ -6,7 +6,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
-@Table(name = "solicitud_organizacion", schema = "vivso3")
+@Table(name = "solicitud_organizacion")
 @Getter @Setter
 @Builder
 @NoArgsConstructor
