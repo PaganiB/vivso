@@ -93,6 +93,8 @@ public class SecurityConfig implements WebMvcConfigurer {
                         .requestMatchers(HttpMethod.POST, "/visita-inicial/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO")
                         .requestMatchers(HttpMethod.POST, "/visita-inicial/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO")
                         .requestMatchers(HttpMethod.POST, "/etapa/solicitud/*/iniciar").hasRole("TECNICO")
+                        .requestMatchers(HttpMethod.GET, "/archivos/visitas/**").hasAnyRole("ADMIN", "ARQUITECTO", "TECNICO")
+                        .requestMatchers(HttpMethod.GET, "/archivos/documentos/**").hasAnyRole("ADMIN", "ARQUITECTO", "TECNICO","INTEGRANTE")
                         .requestMatchers(HttpMethod.POST, "/etapa/*/aprobar", "/etapa/*/observar", "/etapa/*/prorroga").hasRole("TECNICO")
                         .requestMatchers(HttpMethod.PUT, "/visita-inicial/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO")
                         .requestMatchers(HttpMethod.GET, "/visita-inicial/**", "/visita-obra/**", "/historial-visitas").hasAnyRole("ADMIN", "TECNICO", "ARQUITECTO")
