@@ -24,15 +24,20 @@ public class ArchivoController {
     @GetMapping("/visitas/foto/{nombreArchivo:.+}")
     public ResponseEntity<Resource> obtenerFotoVisita(@PathVariable String nombreArchivo) {
         try {
-            Path rutaArchivo = Paths.get(uploadDir, "visitas").resolve(nombreArchivo).normalize();
-            Resource recurso = new UrlResource(rutaArchivo.toUri());
+            Path base = Paths.get(uploadDir, "visitas").toAbsolutePath().normalize();
+            Path rutaFisica = base.resolve(nombreArchivo).normalize();
+
+            // 1. SEGURIDAD CRÍTICA: Bloquear Path Traversal
+            if (!rutaFisica.startsWith(base)) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            Resource recurso = new UrlResource(rutaFisica.toUri());
 
             if (recurso.exists() && recurso.isReadable()) {
+                // 2. DETECCIÓN DE FORMATO ROBUSTA
+                String contentType = Files.probeContentType(rutaFisica);
 
-                // 1. Intentamos que Java detecte el formato automáticamente
-                String contentType = Files.probeContentType(rutaArchivo);
-
-                // 2. Si Java falla, lo detectamos nosotros manualmente por la extensión
                 if (contentType == null) {
                     String extension = nombreArchivo.substring(nombreArchivo.lastIndexOf(".") + 1).toLowerCase();
                     switch (extension) {
@@ -47,7 +52,7 @@ public class ArchivoController {
                             contentType = "image/webp";
                             break;
                         default:
-                            contentType = "application/octet-stream"; // Descarga genérica si es un formato raro
+                            contentType = "application/octet-stream";
                     }
                 }
 
@@ -56,11 +61,9 @@ public class ArchivoController {
                         .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + recurso.getFilename() + "\"")
                         .body(recurso);
             } else {
-                System.out.println("ERROR 404: Archivo no encontrado en la ruta física: " + rutaArchivo.toAbsolutePath());
                 return ResponseEntity.notFound().build();
             }
         } catch (Exception e) {
-            System.out.println("ERROR INTERNO al buscar foto de visita: " + e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
     }
