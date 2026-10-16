@@ -347,6 +347,7 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<SolicitudOrganizacionDTO> listarSolicitudes() {
         return solicitudOrgRepo.findAll().stream()
                 .map(mapper::toDTO)
@@ -354,6 +355,7 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<SolicitudOrganizacionDTO> listarPendientes() {
         return solicitudOrgRepo.findByEstado(EstadoSolicitud.Pendiente).stream()
                 .map(mapper::toDTO)

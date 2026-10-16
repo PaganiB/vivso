@@ -105,6 +105,7 @@ public class SecurityConfig implements WebMvcConfigurer {
                         .requestMatchers(HttpMethod.GET, "/vivienda/**").hasAnyRole("ADMIN", "ARQUITECTO", "TECNICO", "OPERADOR")
 
                         // ── LECTURA GENERAL (OPERADOR y ARQUITECTO ven expedientes completos) ─
+                        .requestMatchers(HttpMethod.GET, "/archivos/**", "/uploads/**").hasAnyRole("ADMIN", "OPERADOR", "TECNICO", "ARQUITECTO")
                         .requestMatchers(HttpMethod.GET, "/archivos/documentos/**").hasAnyRole("ADMIN", "INTEGRANTE", "ARQUITECTO", "TECNICO")
                         .requestMatchers(HttpMethod.GET, "/solicitud/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO", "TECNICO")
                         .requestMatchers(HttpMethod.GET, "/familia/**", "/familiar/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO", "TECNICO")

@@ -5,6 +5,7 @@ import com.vivso.Vivso.DTO.UsuarioRegistroDTO;
 import com.vivso.Vivso.DTO.UsuarioRespuestaDTO;
 import com.vivso.Vivso.Exception.RecursoNoEncontradoException;
 import com.vivso.Vivso.Model.Usuario;
+import com.vivso.Vivso.Repository.IIntegranteRepository;
 import com.vivso.Vivso.Repository.IUsuarioRepository;
 import com.vivso.Vivso.Security.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,8 @@ public class AuthService {
     private IUsuarioRepository usuarioRepository;
     @Autowired
     private IUsuarioService usuarioService;
+    @Autowired
+    private IIntegranteRepository integranteRepository;
 
     @Transactional(readOnly = true)
     public Map<String, String> iniciarSesion(UsuarioLoginDTO loginDTO) {
@@ -45,6 +48,10 @@ public class AuthService {
         respuesta.put("mensaje", "Login exitoso");
         respuesta.put("rol", usuario.getRol());
         respuesta.put("id", String.valueOf(usuario.getId()));
+
+        // Solo los integrantes pertenecen a una organización; el resto no recibe esta clave
+        integranteRepository.findByUsuario_Email(usuario.getEmail())
+                .ifPresent(i -> respuesta.put("cuitOrg", i.getOrganizacion().getCuit()));
 
         return respuesta;
     }

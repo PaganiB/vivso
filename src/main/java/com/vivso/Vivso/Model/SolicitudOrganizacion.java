@@ -3,6 +3,8 @@ package com.vivso.Vivso.Model;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -67,6 +69,11 @@ public class SolicitudOrganizacion {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_revisor")
     private Usuario revisor;
+
+    // --- DOCUMENTACIÓN DE LA SOLICITUD ---
+    @OneToMany(mappedBy = "solicitudOrganizacion", fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Documento> documentos = new ArrayList<>();
 
     @PrePersist
     public void prePersist() {

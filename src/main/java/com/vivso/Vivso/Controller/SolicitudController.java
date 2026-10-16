@@ -22,8 +22,7 @@ public class SolicitudController {
 
     @Autowired
     private ISolicitudService solicitudService;
-    @Autowired
-    private IUsuarioRepository usuarioRepo;
+
     @PostMapping(value = "/familia", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<SolicitudDTO> registrarSolicitudFamilia(
             @RequestPart("datos") RegistroFamiliaDTO dto,

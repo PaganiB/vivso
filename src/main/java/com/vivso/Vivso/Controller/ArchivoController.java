@@ -71,13 +71,23 @@ public class ArchivoController {
     @GetMapping("/documentos/{nombreArchivo:.+}")
     public ResponseEntity<Resource> obtenerDocumento(@PathVariable String nombreArchivo) {
         try {
-            Path rutaFisica = Paths.get(uploadDir, "documentos").resolve(nombreArchivo).normalize();
+            // Carpeta base donde se guardan los archivos
+            Path base = Paths.get(uploadDir, "documentos").toAbsolutePath().normalize();
+            Path rutaFisica = base.resolve(nombreArchivo).normalize();
+
+            // SEGURIDAD CRÍTICA: Evita ataques de "Path Traversal"
+            if (!rutaFisica.startsWith(base)) {
+                return ResponseEntity.badRequest().build();
+            }
+
             Resource recurso = new UrlResource(rutaFisica.toUri());
 
             if (recurso.exists() && recurso.isReadable()) {
                 // Detecta inteligentemente si es JPG, PNG o PDF
                 String tipoMime = Files.probeContentType(rutaFisica);
+
                 if (tipoMime == null) {
+                    // Descarga genérica si el formato es desconocido
                     tipoMime = MediaType.APPLICATION_OCTET_STREAM_VALUE;
                 }
 
@@ -85,10 +95,10 @@ public class ArchivoController {
                         .contentType(MediaType.parseMediaType(tipoMime))
                         .body(recurso);
             } else {
-                return ResponseEntity.notFound().build();
+                return ResponseEntity.notFound().build(); // 404 si el archivo no existe
             }
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.internalServerError().build(); // 500 en caso de error de lectura
         }
     }
 }
