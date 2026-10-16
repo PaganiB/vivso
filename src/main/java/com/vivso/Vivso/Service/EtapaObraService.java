@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -89,13 +90,15 @@ public class EtapaObraService implements IEtapaObraService {
         if (!esIntegranteDeLaOrganizacion(etapa.getSolicitud(), email)) {
             throw prohibido("Solo un integrante de la organización del expediente puede enviar la etapa.");
         }
-        if (etapa.getEstado() != EstadoEtapa.EN_CURSO && etapa.getEstado() != EstadoEtapa.OBSERVADA) {
-            throw conflicto("Solo se puede enviar una etapa en curso u observada. Estado actual: " + etapa.getEstado());
+        if (etapa.getEstado() != EstadoEtapa.EN_CURSO &&
+                etapa.getEstado() != EstadoEtapa.OBSERVADA &&
+                etapa.getEstado() != EstadoEtapa.PRORROGADA) {
+            throw conflicto("Solo se puede enviar una etapa en curso, observada o prorrogada. Estado actual: " + etapa.getEstado());
         }
         // TODO: exigir al menos una foto cargada cuando exista FotoEtapa
 
         etapa.setEstado(EstadoEtapa.EN_REVISION);
-        etapa.setFechaEnvio(LocalDateTime.now(ZONA));
+        etapa.setFechaEnvio(LocalDateTime.now(ZONA).truncatedTo(ChronoUnit.MINUTES));
         etapa.setEnviadoPor(buscarUsuario(email));
         etapa.setObservacionOrganizacion(dto != null ? dto.getObservacionOrganizacion() : null);
         return mapper.toDTO(etapaRepo.save(etapa));
@@ -111,7 +114,7 @@ public class EtapaObraService implements IEtapaObraService {
 
         etapa.setEstado(EstadoEtapa.APROBADA);
         etapa.setRevisadoPor(buscarUsuario(email));
-        etapa.setFechaRevision(LocalDateTime.now(ZONA));
+        etapa.setFechaRevision(LocalDateTime.now(ZONA).truncatedTo(ChronoUnit.MINUTES));
 
         // Habilita la siguiente: desde este momento corre su plazo
         EtapaConstruccion siguiente = etapa.getEtapa().obtenerSiguienteEtapa();
@@ -136,7 +139,7 @@ public class EtapaObraService implements IEtapaObraService {
         etapa.setEstado(EstadoEtapa.OBSERVADA);
         etapa.setObservacionTecnico(dto.getObservacionTecnico());
         etapa.setRevisadoPor(buscarUsuario(email));
-        etapa.setFechaRevision(LocalDateTime.now(ZONA));
+        etapa.setFechaRevision(LocalDateTime.now(ZONA).truncatedTo(ChronoUnit.MINUTES));
         return mapper.toDTO(etapaRepo.save(etapa));
     }
 
@@ -150,22 +153,26 @@ public class EtapaObraService implements IEtapaObraService {
         if (etapa.getEstado() != EstadoEtapa.EN_CURSO &&
                 etapa.getEstado() != EstadoEtapa.OBSERVADA &&
                 etapa.getEstado() != EstadoEtapa.PRORROGADA) {
-            throw conflicto("Solo se puede prorrogar una etapa en curso, observada o en revisión. Estado actual: " + etapa.getEstado());
+            throw conflicto("Solo se puede prorrogar una etapa en curso, observada o prorrogada. Estado actual: " + etapa.getEstado());
         }
 
-        LocalDate nueva = dto.getNuevaFechaLimite();
+        // 1. Obtenemos la cantidad de días originales que dura la etapa desde el Enum
+        int diasAAdd = etapa.getEtapa().getDiasEstimados();
 
-        // 1. Validar que la prórroga sume tiempo (no puede ser menor o igual al vencimiento actual)
-        if (!nueva.isAfter(etapa.getFechaLimite())) {
-            throw conflicto("La nueva fecha debe ser posterior al vencimiento actual (" + etapa.getFechaLimite() + ").");
+        // 2. Calculamos la nueva fecha sumando los días hábiles a partir de la fecha límite actual
+        LocalDate baseFecha = etapa.getFechaLimite();
+        LocalDate nuevaFecha = baseFecha;
+        int diasAgregados = 0;
+
+        while (diasAgregados < diasAAdd) {
+            nuevaFecha = nuevaFecha.plusDays(1);
+            if (calendario.esDiaHabil(nuevaFecha)) {
+                diasAgregados++;
+            }
         }
 
-        // 2. Validar que el técnico no haya seleccionado un fin de semana o feriado por error
-        if (!calendario.esDiaHabil(nueva)) {
-            throw conflicto("La nueva fecha de vencimiento debe ser un día hábil.");
-        }
-
-        etapa.setFechaLimite(nueva);
+        // 3. Actualizamos los valores en la entidad
+        etapa.setFechaLimite(nuevaFecha);
         etapa.setMotivoProrroga(dto.getMotivoProrroga());
         etapa.setEstado(EstadoEtapa.PRORROGADA);
 

@@ -3,6 +3,7 @@ package com.vivso.Vivso.Security;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -19,17 +20,17 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig implements WebMvcConfigurer {
+
+    @Value("${cors.origins}")
+    private List<String> allowedOrigins;
 
     @Autowired private UserDetailsService userDetailsService;
     @Autowired private JwtAuthenticationFilter jwtAuthFilter;
@@ -90,10 +91,11 @@ public class SecurityConfig implements WebMvcConfigurer {
                         .requestMatchers(HttpMethod.GET, "/solicitud-organizacion/pendientes").hasAnyRole("ADMIN", "OPERADOR")
 
                         // ── TECNICO (visita inicial y aprobacion de etapas) ─────────────────────────────────────────────────
-                        .requestMatchers(HttpMethod.GET, "/archivos/**").hasAnyRole("ADMIN", "TECNICO", "ARQUITECTO")
                         .requestMatchers(HttpMethod.POST, "/visita-inicial/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO")
                         .requestMatchers(HttpMethod.POST, "/visita-inicial/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO")
                         .requestMatchers(HttpMethod.POST, "/etapa/solicitud/*/iniciar").hasRole("TECNICO")
+                        .requestMatchers(HttpMethod.GET, "/archivos/visitas/**").hasAnyRole("ADMIN", "ARQUITECTO", "TECNICO")
+                        .requestMatchers(HttpMethod.GET, "/archivos/documentos/**").hasAnyRole("ADMIN", "ARQUITECTO", "TECNICO","INTEGRANTE")
                         .requestMatchers(HttpMethod.POST, "/etapa/*/aprobar", "/etapa/*/observar", "/etapa/*/prorroga").hasRole("TECNICO")
                         .requestMatchers(HttpMethod.PUT, "/visita-inicial/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO")
                         .requestMatchers(HttpMethod.GET, "/visita-inicial/**", "/visita-obra/**", "/historial-visitas").hasAnyRole("ADMIN", "TECNICO", "ARQUITECTO")
@@ -103,11 +105,14 @@ public class SecurityConfig implements WebMvcConfigurer {
                         .requestMatchers(HttpMethod.GET, "/vivienda/**").hasAnyRole("ADMIN", "ARQUITECTO", "TECNICO", "OPERADOR")
 
                         // ── LECTURA GENERAL (OPERADOR y ARQUITECTO ven expedientes completos) ─
+                        .requestMatchers(HttpMethod.GET, "/archivos/**", "/uploads/**").hasAnyRole("ADMIN", "OPERADOR", "TECNICO", "ARQUITECTO")
+                        .requestMatchers(HttpMethod.GET, "/archivos/documentos/**").hasAnyRole("ADMIN", "INTEGRANTE", "ARQUITECTO", "TECNICO")
                         .requestMatchers(HttpMethod.GET, "/solicitud/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO", "TECNICO")
                         .requestMatchers(HttpMethod.GET, "/familia/**", "/familiar/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO", "TECNICO")
                         .requestMatchers(HttpMethod.GET, "/organizacion/**", "/integrante/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO")
                         .requestMatchers(HttpMethod.GET, "/documento/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO")
                         .requestMatchers(HttpMethod.GET, "/organizacion/**", "/integrante/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO", "TECNICO")
+                        .requestMatchers(HttpMethod.GET, "/etapa/*/fotos").hasAnyRole("ADMIN", "INTEGRANTE", "ARQUITECTO","TECNICO")
 
                         // ── ESCRITURA GENERAL (solo OPERADOR registra datos) ─────────────────
                         .requestMatchers(HttpMethod.POST, "/solicitud", "/organizacion/**", "/familia/**",
@@ -130,41 +135,14 @@ public class SecurityConfig implements WebMvcConfigurer {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-
-        configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:5173",
-                "https://fetch-reproduce-eatery.ngrok-free.dev",
-                "http://localhost:8081",
-                "http://192.168.100.6:8081"
-                //"https://blade-pretty-obstruct.ngrok-free.dev"
-        ));
-
-        configuration.setAllowedMethods(Arrays.asList(
-                "GET",
-                "POST",
-                "PUT",
-                "PATCH",
-                "DELETE",
-                "OPTIONS"
-        ));
-
+        configuration.setAllowedOrigins(allowedOrigins);
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
 
-        UrlBasedCorsConfigurationSource source =
-                new UrlBasedCorsConfigurationSource();
-
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
-
         return source;
     }
 
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        Path uploadDir = Paths.get("uploads");
-        String uploadPath = uploadDir.toFile().getAbsolutePath();
-
-        registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:" + uploadPath + "/");
-    }
 }

@@ -2,6 +2,7 @@ package com.vivso.Vivso.Controller;
 
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,12 +24,41 @@ public class ArchivoController {
     @GetMapping("/visitas/foto/{nombreArchivo:.+}")
     public ResponseEntity<Resource> obtenerFotoVisita(@PathVariable String nombreArchivo) {
         try {
-            Path rutaFisica = Paths.get("uploadDir, visitas").resolve(nombreArchivo).normalize();
+            Path base = Paths.get(uploadDir, "visitas").toAbsolutePath().normalize();
+            Path rutaFisica = base.resolve(nombreArchivo).normalize();
+
+            // 1. SEGURIDAD CRÍTICA: Bloquear Path Traversal
+            if (!rutaFisica.startsWith(base)) {
+                return ResponseEntity.badRequest().build();
+            }
+
             Resource recurso = new UrlResource(rutaFisica.toUri());
 
             if (recurso.exists() && recurso.isReadable()) {
+                // 2. DETECCIÓN DE FORMATO ROBUSTA
+                String contentType = Files.probeContentType(rutaFisica);
+
+                if (contentType == null) {
+                    String extension = nombreArchivo.substring(nombreArchivo.lastIndexOf(".") + 1).toLowerCase();
+                    switch (extension) {
+                        case "png":
+                            contentType = "image/png";
+                            break;
+                        case "jpg":
+                        case "jpeg":
+                            contentType = "image/jpeg";
+                            break;
+                        case "webp":
+                            contentType = "image/webp";
+                            break;
+                        default:
+                            contentType = "application/octet-stream";
+                    }
+                }
+
                 return ResponseEntity.ok()
-                        .contentType(MediaType.IMAGE_JPEG)
+                        .contentType(MediaType.parseMediaType(contentType))
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + recurso.getFilename() + "\"")
                         .body(recurso);
             } else {
                 return ResponseEntity.notFound().build();
@@ -41,13 +71,23 @@ public class ArchivoController {
     @GetMapping("/documentos/{nombreArchivo:.+}")
     public ResponseEntity<Resource> obtenerDocumento(@PathVariable String nombreArchivo) {
         try {
-            Path rutaFisica = Paths.get("uploadDir, documentos").resolve(nombreArchivo).normalize();
+            // Carpeta base donde se guardan los archivos
+            Path base = Paths.get(uploadDir, "documentos").toAbsolutePath().normalize();
+            Path rutaFisica = base.resolve(nombreArchivo).normalize();
+
+            // SEGURIDAD CRÍTICA: Evita ataques de "Path Traversal"
+            if (!rutaFisica.startsWith(base)) {
+                return ResponseEntity.badRequest().build();
+            }
+
             Resource recurso = new UrlResource(rutaFisica.toUri());
 
             if (recurso.exists() && recurso.isReadable()) {
                 // Detecta inteligentemente si es JPG, PNG o PDF
                 String tipoMime = Files.probeContentType(rutaFisica);
+
                 if (tipoMime == null) {
+                    // Descarga genérica si el formato es desconocido
                     tipoMime = MediaType.APPLICATION_OCTET_STREAM_VALUE;
                 }
 
@@ -55,10 +95,10 @@ public class ArchivoController {
                         .contentType(MediaType.parseMediaType(tipoMime))
                         .body(recurso);
             } else {
-                return ResponseEntity.notFound().build();
+                return ResponseEntity.notFound().build(); // 404 si el archivo no existe
             }
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.internalServerError().build(); // 500 en caso de error de lectura
         }
     }
 }

@@ -51,8 +51,10 @@ public class FotoEtapaService implements IFotoEtapaService {
             throw prohibido("Solo la organización asignada puede subir fotos.");
         }
 
-        if (etapa.getEstado() != EstadoEtapa.EN_CURSO && etapa.getEstado() != EstadoEtapa.OBSERVADA) {
-            throw conflicto("No se pueden subir fotos a una etapa que no está en curso o en corrección.");
+        if (etapa.getEstado() != EstadoEtapa.EN_CURSO &&
+                etapa.getEstado() != EstadoEtapa.OBSERVADA &&
+                etapa.getEstado() != EstadoEtapa.PRORROGADA) {
+            throw conflicto("No se pueden subir fotos a una etapa que no está en curso, observada o prorrogada.");
         }
 
         Usuario usuario = usuarioRepo.findByEmail(email).orElseThrow();
@@ -86,12 +88,20 @@ public class FotoEtapaService implements IFotoEtapaService {
         EtapaObra etapa = etapaRepo.findById(idEtapa)
                 .orElseThrow(() -> noEncontrado("Etapa no encontrada"));
 
-        if (!esAdmin && !esTecnicoAsignado(etapa.getSolicitud(), email) && !esIntegranteDeLaOrganizacion(etapa.getSolicitud(), email)) {
+        boolean esTecnico = esTecnicoAsignado(etapa.getSolicitud(), email);
+        boolean esOng = esIntegranteDeLaOrganizacion(etapa.getSolicitud(), email);
+
+        if (!esAdmin && !esTecnico && !esOng) {
             throw prohibido("No tenés permiso para ver las fotos de esta etapa.");
         }
-
-        // ACÁ ESTÁ LA CORRECCIÓN: findByEtapa_IdEtapaObra
         return fotoRepo.findByEtapa_IdEtapaObra(idEtapa).stream()
+                .filter(foto -> {
+                    // El Admin y el Técnico asignado tienen acceso total
+                    if (esAdmin || esTecnico) return true;
+
+                    // El integrante de la ONG solo ve las fotos donde su usuario sea el autor
+                    return foto.getSubidaPor() != null && foto.getSubidaPor().getEmail().equals(email);
+                })
                 .map(mapper::toDTO)
                 .collect(Collectors.toList());
     }
@@ -105,7 +115,9 @@ public class FotoEtapaService implements IFotoEtapaService {
         if (!esIntegranteDeLaOrganizacion(foto.getEtapa().getSolicitud(), email)) {
             throw prohibido("Solo la organización asignada puede eliminar fotos.");
         }
-        if (foto.getEtapa().getEstado() != EstadoEtapa.EN_CURSO && foto.getEtapa().getEstado() != EstadoEtapa.OBSERVADA) {
+        if (foto.getEtapa().getEstado() != EstadoEtapa.EN_CURSO &&
+                foto.getEtapa().getEstado() != EstadoEtapa.OBSERVADA &&
+                foto.getEtapa().getEstado() != EstadoEtapa.PRORROGADA) {
             throw conflicto("No se pueden borrar fotos una vez enviada la etapa.");
         }
 
