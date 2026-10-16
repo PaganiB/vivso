@@ -23,12 +23,25 @@ public class ArchivoController {
     @GetMapping("/visitas/foto/{nombreArchivo:.+}")
     public ResponseEntity<Resource> obtenerFotoVisita(@PathVariable String nombreArchivo) {
         try {
-            Path rutaFisica = Paths.get("uploadDir, visitas").resolve(nombreArchivo).normalize();
+            Path base = Paths.get(uploadDir, "visitas").toAbsolutePath().normalize();
+            Path rutaFisica = base.resolve(nombreArchivo).normalize();
+
+            // Seguridad: que el archivo pedido no se salga de la carpeta de visitas
+            if (!rutaFisica.startsWith(base)) {
+                return ResponseEntity.badRequest().build();
+            }
+
             Resource recurso = new UrlResource(rutaFisica.toUri());
 
             if (recurso.exists() && recurso.isReadable()) {
+                // Detecta si es JPG, PNG, etc. en vez de asumir siempre JPEG
+                String tipoMime = Files.probeContentType(rutaFisica);
+                if (tipoMime == null) {
+                    tipoMime = MediaType.IMAGE_JPEG_VALUE;
+                }
+
                 return ResponseEntity.ok()
-                        .contentType(MediaType.IMAGE_JPEG)
+                        .contentType(MediaType.parseMediaType(tipoMime))
                         .body(recurso);
             } else {
                 return ResponseEntity.notFound().build();
@@ -41,7 +54,15 @@ public class ArchivoController {
     @GetMapping("/documentos/{nombreArchivo:.+}")
     public ResponseEntity<Resource> obtenerDocumento(@PathVariable String nombreArchivo) {
         try {
-            Path rutaFisica = Paths.get("uploadDir, documentos").resolve(nombreArchivo).normalize();
+            // Carpeta base donde se guardan los archivos (sale de vivso.upload.dir)
+            Path base = Paths.get(uploadDir, "documentos").toAbsolutePath().normalize();
+            Path rutaFisica = base.resolve(nombreArchivo).normalize();
+
+            // Seguridad: que el archivo pedido no se salga de la carpeta base (ej: ../)
+            if (!rutaFisica.startsWith(base)) {
+                return ResponseEntity.badRequest().build();
+            }
+
             Resource recurso = new UrlResource(rutaFisica.toUri());
 
             if (recurso.exists() && recurso.isReadable()) {

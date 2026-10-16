@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 public class SolicitudService implements ISolicitudService {
 
     @Autowired private ISolicitudRepository solicitudRepo;
-    @Autowired private IOrganizacionRepository orgRepo;
     @Autowired private IViviendaRepository viviendaRepo;
     @Autowired private IFamiliaRepository familiaRepo;
     @Autowired private IFamiliarRepository familiarRepo;
@@ -41,8 +40,13 @@ public class SolicitudService implements ISolicitudService {
     public SolicitudDTO registrarSolicitudFamilia(RegistroFamiliaDTO dto,
                                                   MultiValueMap<String, MultipartFile> mapaArchivos) {
 
-        Organizacion org = orgRepo.findById(dto.getCuitOrg())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Organización no encontrada: " + dto.getCuitOrg()));
+        // La organización sale de quién está logueado, no de lo que mande el cliente
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Integrante integrante = integranteRepo.findByUsuario_Email(email)
+                .orElseThrow(() -> new ReglaDeNegocioException(
+                        "El usuario autenticado no está asociado a ninguna organización",
+                        HttpStatus.FORBIDDEN));
+        Organizacion org = integrante.getOrganizacion();
 
         Familia familia = familiaRepo.save(mapper.toEntity(dto.getFamilia()));
 
