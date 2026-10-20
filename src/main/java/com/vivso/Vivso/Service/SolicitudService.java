@@ -41,8 +41,13 @@ public class SolicitudService implements ISolicitudService {
     public SolicitudDTO registrarSolicitudFamilia(RegistroFamiliaDTO dto,
                                                   MultiValueMap<String, MultipartFile> mapaArchivos) {
 
-        Organizacion org = orgRepo.findById(dto.getCuitOrg())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Organización no encontrada: " + dto.getCuitOrg()));
+        // La organización sale de quién está logueado, no de lo que mande el cliente
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Integrante integrante = integranteRepo.findByUsuario_Email(email)
+                .orElseThrow(() -> new ReglaDeNegocioException(
+                        "El usuario autenticado no está asociado a ninguna organización",
+                        HttpStatus.FORBIDDEN));
+        Organizacion org = integrante.getOrganizacion();
 
         Familia familia = familiaRepo.save(mapper.toEntity(dto.getFamilia()));
 
@@ -212,13 +217,18 @@ public class SolicitudService implements ISolicitudService {
 
         Integer idSeguro = tecnico.getId();
 
-        // 2. LA LÍNEA QUE FALTA: Buscar en la base de datos usando el ID seguro
+        // 2. Buscamos las solicitudes asignadas al técnico
         List<Solicitud> solicitudes = solicitudRepo.buscarPorTecnicoAsignado(idSeguro);
 
-        // 3. Ahora sí, el return con el stream ya tiene una lista de dónde leer
+        // 3. Filtramos: que estén Pendientes o Aprobadas, Y QUE NO TENGAN Visita Inicial registrada
         return solicitudes.stream()
-                // Filtramos para que solo lleguen al celular las Pendientes (relevamiento) o Aprobadas (obra)
                 .filter(s -> s.getEstado() == EstadoSolicitud.Pendiente || s.getEstado() == EstadoSolicitud.Aprobada)
+                .filter(s -> {
+                    // Verificamos si ya existe una visita inicial para esta solicitud
+                    List<VisitaInicial> visitas = visitaInicialRepository.findBySolicitud_IdSolicitudOrderByFechaVisitaDesc(s.getIdSolicitud());
+                    // Si la lista de visitas está vacía, significa que todavía está pendiente de relevamiento
+                    return visitas.isEmpty();
+                })
                 .map(solicitud -> {
                     String nombreFamilia = (solicitud.getFamiliaBeneficiaria() != null)
                             ? solicitud.getFamiliaBeneficiaria().getNombreRepresentante()
@@ -233,7 +243,7 @@ public class SolicitudService implements ISolicitudService {
                             .numExp(solicitud.getNumExp())
                             .nombreRepresentanteFamilia(nombreFamilia)
                             .nombreOrganizacion(nombreOng)
-                            .estado(solicitud.getEstado()) // El frontend móvil usará esto para habilitar la Visita de Obra
+                            .estado(solicitud.getEstado())
                             .build();
 
                 }).collect(Collectors.toList());
@@ -362,20 +372,26 @@ public class SolicitudService implements ISolicitudService {
         // 3. Buscar solo los expedientes en fase de obra para esa ONG
         List<Solicitud> obrasAsignadas = solicitudRepo.buscarObrasParaOng(cuitOng);
 
-        // 4. Mapear a DTO para la app móvil
-        return obrasAsignadas.stream().map(solicitud -> {
-            String nombreFamilia = (solicitud.getFamiliaBeneficiaria() != null)
-                    ? solicitud.getFamiliaBeneficiaria().getNombreRepresentante()
-                    : "Sin asignar";
+        // 4. Mapear a DTO para la app móvil aplicando el nuevo filtro
+        return obrasAsignadas.stream()
+                // 👇 NUEVA REGLA: Excluimos las obras que todavía no tienen etapas iniciadas
+                .filter(solicitud -> {
+                    List<EtapaObra> etapas = etapaObraRepo.findBySolicitud_IdSolicitud(solicitud.getIdSolicitud());
+                    return etapas != null && !etapas.isEmpty();
+                })
+                .map(solicitud -> {
+                    String nombreFamilia = (solicitud.getFamiliaBeneficiaria() != null)
+                            ? solicitud.getFamiliaBeneficiaria().getNombreRepresentante()
+                            : "Sin asignar";
 
-            return ExpedienteMovilDTO.builder()
-                    .idSolicitud(solicitud.getIdSolicitud())
-                    .numExp(solicitud.getNumExp())
-                    .nombreRepresentanteFamilia(nombreFamilia)
-                    .nombreOrganizacion(integrante.getOrganizacion().getNombre())
-                    .estado(solicitud.getEstado())
-                    .build();
-        }).collect(Collectors.toList());
+                    return ExpedienteMovilDTO.builder()
+                            .idSolicitud(solicitud.getIdSolicitud())
+                            .numExp(solicitud.getNumExp())
+                            .nombreRepresentanteFamilia(nombreFamilia)
+                            .nombreOrganizacion(integrante.getOrganizacion().getNombre())
+                            .estado(solicitud.getEstado())
+                            .build();
+                }).collect(Collectors.toList());
     }
 
     @Override

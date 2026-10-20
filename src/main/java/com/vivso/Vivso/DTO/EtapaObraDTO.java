@@ -42,7 +42,7 @@ public class EtapaObraDTO {
 
     private String motivoProrroga;
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     private LocalDateTime fechaEnvio;
 
     private Integer idUsuarioEnvio;
@@ -50,7 +50,7 @@ public class EtapaObraDTO {
 
     private String observacionOrganizacion;
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     private LocalDateTime fechaRevision;
 
     private Integer idUsuarioRevisor;

@@ -19,17 +19,17 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import org.springframework.beans.factory.annotation.Value;
 import java.util.Arrays;
 import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig implements WebMvcConfigurer {
+
+    @Value("${cors.origins}")
+    private List<String> allowedOrigins;
 
     @Autowired private UserDetailsService userDetailsService;
     @Autowired private JwtAuthenticationFilter jwtAuthFilter;
@@ -130,41 +130,14 @@ public class SecurityConfig implements WebMvcConfigurer {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-
-        configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:5173",
-                "https://fetch-reproduce-eatery.ngrok-free.dev",
-                "http://localhost:8081",
-                "http://192.168.100.6:8081"
-                //"https://blade-pretty-obstruct.ngrok-free.dev"
-        ));
-
-        configuration.setAllowedMethods(Arrays.asList(
-                "GET",
-                "POST",
-                "PUT",
-                "PATCH",
-                "DELETE",
-                "OPTIONS"
-        ));
-
+        configuration.setAllowedOrigins(allowedOrigins);
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
 
-        UrlBasedCorsConfigurationSource source =
-                new UrlBasedCorsConfigurationSource();
-
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
-
         return source;
     }
 
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        Path uploadDir = Paths.get("uploads");
-        String uploadPath = uploadDir.toFile().getAbsolutePath();
-
-        registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:" + uploadPath + "/");
-    }
 }

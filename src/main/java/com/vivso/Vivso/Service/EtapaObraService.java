@@ -89,8 +89,10 @@ public class EtapaObraService implements IEtapaObraService {
         if (!esIntegranteDeLaOrganizacion(etapa.getSolicitud(), email)) {
             throw prohibido("Solo un integrante de la organización del expediente puede enviar la etapa.");
         }
-        if (etapa.getEstado() != EstadoEtapa.EN_CURSO && etapa.getEstado() != EstadoEtapa.OBSERVADA) {
-            throw conflicto("Solo se puede enviar una etapa en curso u observada. Estado actual: " + etapa.getEstado());
+        if (etapa.getEstado() != EstadoEtapa.EN_CURSO &&
+                etapa.getEstado() != EstadoEtapa.OBSERVADA &&
+                etapa.getEstado() != EstadoEtapa.PRORROGADA) {
+            throw conflicto("Solo se puede enviar una etapa en curso, observada o prorrogada. Estado actual: " + etapa.getEstado());
         }
         // TODO: exigir al menos una foto cargada cuando exista FotoEtapa
 

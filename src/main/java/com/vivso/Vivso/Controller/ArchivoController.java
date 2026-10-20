@@ -1,3 +1,4 @@
+/*
 package com.vivso.Vivso.Controller;
 
 import org.springframework.core.io.Resource;
@@ -61,4 +62,4 @@ public class ArchivoController {
             return ResponseEntity.internalServerError().build();
         }
     }
-}
+}*/

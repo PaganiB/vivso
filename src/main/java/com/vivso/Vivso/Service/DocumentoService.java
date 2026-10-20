@@ -1,5 +1,7 @@
 package com.vivso.Vivso.Service;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.vivso.Vivso.DTO.DocumentoDTO;
 import com.vivso.Vivso.Exception.RecursoNoEncontradoException;
 import com.vivso.Vivso.Exception.ReglaDeNegocioException;
@@ -15,18 +17,17 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
+import java.util.Map;
+
 
 @Slf4j
 @Service
 public class DocumentoService implements IDocumentoService {
 
+    private final Cloudinary cloudinary;
     @Autowired private IDocumentoRepository docRepo;
     @Autowired private IFamiliaRepository familiaRepo;
     @Autowired private IOrganizacionRepository orgRepo;
@@ -34,7 +35,11 @@ public class DocumentoService implements IDocumentoService {
     @Autowired private VivsoMapper mapper;
     @Autowired private ISolicitudOrganizacionRepository  solicitudOrgRepo;
 
-
+    // Inyectamos la URL de Cloudinary directamente en el constructor
+    @Autowired
+    public DocumentoService(@Value("${CLOUDINARY_URL}") String cloudinaryUrl) {
+        this.cloudinary = new Cloudinary(cloudinaryUrl);
+    }
     @Value("${vivso.upload.dir}/documentos")
     private String rootFolder;
     private static final long MAX_SIZE_BYTES = 20 * 1024 * 1024; // 20MB
@@ -43,17 +48,17 @@ public class DocumentoService implements IDocumentoService {
     @Override
     @Transactional
     public DocumentoDTO subirDocumento(MultipartFile archivo, TipoDocumento tipo, Integer idFamilia, String cuitOrg) {
+        validarArchivo(archivo, archivo.getOriginalFilename());
         try {
-            Path pathRoot = Paths.get(rootFolder);
-            if (!Files.exists(pathRoot)) Files.createDirectories(pathRoot);
-
-            String nombreArchivo = UUID.randomUUID() + "_" + archivo.getOriginalFilename();
-            Path destino = pathRoot.resolve(nombreArchivo);
-            Files.copy(archivo.getInputStream(), destino, StandardCopyOption.REPLACE_EXISTING);
+            // Sube a Cloudinary
+            Map resultado = cloudinary.uploader().upload(archivo.getBytes(),
+                    ObjectUtils.asMap("folder", "vivso_documentos")
+            );
+            String urlSegura = resultado.get("secure_url").toString();
 
             Documento doc = new Documento();
             doc.setNombre(archivo.getOriginalFilename());
-            doc.setUrl(destino.toString());
+            doc.setUrl(urlSegura); // Guarda la URL de Cloudinary
             doc.setTipo(tipo);
             doc.setEstado(EstadoDocumento.PENDIENTE);
 
@@ -61,9 +66,8 @@ public class DocumentoService implements IDocumentoService {
             if (cuitOrg   != null) doc.setOrganizacion(orgRepo.findById(cuitOrg).orElse(null));
 
             return mapper.toDTO(docRepo.save(doc));
-
         } catch (IOException e) {
-            throw new RuntimeException("Error al guardar el archivo: " + e.getMessage());
+            throw new RuntimeException("Error al subir el archivo: " + e.getMessage());
         }
     }
 
@@ -103,20 +107,16 @@ public class DocumentoService implements IDocumentoService {
         validarArchivo(archivo, doc.getNombre());
 
         try {
-            Path directorio = Paths.get(rootFolder);
-            if (!Files.exists(directorio)) Files.createDirectories(directorio);
+            borrarArchivoEnNube(doc.getUrl());
 
-            String originalName = archivo.getOriginalFilename();
-            if (originalName == null || !originalName.contains("."))
-                throw new ReglaDeNegocioException("El archivo no tiene extensión válida.", HttpStatus.BAD_REQUEST);
+            // Sube el nuevo a Cloudinary
+            Map resultado = cloudinary.uploader().upload(archivo.getBytes(),
+                    ObjectUtils.asMap("folder", "vivso_documentos")
+            );
+            String urlSegura = resultado.get("secure_url").toString();
 
-            Path rutaDestino = directorio.resolve(
-                    UUID.randomUUID().toString() + originalName.substring(originalName.lastIndexOf(".")));
-
-            Files.copy(archivo.getInputStream(), rutaDestino);
-
-            doc.setNombre(originalName);
-            doc.setUrl(rutaDestino.toString());
+            doc.setNombre(archivo.getOriginalFilename());
+            doc.setUrl(urlSegura);
             doc.setEstado(EstadoDocumento.PENDIENTE);
             doc.setMotivoObservacion(null);
             doc.setRevisor(null);
@@ -124,7 +124,7 @@ public class DocumentoService implements IDocumentoService {
             return mapper.toDTO(docRepo.save(doc));
 
         } catch (IOException e) {
-            throw new RuntimeException("Error al guardar el archivo: " + archivo.getOriginalFilename(), e);
+            throw new RuntimeException("Error al reemplazar el archivo: " + archivo.getOriginalFilename(), e);
         }
     }
 
@@ -197,19 +197,12 @@ public class DocumentoService implements IDocumentoService {
         validarArchivo(archivo, archivo.getOriginalFilename());
 
         try {
-            Path pathRoot = Paths.get(rootFolder);
-            if (!Files.exists(pathRoot)) Files.createDirectories(pathRoot);
-
-            String originalName = archivo.getOriginalFilename();
-            String ext = originalName.substring(originalName.lastIndexOf("."));
-            String nombreUnico = UUID.randomUUID().toString() + ext;
-
-            Path rutaDestino = pathRoot.resolve(nombreUnico);
-            Files.copy(archivo.getInputStream(), rutaDestino);
-
-            return rutaDestino.toString();
+            Map resultado = cloudinary.uploader().upload(archivo.getBytes(),
+                    ObjectUtils.asMap("folder", "vivso_documentos")
+            );
+            return resultado.get("secure_url").toString();
         } catch (IOException e) {
-            throw new RuntimeException("Error al guardar el archivo: " + e.getMessage(), e);
+            throw new RuntimeException("Error al subir el archivo a Cloudinary: " + e.getMessage(), e);
         }
     }
 
@@ -228,15 +221,37 @@ public class DocumentoService implements IDocumentoService {
         return mapper.toDTO(docRepo.save(doc));
     }
 
-    @Override
-    public void borrarArchivoFisico(String url) {
-        if (url != null && !url.isEmpty()) {
+    public void borrarArchivoEnNube(String url) {
+        if (url != null && url.contains("cloudinary")) {
             try {
-                Files.deleteIfExists(Paths.get(url));
+                // Extrae el Public ID de Cloudinary desde la URL para poder borrarlo
+                String publicId = extraerPublicId(url);
+                if (publicId != null) {
+                    cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+                }
             } catch (Exception e) {
-                log.error("No se pudo borrar el archivo físico: {}", url);
+                log.error("No se pudo borrar el archivo en Cloudinary: {}", url);
             }
         }
+    }
+
+    // Méttodo auxiliar para borrar archivos en Cloudinary
+    private String extraerPublicId(String url) {
+        try {
+            String[] parts = url.split("/");
+            String lastPart = parts[parts.length - 1]; // nombre_archivo.jpg
+            String folder = parts[parts.length - 2];   // vivso_documentos
+            String nombreSinExtension = lastPart.substring(0, lastPart.lastIndexOf("."));
+            return folder + "/" + nombreSinExtension;
+        } catch (Exception e){
+            return null;
+        }
+    }
+
+    @Override
+    public void borrarArchivoFisico(String url) {
+        // Redirige la orden de borrado directamente a Cloudinary
+        borrarArchivoEnNube(url);
     }
 
     @Override

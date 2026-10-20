@@ -51,8 +51,10 @@ public class FotoEtapaService implements IFotoEtapaService {
             throw prohibido("Solo la organización asignada puede subir fotos.");
         }
 
-        if (etapa.getEstado() != EstadoEtapa.EN_CURSO && etapa.getEstado() != EstadoEtapa.OBSERVADA) {
-            throw conflicto("No se pueden subir fotos a una etapa que no está en curso o en corrección.");
+        if (etapa.getEstado() != EstadoEtapa.EN_CURSO &&
+                etapa.getEstado() != EstadoEtapa.OBSERVADA &&
+                etapa.getEstado() != EstadoEtapa.PRORROGADA) {
+            throw conflicto("No se pueden subir fotos a una etapa que no está en curso, observada o prorrogada.");
         }
 
         Usuario usuario = usuarioRepo.findByEmail(email).orElseThrow();
