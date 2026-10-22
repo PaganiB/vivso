@@ -11,4 +11,5 @@ public interface IVisitaInicialRepository extends JpaRepository<VisitaInicial,In
 
     List<VisitaInicial> findByTecnico_Id(Integer idTecnico);
     List<VisitaInicial> findBySolicitud_IdSolicitudOrderByFechaVisitaDesc(Integer idSolicitud);
+    boolean existsBySolicitud_IdSolicitud(Integer idSolicitud);
 }

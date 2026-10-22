@@ -151,8 +151,9 @@ public class EtapaObraService implements IEtapaObraService {
 
         if (etapa.getEstado() != EstadoEtapa.EN_CURSO &&
                 etapa.getEstado() != EstadoEtapa.OBSERVADA &&
+                etapa.getEstado() != EstadoEtapa.EN_REVISION &&
                 etapa.getEstado() != EstadoEtapa.PRORROGADA) {
-            throw conflicto("Solo se puede prorrogar una etapa en curso, observada o en revisión. Estado actual: " + etapa.getEstado());
+            throw conflicto("Solo se puede prorrogar una etapa en curso, observada prorrogada, o en revisión. Estado actual: " + etapa.getEstado());
         }
 
         LocalDate nueva = dto.getNuevaFechaLimite();

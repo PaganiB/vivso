@@ -1,7 +1,5 @@
 package com.vivso.Vivso.Service;
 
-import com.cloudinary.Cloudinary;
-import com.cloudinary.utils.ObjectUtils;
 import com.vivso.Vivso.DTO.DocumentoDTO;
 import com.vivso.Vivso.Exception.RecursoNoEncontradoException;
 import com.vivso.Vivso.Exception.ReglaDeNegocioException;
@@ -10,295 +8,254 @@ import com.vivso.Vivso.Model.*;
 import com.vivso.Vivso.Repository.*;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import java.io.IOException;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
-
 
 @Slf4j
 @Service
 public class DocumentoService implements IDocumentoService {
 
-    private final Cloudinary cloudinary;
-    @Autowired private IDocumentoRepository docRepo;
-    @Autowired private IFamiliaRepository familiaRepo;
-    @Autowired private IOrganizacionRepository orgRepo;
-    @Autowired private IUsuarioRepository usuarioRepo;
-    @Autowired private VivsoMapper mapper;
-    @Autowired private ISolicitudOrganizacionRepository  solicitudOrgRepo;
+  private static final long MAX_SIZE_BYTES = 20 * 1024 * 1024; // 20MB
+  private static final List<String> EXTENSIONES_PERMITIDAS = List.of("pdf", "jpg", "jpeg", "png");
+  @Autowired
+  private IDocumentoRepository docRepo;
+  @Autowired
+  private IFamiliaRepository familiaRepo;
+  @Autowired
+  private IOrganizacionRepository orgRepo;
+  @Autowired
+  private IUsuarioRepository usuarioRepo;
+  @Autowired
+  private VivsoMapper mapper;
+  @Autowired
+  private ISolicitudOrganizacionRepository solicitudOrgRepo;
+  @Autowired
+  private CloudinaryService cloudinaryService;
 
-    // Inyectamos la URL de Cloudinary directamente en el constructor
-    @Autowired
-    public DocumentoService(@Value("${CLOUDINARY_URL}") String cloudinaryUrl) {
-        this.cloudinary = new Cloudinary(cloudinaryUrl);
-    }
-    @Value("${vivso.upload.dir}/documentos")
-    private String rootFolder;
-    private static final long MAX_SIZE_BYTES = 20 * 1024 * 1024; // 20MB
-    private static final List<String> EXTENSIONES_PERMITIDAS = List.of("pdf", "jpg", "jpeg", "png");
+  @Override
+  @Transactional
+  public DocumentoDTO subirDocumento(MultipartFile archivo, TipoDocumento tipo, Integer idFamilia, String cuitOrg) {
+    validarArchivo(archivo, archivo.getOriginalFilename());
 
-    @Override
-    @Transactional
-    public DocumentoDTO subirDocumento(MultipartFile archivo, TipoDocumento tipo, Integer idFamilia, String cuitOrg) {
-        validarArchivo(archivo, archivo.getOriginalFilename());
-        try {
-            // Sube a Cloudinary
-            Map resultado = cloudinary.uploader().upload(archivo.getBytes(),
-                    ObjectUtils.asMap("folder", "vivso_documentos")
-            );
-            String urlSegura = resultado.get("secure_url").toString();
+    String urlSegura = cloudinaryService.subirArchivo(archivo, "vivso_documentos");
 
-            Documento doc = new Documento();
-            doc.setNombre(archivo.getOriginalFilename());
-            doc.setUrl(urlSegura); // Guarda la URL de Cloudinary
-            doc.setTipo(tipo);
-            doc.setEstado(EstadoDocumento.PENDIENTE);
+    Documento doc = new Documento();
+    doc.setNombre(archivo.getOriginalFilename());
+    doc.setUrl(urlSegura);
+    doc.setTipo(tipo);
+    doc.setEstado(EstadoDocumento.PENDIENTE);
 
-            if (idFamilia != null) doc.setFamilia(familiaRepo.findById(idFamilia).orElse(null));
-            if (cuitOrg   != null) doc.setOrganizacion(orgRepo.findById(cuitOrg).orElse(null));
+    if (idFamilia != null) doc.setFamilia(familiaRepo.findById(idFamilia).orElse(null));
+    if (cuitOrg != null) doc.setOrganizacion(orgRepo.findById(cuitOrg).orElse(null));
 
-            return mapper.toDTO(docRepo.save(doc));
-        } catch (IOException e) {
-            throw new RuntimeException("Error al subir el archivo: " + e.getMessage());
-        }
-    }
+    return mapper.toDTO(docRepo.save(doc));
+  }
 
-    @Override
-    @Transactional
-    public DocumentoDTO marcarParaCorregir(Integer idDoc, String motivo) {
+  @Override
+  @Transactional
+  public DocumentoDTO marcarParaCorregir(Integer idDoc, String motivo) {
 
-        Documento doc = docRepo.findById(idDoc)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Documento no encontrado: " + idDoc));
+    Documento doc = docRepo.findById(idDoc)
+      .orElseThrow(() -> new RecursoNoEncontradoException("Documento no encontrado: " + idDoc));
 
-        if (doc.getEstado() != EstadoDocumento.PENDIENTE) {
-            throw new ReglaDeNegocioException("Solo se pueden revisar documentos pendientes", HttpStatus.CONFLICT);
-        }
-
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        Usuario revisor = usuarioRepo.findByEmail(email)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario autenticado no encontrado"));
-
-        doc.setEstado(EstadoDocumento.A_CORREGIR);
-        doc.setRevisor(revisor);
-        doc.setMotivoObservacion(motivo);
-        doc.setFechaRevision(LocalDateTime.now());
-
-        return mapper.toDTO(docRepo.save(doc));
+    if (doc.getEstado() != EstadoDocumento.PENDIENTE) {
+      throw new ReglaDeNegocioException("Solo se pueden revisar documentos pendientes", HttpStatus.CONFLICT);
     }
 
-    @Override
-    @Transactional
-    public DocumentoDTO reemplazar(Integer idDoc, MultipartFile archivo) {
-        Documento doc = docRepo.findById(idDoc)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Documento no encontrado: " + idDoc));
+    String email = SecurityContextHolder.getContext().getAuthentication().getName();
+    Usuario revisor = usuarioRepo.findByEmail(email)
+      .orElseThrow(() -> new RecursoNoEncontradoException("Usuario autenticado no encontrado"));
 
-        if (doc.getEstado() != EstadoDocumento.A_CORREGIR) {
-            throw new ReglaDeNegocioException("Solo se pueden reemplazar documentos marcados para corregir", HttpStatus.CONFLICT);
-        }
+    doc.setEstado(EstadoDocumento.A_CORREGIR);
+    doc.setRevisor(revisor);
+    doc.setMotivoObservacion(motivo);
+    doc.setFechaRevision(LocalDateTime.now());
 
-        validarArchivo(archivo, doc.getNombre());
+    return mapper.toDTO(docRepo.save(doc));
+  }
 
-        try {
-            borrarArchivoEnNube(doc.getUrl());
+  @Override
+  @Transactional
+  public DocumentoDTO reemplazar(Integer idDoc, MultipartFile archivo) {
+    Documento doc = docRepo.findById(idDoc)
+      .orElseThrow(() -> new RecursoNoEncontradoException("Documento no encontrado: " + idDoc));
 
-            // Sube el nuevo a Cloudinary
-            Map resultado = cloudinary.uploader().upload(archivo.getBytes(),
-                    ObjectUtils.asMap("folder", "vivso_documentos")
-            );
-            String urlSegura = resultado.get("secure_url").toString();
-
-            doc.setNombre(archivo.getOriginalFilename());
-            doc.setUrl(urlSegura);
-            doc.setEstado(EstadoDocumento.PENDIENTE);
-            doc.setMotivoObservacion(null);
-            doc.setRevisor(null);
-
-            return mapper.toDTO(docRepo.save(doc));
-
-        } catch (IOException e) {
-            throw new RuntimeException("Error al reemplazar el archivo: " + archivo.getOriginalFilename(), e);
-        }
+    if (doc.getEstado() != EstadoDocumento.A_CORREGIR) {
+      throw new ReglaDeNegocioException("Solo se pueden reemplazar documentos marcados para corregir", HttpStatus.CONFLICT);
     }
 
-    @Override
-    public List<DocumentoDTO> listarPorFamilia(Integer idFamilia) {
-        if (!familiaRepo.existsById(idFamilia))
-            throw new RecursoNoEncontradoException("No se encontró la familia: " + idFamilia);
-        return docRepo.findByFamilia_IdFamilia(idFamilia).stream()
-                .map(mapper::toDTO)
-                .toList();
+    validarArchivo(archivo, doc.getNombre());
+
+    cloudinaryService.borrarArchivo(doc.getUrl());
+
+    String urlSegura = cloudinaryService.subirArchivo(archivo, "vivso_documentos");
+
+    doc.setNombre(archivo.getOriginalFilename());
+    doc.setUrl(urlSegura);
+    doc.setEstado(EstadoDocumento.PENDIENTE);
+    doc.setMotivoObservacion(null);
+    doc.setRevisor(null);
+
+    return mapper.toDTO(docRepo.save(doc));
+  }
+
+  @Override
+  public List<DocumentoDTO> listarPorFamilia(Integer idFamilia) {
+    if (!familiaRepo.existsById(idFamilia))
+      throw new RecursoNoEncontradoException("No se encontró la familia: " + idFamilia);
+    return docRepo.findByFamilia_IdFamilia(idFamilia).stream()
+      .map(mapper::toDTO)
+      .toList();
+  }
+
+  @Override
+  public List<DocumentoDTO> listarPorOrganizacion(String cuitOrg) {
+    if (!orgRepo.existsById(cuitOrg))
+      throw new RecursoNoEncontradoException("No se encontró la organización: " + cuitOrg);
+    return docRepo.findByOrganizacion_Cuit(cuitOrg).stream()
+      .map(mapper::toDTO)
+      .toList();
+  }
+
+  @Override
+  public List<DocumentoDTO> listarPorUsuarioRevisor(Integer idUsuario) {
+    if (!usuarioRepo.existsById(idUsuario))
+      throw new RecursoNoEncontradoException("No se encontró el revisor: " + idUsuario);
+    return docRepo.findByRevisor_Id(idUsuario).stream()
+      .map(mapper::toDTO)
+      .toList();
+  }
+
+  @Override
+  @Transactional
+  public void eliminar(Integer id) {
+    Documento doc = docRepo.findById(id)
+      .orElseThrow(() -> new RecursoNoEncontradoException("Documento no encontrado: " + id));
+
+    borrarArchivoFisico(doc.getUrl());
+    docRepo.deleteById(id);
+  }
+
+  private void validarArchivo(MultipartFile archivo, String nombreCampo) {
+    if (archivo == null || archivo.isEmpty()) return;
+
+    // Validar tamaño
+    if (archivo.getSize() > MAX_SIZE_BYTES) {
+      throw new ReglaDeNegocioException(
+        "El archivo '" + nombreCampo + "' supera el máximo de 20MB (peso actual: " + archivo.getSize() / (1024 * 1024) + "MB)",
+        HttpStatus.BAD_REQUEST);
     }
 
-    @Override
-    public List<DocumentoDTO> listarPorOrganizacion(String cuitOrg) {
-        if (!orgRepo.existsById(cuitOrg))
-            throw new RecursoNoEncontradoException("No se encontró la organización: " + cuitOrg);
-        return docRepo.findByOrganizacion_Cuit(cuitOrg).stream()
-                .map(mapper::toDTO)
-                .toList();
+    // Validar extensión
+    String nombreOriginal = archivo.getOriginalFilename();
+    if (nombreOriginal == null || !nombreOriginal.contains(".")) {
+      throw new ReglaDeNegocioException("El archivo '" + nombreCampo + "' no tiene una extensión válida", HttpStatus.BAD_REQUEST);
     }
 
-    @Override
-    public List<DocumentoDTO> listarPorUsuarioRevisor(Integer idUsuario) {
-        if (!usuarioRepo.existsById(idUsuario))
-            throw new RecursoNoEncontradoException("No se encontró el revisor: " + idUsuario);
-        return docRepo.findByRevisor_Id(idUsuario).stream()
-                .map(mapper::toDTO)
-                .toList();
+    String extension = nombreOriginal.substring(nombreOriginal.lastIndexOf('.') + 1).toLowerCase();
+    if (!EXTENSIONES_PERMITIDAS.contains(extension)) {
+      throw new ReglaDeNegocioException(
+        "El archivo '" + nombreCampo + "' tiene extensión no permitida (." + extension + "). Solo se aceptan: PDF, JPG, PNG",
+        HttpStatus.BAD_REQUEST);
     }
+  }
 
-    @Override
-    @Transactional
-    public void eliminar(Integer id) {
-        Documento doc = docRepo.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Documento no encontrado: " + id));
-
-        borrarArchivoFisico(doc.getUrl());
-        docRepo.deleteById(id);
+  @Override
+  public String guardarArchivoFisico(MultipartFile archivo) {
+    if (archivo == null || archivo.isEmpty()) {
+      throw new ReglaDeNegocioException("El archivo llegó vacío o corrupto desde el frontend.", HttpStatus.BAD_REQUEST);
     }
+    validarArchivo(archivo, archivo.getOriginalFilename());
+    // Se mantiene este método público por si la interfaz lo requiere, pero delega la acción
+    return cloudinaryService.subirArchivo(archivo, "vivso_documentos");
+  }
 
-    private void validarArchivo(MultipartFile archivo, String nombreCampo) {
-        if (archivo == null || archivo.isEmpty()) return;
+  @Override
+  @Transactional
+  public DocumentoDTO crearDesdeRutaExistente(String url, TipoDocumento tipo, Integer idFamilia, String cuitOrg) {
+    Documento doc = new Documento();
+    doc.setNombre(Paths.get(url).getFileName().toString());
+    doc.setUrl(url);
+    doc.setTipo(tipo);
+    doc.setEstado(EstadoDocumento.PENDIENTE);
 
-        // Validar tamaño
-        if (archivo.getSize() > MAX_SIZE_BYTES) {
-            throw new ReglaDeNegocioException(
-                    "El archivo '" + nombreCampo + "' supera el máximo de 20MB (peso actual: " + archivo.getSize() / (1024 * 1024) + "MB)",
-                    HttpStatus.BAD_REQUEST);
-        }
+    if (idFamilia != null) doc.setFamilia(familiaRepo.findById(idFamilia).orElse(null));
+    if (cuitOrg != null) doc.setOrganizacion(orgRepo.findById(cuitOrg).orElse(null));
 
-        // Validar extensión
-        String nombreOriginal = archivo.getOriginalFilename();
-        if (nombreOriginal == null || !nombreOriginal.contains(".")) {
-            throw new ReglaDeNegocioException("El archivo '" + nombreCampo + "' no tiene una extensión válida", HttpStatus.BAD_REQUEST);
-        }
+    return mapper.toDTO(docRepo.save(doc));
+  }
 
-        String extension = nombreOriginal.substring(nombreOriginal.lastIndexOf('.') + 1).toLowerCase();
-        if (!EXTENSIONES_PERMITIDAS.contains(extension)) {
-            throw new ReglaDeNegocioException(
-                    "El archivo '" + nombreCampo + "' tiene extensión no permitida (." + extension + "). Solo se aceptan: PDF, JPG, PNG",
-                    HttpStatus.BAD_REQUEST);
-        }
+
+  // Méttodo auxiliar para borrar archivos en Cloudinary
+  private String extraerPublicId(String url) {
+    try {
+      String[] parts = url.split("/");
+      String lastPart = parts[parts.length - 1]; // nombre_archivo.jpg
+      String folder = parts[parts.length - 2];   // vivso_documentos
+      String nombreSinExtension = lastPart.substring(0, lastPart.lastIndexOf("."));
+      return folder + "/" + nombreSinExtension;
+    } catch (Exception e) {
+      return null;
     }
+  }
 
-    @Override
-    public String guardarArchivoFisico(MultipartFile archivo) {
-        if (archivo == null || archivo.isEmpty()) {
-            throw new ReglaDeNegocioException("El archivo llegó vacío o corrupto desde el frontend.", HttpStatus.BAD_REQUEST);
-        }
-        validarArchivo(archivo, archivo.getOriginalFilename());
+  @Override
+  public void borrarArchivoFisico(String url) {
+    // Se mantiene este método público por si la interfaz lo requiere
+    cloudinaryService.borrarArchivo(url);
+  }
 
-        try {
-            Map resultado = cloudinary.uploader().upload(archivo.getBytes(),
-                    ObjectUtils.asMap("folder", "vivso_documentos")
-            );
-            return resultado.get("secure_url").toString();
-        } catch (IOException e) {
-            throw new RuntimeException("Error al subir el archivo a Cloudinary: " + e.getMessage(), e);
-        }
-    }
+  @Override
+  @Transactional
+  public DocumentoDTO subirDocumentoDeSolicitudOrg(MultipartFile archivo, TipoDocumento tipo, Integer idSolicitudOrg) {
+    String ruta = guardarArchivoFisico(archivo); // reutiliza el que ya existe, valida tamaño/extensión
 
-    @Override
-    @Transactional
-    public DocumentoDTO crearDesdeRutaExistente(String url, TipoDocumento tipo, Integer idFamilia, String cuitOrg) {
-        Documento doc = new Documento();
-        doc.setNombre(Paths.get(url).getFileName().toString());
-        doc.setUrl(url);
-        doc.setTipo(tipo);
-        doc.setEstado(EstadoDocumento.PENDIENTE);
+    Documento doc = new Documento();
+    doc.setNombre(archivo.getOriginalFilename());
+    doc.setUrl(ruta);
+    doc.setTipo(tipo);
+    doc.setEstado(EstadoDocumento.PENDIENTE);
+    doc.setSolicitudOrganizacion(
+      solicitudOrgRepo.findById(idSolicitudOrg)
+        .orElseThrow(() -> new RecursoNoEncontradoException("Solicitud de organización no encontrada: " + idSolicitudOrg))
+    );
 
-        if (idFamilia != null) doc.setFamilia(familiaRepo.findById(idFamilia).orElse(null));
-        if (cuitOrg != null) doc.setOrganizacion(orgRepo.findById(cuitOrg).orElse(null));
+    return mapper.toDTO(docRepo.save(doc));
+  }
 
-        return mapper.toDTO(docRepo.save(doc));
-    }
+  @Override
+  public List<DocumentoDTO> listarPorSolicitudOrg(Integer idSolicitudOrg) {
+    return docRepo.findBySolicitudOrganizacion_IdSolicitudOrg(idSolicitudOrg).stream()
+      .map(mapper::toDTO)
+      .toList();
+  }
 
-    public void borrarArchivoEnNube(String url) {
-        if (url != null && url.contains("cloudinary")) {
-            try {
-                // Extrae el Public ID de Cloudinary desde la URL para poder borrarlo
-                String publicId = extraerPublicId(url);
-                if (publicId != null) {
-                    cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
-                }
-            } catch (Exception e) {
-                log.error("No se pudo borrar el archivo en Cloudinary: {}", url);
-            }
-        }
-    }
+  @Override
+  @Transactional
+  public void aprobarConOrganizacion(Integer idDocumento, Organizacion org, Usuario revisor) {
+    Documento doc = docRepo.findById(idDocumento)
+      .orElseThrow(() -> new RecursoNoEncontradoException("Documento no encontrado: " + idDocumento));
+    doc.setEstado(EstadoDocumento.APROBADO);
+    doc.setOrganizacion(org);
+    doc.setRevisor(revisor);
+    docRepo.save(doc);
+  }
 
-    // Méttodo auxiliar para borrar archivos en Cloudinary
-    private String extraerPublicId(String url) {
-        try {
-            String[] parts = url.split("/");
-            String lastPart = parts[parts.length - 1]; // nombre_archivo.jpg
-            String folder = parts[parts.length - 2];   // vivso_documentos
-            String nombreSinExtension = lastPart.substring(0, lastPart.lastIndexOf("."));
-            return folder + "/" + nombreSinExtension;
-        } catch (Exception e){
-            return null;
-        }
-    }
-
-    @Override
-    public void borrarArchivoFisico(String url) {
-        // Redirige la orden de borrado directamente a Cloudinary
-        borrarArchivoEnNube(url);
-    }
-
-    @Override
-    @Transactional
-    public DocumentoDTO subirDocumentoDeSolicitudOrg(MultipartFile archivo, TipoDocumento tipo, Integer idSolicitudOrg) {
-        String ruta = guardarArchivoFisico(archivo); // reutiliza el que ya existe, valida tamaño/extensión
-
-        Documento doc = new Documento();
-        doc.setNombre(archivo.getOriginalFilename());
-        doc.setUrl(ruta);
-        doc.setTipo(tipo);
-        doc.setEstado(EstadoDocumento.PENDIENTE);
-        doc.setSolicitudOrganizacion(
-                solicitudOrgRepo.findById(idSolicitudOrg)
-                        .orElseThrow(() -> new RecursoNoEncontradoException("Solicitud de organización no encontrada: " + idSolicitudOrg))
-        );
-
-        return mapper.toDTO(docRepo.save(doc));
-    }
-
-    @Override
-    public List<DocumentoDTO> listarPorSolicitudOrg(Integer idSolicitudOrg) {
-        return docRepo.findBySolicitudOrganizacion_IdSolicitudOrg(idSolicitudOrg).stream()
-                .map(mapper::toDTO)
-                .toList();
-    }
-
-    @Override
-    @Transactional
-    public void aprobarConOrganizacion(Integer idDocumento, Organizacion org, Usuario revisor) {
-        Documento doc = docRepo.findById(idDocumento)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Documento no encontrado: " + idDocumento));
-        doc.setEstado(EstadoDocumento.APROBADO);
-        doc.setOrganizacion(org);
-        doc.setRevisor(revisor);
-        docRepo.save(doc);
-    }
-
-    @Override
-    @Transactional
-    public void rechazar(Integer idDocumento, Usuario revisor) {
-        Documento doc = docRepo.findById(idDocumento)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Documento no encontrado: " + idDocumento));
-        borrarArchivoFisico(doc.getUrl());
-        doc.setEstado(EstadoDocumento.RECHAZADO);
-        doc.setRevisor(revisor);
-        docRepo.save(doc);
-    }
+  @Override
+  @Transactional
+  public void rechazar(Integer idDocumento, Usuario revisor) {
+    Documento doc = docRepo.findById(idDocumento)
+      .orElseThrow(() -> new RecursoNoEncontradoException("Documento no encontrado: " + idDocumento));
+    borrarArchivoFisico(doc.getUrl());
+    doc.setEstado(EstadoDocumento.RECHAZADO);
+    doc.setRevisor(revisor);
+    docRepo.save(doc);
+  }
 
 }

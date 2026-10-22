@@ -37,9 +37,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             // Le sacamos la palabra "Bearer " (que tiene 7 caracteres) para quedarnos con el token puro
             jwt = authHeader.substring(7);
-        } else if (request.getParameter("token") != null) {
-            // Si viene desde el componente Image de React Native en la URL (?token=...)
-            jwt = request.getParameter("token");
         }
 
         // 3. Si no encontramos el token por ningún lado, lo dejamos pasar sin autenticar.

@@ -222,7 +222,9 @@ public class SolicitudService implements ISolicitudService {
 
         // 3. Filtramos: que estén Pendientes o Aprobadas, Y QUE NO TENGAN Visita Inicial registrada
         return solicitudes.stream()
-                .filter(s -> s.getEstado() == EstadoSolicitud.Pendiente || s.getEstado() == EstadoSolicitud.Aprobada)
+                .filter(s -> s.getEstado() == EstadoSolicitud.Aprobada
+                        || (s.getEstado() == EstadoSolicitud.Pendiente
+                        && !visitaInicialRepository.existsBySolicitud_IdSolicitud(s.getIdSolicitud())))
                 .filter(s -> {
                     // Verificamos si ya existe una visita inicial para esta solicitud
                     List<VisitaInicial> visitas = visitaInicialRepository.findBySolicitud_IdSolicitudOrderByFechaVisitaDesc(s.getIdSolicitud());
