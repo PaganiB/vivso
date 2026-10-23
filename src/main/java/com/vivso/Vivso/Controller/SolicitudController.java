@@ -76,6 +76,11 @@ public class SolicitudController {
         return ResponseEntity.ok(solicitudService.obtenerDashboardWebTecnico());
     }
 
+    @GetMapping("/{id}/expediente")
+    public ResponseEntity<ExpedienteDetalleDTO> obtenerExpediente(@PathVariable Integer id) {
+        return ResponseEntity.ok(solicitudService.obtenerExpedienteDetalle(id));
+    }
+
     // Metodo para obtener la lista de DTO a la app movil
     @GetMapping("/movil")
     public ResponseEntity<List<ExpedienteMovilDTO>> getSolicitudesMovil() {

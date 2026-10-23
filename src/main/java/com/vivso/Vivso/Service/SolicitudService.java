@@ -9,6 +9,7 @@ import com.vivso.Vivso.Repository.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,7 +17,9 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -25,7 +28,6 @@ import java.util.stream.Collectors;
 public class SolicitudService implements ISolicitudService {
 
     @Autowired private ISolicitudRepository solicitudRepo;
-    @Autowired private IOrganizacionRepository orgRepo;
     @Autowired private IViviendaRepository viviendaRepo;
     @Autowired private IFamiliaRepository familiaRepo;
     @Autowired private IFamiliarRepository familiarRepo;
@@ -35,6 +37,7 @@ public class SolicitudService implements ISolicitudService {
     @Autowired private IIntegranteRepository integranteRepo;
     @Autowired private IUsuarioRepository usuarioRepo;
     @Autowired private IEtapaObraRepository etapaObraRepo;
+    @Autowired private IFotoEtapaRepository fotoEtapaRepo;
 
     @Override
     @Transactional
@@ -259,100 +262,37 @@ public class SolicitudService implements ISolicitudService {
         Usuario tecnico = usuarioRepo.findByEmail(email)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Técnico no encontrado"));
 
-        Integer idSeguro = tecnico.getId();
-
-        List<Solicitud> solicitudes = solicitudRepo.buscarPorTecnicoAsignado(idSeguro);
+        List<Solicitud> solicitudes = solicitudRepo.buscarPorTecnicoAsignado(tecnico.getId());
 
         return solicitudes.stream().map(s -> {
-            ExpedienteWebDTO dto = new ExpedienteWebDTO();
-            dto.setIdSolicitud(s.getIdSolicitud());
-            dto.setNumExp(s.getNumExp());
-            dto.setEstadoSolicitud(s.getEstado());
+            Familia familia = s.getFamiliaBeneficiaria();
+            Organizacion org = s.getCuitOrg();
 
-            if (s.getFamiliaBeneficiaria() != null) {
-                dto.setBeneficiario(s.getFamiliaBeneficiaria().getNombreRepresentante());
-                dto.setDni(s.getFamiliaBeneficiaria().getDniRepresentante() != null ? s.getFamiliaBeneficiaria().getDniRepresentante() : "S/D");
-            } else {
-                dto.setBeneficiario("Sin asignar");
-                dto.setDni("S/D");
-            }
-
-            // 1. FASE DE OBRA
+            String estadoRelevamiento;
             if (s.getEstado() == EstadoSolicitud.Aprobada) {
-                Optional<Vivienda> viviendaOpt = viviendaRepo.findBySolicitud_IdSolicitud(s.getIdSolicitud());
-
-                if (viviendaOpt.isPresent()) {
-                    Vivienda v = viviendaOpt.get();
-                    dto.setEstadoRelevamiento("En Construcción");
-                    dto.setUltimoRegistro(v.getFechaInic() != null ? v.getFechaInic().toString() : "Fase de obra");
-
-                    // 👇 LÓGICA DE ETAPA ACTUAL CON ÚLTIMO REGISTRO
-                    List<EtapaObra> etapas = etapaObraRepo.findBySolicitud_IdSolicitud(s.getIdSolicitud());
-
-                    if (etapas != null && !etapas.isEmpty()) {
-                        // Buscamos cuál es la etapa activa
-                        Optional<EtapaObra> etapaActiva = etapas.stream()
-                                .filter(e -> e.getEstado() == EstadoEtapa.EN_CURSO ||
-                                        e.getEstado() == EstadoEtapa.OBSERVADA ||
-                                        e.getEstado() == EstadoEtapa.PRORROGADA ||
-                                        e.getEstado() == EstadoEtapa.EN_REVISION)
-                                .findFirst();
-
-                        if (etapaActiva.isPresent()) {
-                            EtapaObra e = etapaActiva.get();
-
-                            int numero = e.getEtapa().getNumero();
-                            String nombre = e.getEtapa().getNombre();
-
-                            dto.setEtapaActual("Etapa " + numero + ": " + nombre + " (" + e.getEstado() + ")");
-
-                            // 👇 ASIGNAR LA FECHA DE ENVÍO DE LA ONG (ultimoRegistro)
-                            if (e.getFechaEnvio() != null) {
-                                // Formateamos el LocalDateTime a algo legible: "dd/MM/yyyy HH:mm"
-                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-                                dto.setUltimoRegistro(e.getFechaEnvio().format(formatter));
-                            } else {
-                                // Si la etapa está EN_CURSO pero la ONG todavía no mandó nada a revisión
-                                dto.setUltimoRegistro("Sin envíos a revisión");
-                            }
-
-                        } else {
-                            // Si no hay ninguna activa, verificamos si ya terminaron todas
-                            boolean todasAprobadas = etapas.stream().allMatch(e -> e.getEstado() == EstadoEtapa.APROBADA);
-                            if (todasAprobadas) {
-                                dto.setEtapaActual("Obra Finalizada");
-                                dto.setUltimoRegistro("-");
-                            } else {
-                                dto.setEtapaActual("Esperando habilitación de etapa");
-                                dto.setUltimoRegistro("-");
-                            }
-                        }
-                    } else {
-                        dto.setEtapaActual("Sin etapas generadas");
-                        dto.setUltimoRegistro("-");
-                    }
-                } else {
-                    dto.setEstadoRelevamiento("Aprobada - Esperando inicio");
-                    dto.setUltimoRegistro("-");
-                    dto.setEtapaActual("Sin iniciar");
-                }
-            }
-            // 2. FASE INICIAL
-            else {
-                List<VisitaInicial> historialVisitas = visitaInicialRepository.findBySolicitud_IdSolicitudOrderByFechaVisitaDesc(s.getIdSolicitud());
-
-                if (!historialVisitas.isEmpty()) {
-                    dto.setEstadoRelevamiento("Relevamiento en proceso");
-                    dto.setUltimoRegistro(historialVisitas.get(0).getFechaVisita().toLocalDate().toString());
-                } else {
-                    dto.setEstadoRelevamiento("Sin relevamiento");
-                    dto.setUltimoRegistro("Sin relevamiento");
-                }
-
-                dto.setEtapaActual("Fase Previa");
+                // Fase de obra
+                estadoRelevamiento = viviendaRepo.findBySolicitud_IdSolicitud(s.getIdSolicitud()).isPresent()
+                        ? "En Construcción"
+                        : "Aprobada - Esperando inicio";
+            } else {
+                // Fase inicial
+                estadoRelevamiento = visitaInicialRepository
+                        .findBySolicitud_IdSolicitudOrderByFechaVisitaDesc(s.getIdSolicitud()).isEmpty()
+                        ? "Sin relevamiento"
+                        : "Relevamiento en proceso";
             }
 
-            return dto;
+            return ExpedienteWebDTO.builder()
+                    .idSolicitud(s.getIdSolicitud())
+                    .numExp(s.getNumExp())
+                    .estadoSolicitud(s.getEstado())
+                    .estadoRelevamiento(estadoRelevamiento)
+                    .beneficiario(familia != null ? familia.getNombreRepresentante() : "Sin asignar")
+                    .dni(familia != null && familia.getDniRepresentante() != null
+                            ? familia.getDniRepresentante() : "S/D")
+                    .nombreOrg(org != null ? org.getNombre() : null)
+                    .cuitOrg(org != null ? org.getCuit() : null)
+                    .build();
         }).collect(Collectors.toList());
     }
 
@@ -394,6 +334,113 @@ public class SolicitudService implements ISolicitudService {
                             .estado(solicitud.getEstado())
                             .build();
                 }).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ExpedienteDetalleDTO obtenerExpedienteDetalle(Integer idSolicitud) {
+
+        Solicitud s = solicitudRepo.findById(idSolicitud)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Solicitud no encontrada: " + idSolicitud));
+
+        validarAccesoTecnico(s);
+
+        Familia familia = s.getFamiliaBeneficiaria();
+        Organizacion org = s.getCuitOrg();
+
+        List<Integrante> integrantes = org != null
+                ? integranteRepo.findByOrganizacion_Cuit(org.getCuit())
+                : List.of();
+
+        List<ExpedienteDetalleDTO.MiembroFamilia> grupoFamiliar = familia == null ? List.of()
+                : familiarRepo.findByFamilia_IdFamilia(familia.getIdFamilia()).stream()
+                .map(f -> ExpedienteDetalleDTO.MiembroFamilia.builder()
+                        .dni(f.getDni())
+                        .nombre(f.getNombre())
+                        .apellido(f.getApellido())
+                        .discapacidad(tieneDiscapacidad(f.getCondicion_especial()))
+                        .build())
+                .toList();
+
+        List<ExpedienteDetalleDTO.EtapaConFotos> etapas = etapaObraRepo
+                .findBySolicitud_IdSolicitud(idSolicitud).stream()
+                .map(e -> ExpedienteDetalleDTO.EtapaConFotos.builder()
+                        .etapa(mapper.toDTO(e))
+                        .fotos(fotoEtapaRepo.findByEtapa_IdEtapaObra(e.getIdEtapaObra())
+                                .stream().map(mapper::toDTO).toList())
+                        .build())
+                .toList();
+
+        return ExpedienteDetalleDTO.builder()
+                .id(s.getIdSolicitud())
+                .numero(s.getNumExp() != null ? s.getNumExp() : "Sin asignar")
+                .estado(s.getEstado().name())
+                .beneficiario(ExpedienteDetalleDTO.Beneficiario.builder()
+                        .nombre(familia != null ? familia.getNombreRepresentante() : "Sin asignar")
+                        .dni(familia != null && familia.getDniRepresentante() != null
+                                ? familia.getDniRepresentante() : "S/D")
+                        .build())
+                .ong(org == null ? null : ExpedienteDetalleDTO.Ong.builder()
+                        .nombre(org.getNombre()).cuit(org.getCuit()).build())
+                .org(org == null ? null : ExpedienteDetalleDTO.Org.builder()
+                        .cuit(org.getCuit())
+                        .nombre(org.getNombre())
+                        .tipo(org.getTipo())
+                        .domicilioLegal(org.getDom_legal())
+                        .nroCpe(org.getCpe())
+                        .vencimientoVigencia(org.getFechaVencimientoVigencia())
+                        .build())
+                .presidente(autoridad(integrantes, TipoCargo.PRESIDENTE))
+                .tesorero(autoridad(integrantes, TipoCargo.TESORERO))
+                .solicitud(ExpedienteDetalleDTO.SolicitudDatos.builder()
+                        .representanteNombre(familia != null ? familia.getNombreRepresentante() : null)
+                        .representanteTelefono(familia != null ? familia.getContacto() : null)
+                        .fechaSolicitud(s.getFechaSolicitud())
+                        .observaciones(s.getObservacion())
+                        .grupoFamiliar(grupoFamiliar)
+                        .antiguedadPosesion(familia != null ? familia.getAntiguedadRancho() : null)
+                        .ubicacion(familia != null ? familia.getCoordenadasRancho() : null)
+                        .build())
+                .visitas(visitaInicialRepository
+                        .findBySolicitud_IdSolicitudOrderByFechaVisitaDesc(idSolicitud)
+                        .stream().map(mapper::toDTO).toList())
+                .vivienda(viviendaRepo.findBySolicitud_IdSolicitud(idSolicitud)
+                        .map(mapper::toDTO).orElse(null))
+                .etapas(etapas)
+                .build();
+    }
+
+    // El técnico solo ve los expedientes que tiene asignados; ADMIN, OPERADOR y ARQUITECTO ven todos
+    private void validarAccesoTecnico(Solicitud s) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean esTecnico = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_TECNICO"));
+        if (!esTecnico) return;
+
+        Usuario tecnico = usuarioRepo.findByEmail(auth.getName())
+                .orElseThrow(() -> new RecursoNoEncontradoException("Técnico no encontrado"));
+        Usuario asignado = s.getTecnicoAsignado();
+        if (asignado == null || !Objects.equals(asignado.getId(), tecnico.getId())) {
+            throw new ReglaDeNegocioException("No tenés asignado este expediente", HttpStatus.FORBIDDEN);
+        }
+    }
+
+    private ExpedienteDetalleDTO.Autoridad autoridad(List<Integrante> integrantes, TipoCargo cargo) {
+        return integrantes.stream()
+                .filter(i -> i.getCargo() == cargo && Boolean.TRUE.equals(i.getActivo()))
+                .findFirst()
+                .map(i -> ExpedienteDetalleDTO.Autoridad.builder()
+                        .nombre(i.getNombre()).apellido(i.getApellido()).dni(i.getDni())
+                        .email(i.getCorreo()).telefono(i.getTelefono()).domicilio(i.getDomicilio())
+                        .fechaAltaCargo(i.getFechaAltaCargo())
+                        .build())
+                .orElse(null);
+    }
+
+    // La base guarda un texto; el front quiere un sí/no
+    private boolean tieneDiscapacidad(String condicion) {
+        return condicion != null && !condicion.isBlank()
+                && !condicion.equalsIgnoreCase("No posee discapacidad");
     }
 
     @Override

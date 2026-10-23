@@ -32,6 +32,8 @@ public class SolicitudDTO {
 
     private String nombreRepresentanteFamilia;
 
+    private String dniRepresentanteFamilia;
+
     private String nombreOrganizacion;
 
     private Integer idTecnico;

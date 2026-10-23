@@ -33,4 +33,6 @@ public interface ISolicitudService {
     void rechazarSolicitudVivienda(Integer idSolicitud, String motivo);
     SolicitudDTO semiAprobarSolicitud(Integer idSolicitud, List<String> camposObservados, String motivo);
     void confirmarCorreccion(Integer idSolicitud);
+
+    ExpedienteDetalleDTO obtenerExpedienteDetalle(Integer idSolicitud);
 }
