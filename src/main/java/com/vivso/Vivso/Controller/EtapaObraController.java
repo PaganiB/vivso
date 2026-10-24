@@ -1,9 +1,6 @@
 package com.vivso.Vivso.Controller;
 
-import com.vivso.Vivso.DTO.EnviarEtapaDTO;
-import com.vivso.Vivso.DTO.EtapaObraDTO;
-import com.vivso.Vivso.DTO.ObservarEtapaDTO;
-import com.vivso.Vivso.DTO.ProrrogaEtapaDTO;
+import com.vivso.Vivso.DTO.*;
 import com.vivso.Vivso.Service.IEtapaObraService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -86,4 +83,18 @@ public class EtapaObraController {
 
         return ResponseEntity.ok(etapaActualizada);
     }
+
+  // ======================== RECHAZAR (TÉCNICO) ========================
+  @PostMapping("/{idEtapa}/rechazar")
+  public ResponseEntity<EtapaObraDTO> rechazarEtapa(
+    @PathVariable Integer idEtapa,
+    @RequestBody @Valid RechazarEtapaDTO dto,
+    Authentication authentication) {
+
+    String emailTecnico = authentication.getName();
+    EtapaObraDTO etapaActualizada = etapaObraService.rechazarEtapa(idEtapa, dto, emailTecnico);
+
+    return ResponseEntity.ok(etapaActualizada);
+  }
+
 }

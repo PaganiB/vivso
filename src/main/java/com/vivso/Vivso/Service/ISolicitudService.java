@@ -14,6 +14,7 @@ public interface ISolicitudService {
 
     //Buscar por tecnico
     List<ExpedienteWebDTO> obtenerDashboardWebTecnico();
+    //Envio de Expedientes para la App
     List<ExpedienteMovilDTO> getSolicitudesParaMovil();
 
     // Buscar por estado (Pendiente, Aprobada, Rechazada)

@@ -10,6 +10,8 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 // Respuesta: lo que ven la ONG, el técnico y las apps al consultar las etapas de un expediente.
 @Getter
@@ -19,42 +21,45 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class EtapaObraDTO {
 
-    private Integer idEtapaObra;
-    private Integer idSolicitud;
-    private String numExp;
+  private Integer idEtapaObra;
+  private Integer idSolicitud;
+  private String numExp;
 
-    // Datos de la etapa (salen del enum EtapaConstruccion, aplanados)
-    private Integer numeroEtapa;
-    private String nombreEtapa;
-    private String descripcionEtapa;
-    private Integer diasEstimados;
+  // Datos de la etapa (salen del enum EtapaConstruccion, aplanados)
+  private Integer numeroEtapa;
+  private String nombreEtapa;
+  private String descripcionEtapa;
+  private Integer diasEstimados;
 
-    private EstadoEtapa estado;
+  private EstadoEtapa estado;
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDate fechaInicio;
+  @JsonFormat(pattern = "yyyy-MM-dd")
+  private LocalDate fechaInicio;
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDate fechaLimite;
+  @JsonFormat(pattern = "yyyy-MM-dd")
+  private LocalDate fechaLimite;
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDate fechaLimiteOriginal;
+  @JsonFormat(pattern = "yyyy-MM-dd")
+  private LocalDate fechaLimiteOriginal;
 
-    private String motivoProrroga;
+  private String motivoProrroga;
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
-    private LocalDateTime fechaEnvio;
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
+  private LocalDateTime fechaEnvio;
 
-    private Integer idUsuarioEnvio;
-    private String nombreEnvio;
+  private Integer idUsuarioEnvio;
+  private String nombreEnvio;
 
-    private String observacionOrganizacion;
+  private String observacionOrganizacion;
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
-    private LocalDateTime fechaRevision;
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
+  private LocalDateTime fechaRevision;
 
-    private Integer idUsuarioRevisor;
-    private String nombreRevisor;
+  private Integer idUsuarioRevisor;
+  private String nombreRevisor;
 
-    private String observacionTecnico;
+  private String observacionTecnico;
+
+  @Builder.Default
+  private List<FotoEtapaDTO> fotos = new ArrayList<>();
 }

@@ -1,9 +1,7 @@
 package com.vivso.Vivso.Service;
 
-import com.vivso.Vivso.DTO.EnviarEtapaDTO;
-import com.vivso.Vivso.DTO.EtapaObraDTO;
-import com.vivso.Vivso.DTO.ObservarEtapaDTO;
-import com.vivso.Vivso.DTO.ProrrogaEtapaDTO;
+import com.vivso.Vivso.DTO.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -24,4 +22,5 @@ public interface IEtapaObraService {
 
     EtapaObraDTO prorrogarEtapa(Integer idEtapa, ProrrogaEtapaDTO dto, String email);
 
+    EtapaObraDTO rechazarEtapa(Integer idEtapa, RechazarEtapaDTO dto, String emailTecnico);
 }
