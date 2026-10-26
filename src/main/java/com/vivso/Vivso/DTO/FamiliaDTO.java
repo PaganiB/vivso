@@ -17,6 +17,9 @@ public class FamiliaDTO {
     @NotBlank(message = "El nombre del representante es obligatorio")
     private String nombreRepresentante;
 
+    @NotBlank(message = "El dni del representante es obligatorio")
+    private String dniRepresentante;
+
     @NotBlank(message = "Debe proporcionar un número de contacto")
     private String contacto;
 

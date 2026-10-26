@@ -43,7 +43,7 @@ public class HistorialService {
                         .localidad(v.getLocalidad() != null ? v.getLocalidad() : "Sin localidad")
                         .departamento(v.getDepartamento() != null ? v.getDepartamento() : "Sin depto")
                         .fecha(v.getFechaVisita() != null ? v.getFechaVisita().format(formatter) : "")
-                        .clasificacion(v.getClasificacionPreliminar() != null ? v.getClasificacionPreliminar().name() : "-")
+                        .clasificacion(v.getClasificacionPreliminar() != null ? v.getClasificacionPreliminar().getValor() : "-")
                         .estado("sincronizada")
                         .estadoSolicitud(v.getSolicitud() != null && v.getSolicitud().getEstado() != null ? v.getSolicitud().getEstado().name() : "Pendiente")
                         .avanceActual(0)
@@ -72,7 +72,6 @@ public class HistorialService {
                         .fecha(o.getFecha() != null ? o.getFecha().format(formatter) : "")
                         .clasificacion("-")
                         .estado("sincronizada")
-                        .avanceActual(o.getAfo() != null ? o.getAfo() : 0)
                         .build()
         ).toList();
 

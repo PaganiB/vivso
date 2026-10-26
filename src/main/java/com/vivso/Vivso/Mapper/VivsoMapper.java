@@ -92,6 +92,7 @@ public interface VivsoMapper {
     @Mapping(source = "cuitOrg.nombre",                          target = "nombreOrganizacion")
     @Mapping(source = "familiaBeneficiaria.idFamilia",           target = "idFamilia")
     @Mapping(source = "familiaBeneficiaria.nombreRepresentante", target = "nombreRepresentanteFamilia")
+    @Mapping(source = "familiaBeneficiaria.dniRepresentante", target = "dniRepresentanteFamilia")
     SolicitudDTO toDTO(Solicitud solicitud);
 
     @Mapping(target = "cuitOrg",             ignore = true)

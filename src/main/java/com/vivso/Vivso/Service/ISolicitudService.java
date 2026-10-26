@@ -14,6 +14,7 @@ public interface ISolicitudService {
 
     //Buscar por tecnico
     List<ExpedienteWebDTO> obtenerDashboardWebTecnico();
+    //Envio de Expedientes para la App
     List<ExpedienteMovilDTO> getSolicitudesParaMovil();
 
     // Buscar por estado (Pendiente, Aprobada, Rechazada)
@@ -33,4 +34,6 @@ public interface ISolicitudService {
     void rechazarSolicitudVivienda(Integer idSolicitud, String motivo);
     SolicitudDTO semiAprobarSolicitud(Integer idSolicitud, List<String> camposObservados, String motivo);
     void confirmarCorreccion(Integer idSolicitud);
+
+    ExpedienteDetalleDTO obtenerExpedienteDetalle(Integer idSolicitud);
 }

@@ -29,10 +29,10 @@ public class DocumentoDTO {
 
     private String motivoObservacion;
 
-    @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
+    @JsonFormat(pattern = "dd-MM-yyyy HH:mm")
     private LocalDateTime fechaSubida;
 
-    @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
+    @JsonFormat(pattern = "dd-MM-yyyy HH:mm")
     private LocalDateTime fechaRevision;
 
     // --- Referencias por ID ---

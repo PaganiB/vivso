@@ -13,6 +13,8 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class RegistroFamiliaDTO {
+
     @Valid private FamiliaDTO familia;
     @Valid private List<FamiliarDTO> familiares;
+
 }

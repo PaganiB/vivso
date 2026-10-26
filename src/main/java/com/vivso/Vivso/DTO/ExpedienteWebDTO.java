@@ -13,9 +13,8 @@ public class ExpedienteWebDTO {
     private String estadoRelevamiento;
     private String beneficiario;
     private String dni;
-
-    private String etapaActual;
-    private String ultimoRegistro;
+    private String nombreOrg;
+    private String cuitOrg;
 
     // El frontend lee este estado para saber si dibuja la barra (Aprobada) o no (Pendiente)
     private EstadoSolicitud estadoSolicitud;

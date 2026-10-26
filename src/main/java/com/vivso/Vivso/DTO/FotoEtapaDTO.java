@@ -13,7 +13,7 @@ public class FotoEtapaDTO {
     private String rutaArchivo;
     private String nombreArchivo;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm")
+  @JsonFormat(pattern = "dd/MM/yyyy HH:mm")
     private LocalDateTime fechaSubida;
 
     private Integer idUsuarioSubida;
