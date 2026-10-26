@@ -42,3 +42,4 @@ uploads/
 # Ignorar archivos de paquetes secundarios en la raíz
 package.json
 package-lock.json
+node_modules/
