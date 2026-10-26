@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -38,60 +39,59 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
     @Autowired private IUsuarioRepository usuarioRepo;
     @Autowired private PasswordEncoder passwordEncoder;
 
-    @Override
-    @Transactional
-    public void registrarOrganizacion(RegistroOrganizacionDTO dto, MultiValueMap<String, MultipartFile> mapaArchivos) {
-        String cuit = dto.getOrganizacion().getCuit();
+  @Override
+  // 1. ELIMINAMOS el @Transactional de aquí arriba.
+  // Esto es vital: la conexión a la base de datos ya no estará secuestrada durante la subida.
+  public void registrarOrganizacion(RegistroOrganizacionDTO dto, MultiValueMap<String, MultipartFile> mapaArchivos) {
+    String cuit = dto.getOrganizacion().getCuit();
 
-        if (orgRepo.existsById(cuit)) throw new ReglaDeNegocioException("El CUIT ya es una organización activa.", HttpStatus.CONFLICT);
-        if (solicitudOrgRepo.existsByCuitAndEstadoIn(cuit, List.of(EstadoSolicitud.Pendiente, EstadoSolicitud.SemiAprobada)))
-            throw new ReglaDeNegocioException("Ya hay una solicitud en trámite para este CUIT.", HttpStatus.CONFLICT);
+    // Validaciones iniciales
+    if (orgRepo.existsById(cuit))
+      throw new ReglaDeNegocioException("El CUIT ya es una organización activa.", HttpStatus.CONFLICT);
+    if (solicitudOrgRepo.existsByCuitAndEstadoIn(cuit, List.of(EstadoSolicitud.Pendiente, EstadoSolicitud.SemiAprobada)))
+      throw new ReglaDeNegocioException("Ya hay una solicitud en trámite para este CUIT.", HttpStatus.CONFLICT);
 
-        SolicitudOrganizacion sol = SolicitudOrganizacion.builder()
-                .cuit(cuit)
-                .nombre(dto.getOrganizacion().getNombre())
-                .tipo(dto.getOrganizacion().getTipo())
-                .domLegal(dto.getOrganizacion().getDom_legal())
-                .cpe(dto.getOrganizacion().getCpe())
-                .fechaVencimientoVigencia(dto.getOrganizacion().getFechaVencimientoVigencia())
-                .fechaUltimaAsamblea(dto.getOrganizacion().getFechaUltimaAsamblea())
-                .dniPresidente(dto.getPresidente().getDni())
-                .nombrePresidente(dto.getPresidente().getNombre())
-                .apellidoPresidente(dto.getPresidente().getApellido())
-                .correoPresidente(dto.getPresidente().getCorreo())
-                .telefonoPresidente(dto.getPresidente().getTelefono())
-                .fechaAltaCargoPresidente(dto.getPresidente().getFechaAltaCargo())
-                .domicilioPresidente(dto.getPresidente().getDomicilio())
-                .estado(EstadoSolicitud.Pendiente)
-                .build();
+    // 2. Guardado Rápido (Milisegundos)
+    // Spring aplica un @Transactional automático y muy breve solo para este .save()
+    SolicitudOrganizacion solNueva = construirEntidad(dto, cuit);
+    final SolicitudOrganizacion solGuardada = solicitudOrgRepo.save(solNueva);
+    final Integer idSol = solGuardada.getIdSolicitudOrg();
 
-        if (dto.getTesorero() != null) {
-            sol.setDniTesorero(dto.getTesorero().getDni());
-            sol.setNombreTesorero(dto.getTesorero().getNombre());
-            sol.setApellidoTesorero(dto.getTesorero().getApellido());
-            sol.setCorreoTesorero(dto.getTesorero().getCorreo());
-            sol.setTelefonoTesorero(dto.getTesorero().getTelefono());
-            sol.setFechaAltaCargoTesorero(dto.getTesorero().getFechaAltaCargo());
-            sol.setDomicilioTesorero(dto.getTesorero().getDomicilio());
+    // 3. Procesamiento Paralelo de Archivos
+    if (mapaArchivos != null) {
+      List<CompletableFuture<Void>> hilosDeSubida = new ArrayList<>();
+
+      mapaArchivos.forEach((clave, listaArchivos) -> {
+        if (!clave.equals("datos") && !listaArchivos.isEmpty()) {
+          MultipartFile archivo = listaArchivos.get(0);
+
+          // Disparamos un hilo secundario por cada archivo
+          CompletableFuture<Void> tarea = CompletableFuture.runAsync(() -> {
+            try {
+              TipoDocumento tipoDoc = TipoDocumento.valueOf(clave.toUpperCase());
+              documentoService.subirDocumentoDeSolicitudOrg(archivo, tipoDoc, idSol);
+            } catch (IllegalArgumentException e) {
+              log.warn("Clave de documento ignorada: {}", clave);
+            } catch (Exception e) {
+              log.error("Fallo crítico subiendo el documento {} para la solicitud {}: {}", clave, idSol, e.getMessage());
+              throw new RuntimeException("Error en subida", e); // Rompe el hilo si Cloudinary falla
+            }
+          });
+
+          hilosDeSubida.add(tarea);
         }
+      });
 
-        sol = solicitudOrgRepo.save(sol);
-
-        // 2° RECIÉN AHORA se procesan los archivos, ya con idSolicitudOrg disponible
-        if (mapaArchivos != null) {
-            Integer idSol = sol.getIdSolicitudOrg();
-            mapaArchivos.forEach((clave, listaArchivos) -> {
-                if (!clave.equals("datos") && !listaArchivos.isEmpty()) {
-                    try {
-                        TipoDocumento tipoDoc = TipoDocumento.valueOf(clave.toUpperCase());
-                        documentoService.subirDocumentoDeSolicitudOrg(listaArchivos.get(0), tipoDoc, idSol);
-                    } catch (IllegalArgumentException e) {
-                        log.warn("Clave de documento ignorada: {}", clave);
-                    }
-                }
-            });
-        }
+      // 4. Barrera de Sincronización (Join)
+      try {
+        // Esperamos que TODOS los archivos terminen de subir al mismo tiempo
+        CompletableFuture.allOf(hilosDeSubida.toArray(new CompletableFuture[0])).join();
+      } catch (Exception e) {
+        // Si falla el internet o Cloudinary, le avisamos al frontend
+        throw new ReglaDeNegocioException("La organización se registró, pero hubo un error subiendo algunos documentos. Por favor, revise su conexión.", HttpStatus.INTERNAL_SERVER_ERROR);
+      }
     }
+  }
 
     @Override
     @Transactional
@@ -362,4 +362,39 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
                 .toList();
     }
 
+  // === MÉTODO DE APOYO ===
+  // Lo sacamos a un método privado para que el código principal quede limpio y fácil de leer
+  private SolicitudOrganizacion construirEntidad(RegistroOrganizacionDTO dto, String cuit) {
+    SolicitudOrganizacion sol = SolicitudOrganizacion.builder()
+      .cuit(cuit)
+      .nombre(dto.getOrganizacion().getNombre())
+      .tipo(dto.getOrganizacion().getTipo())
+      .domLegal(dto.getOrganizacion().getDom_legal())
+      .cpe(dto.getOrganizacion().getCpe())
+      .fechaVencimientoVigencia(dto.getOrganizacion().getFechaVencimientoVigencia())
+      .fechaUltimaAsamblea(dto.getOrganizacion().getFechaUltimaAsamblea())
+      .dniPresidente(dto.getPresidente().getDni())
+      .nombrePresidente(dto.getPresidente().getNombre())
+      .apellidoPresidente(dto.getPresidente().getApellido())
+      .correoPresidente(dto.getPresidente().getCorreo())
+      .telefonoPresidente(dto.getPresidente().getTelefono())
+      .fechaAltaCargoPresidente(dto.getPresidente().getFechaAltaCargo())
+      .domicilioPresidente(dto.getPresidente().getDomicilio())
+      .estado(EstadoSolicitud.Pendiente)
+      .build();
+
+    if (dto.getTesorero() != null) {
+      sol.setDniTesorero(dto.getTesorero().getDni());
+      sol.setNombreTesorero(dto.getTesorero().getNombre());
+      sol.setApellidoTesorero(dto.getTesorero().getApellido());
+      sol.setCorreoTesorero(dto.getTesorero().getCorreo());
+      sol.setTelefonoTesorero(dto.getTesorero().getTelefono());
+      sol.setFechaAltaCargoTesorero(dto.getTesorero().getFechaAltaCargo());
+      sol.setDomicilioTesorero(dto.getTesorero().getDomicilio());
+    }
+
+    return sol;
+  }
+
 }
+

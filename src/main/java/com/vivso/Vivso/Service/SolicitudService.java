@@ -348,6 +348,7 @@ public class SolicitudService implements ISolicitudService {
   @Transactional(readOnly = true)
   public ExpedienteDetalleDTO obtenerExpedienteDetalle(Integer idSolicitud) {
 
+    // 1. Buscamos la solicitud principal y validamos permisos del técnico
     Solicitud s = solicitudRepo.findById(idSolicitud)
       .orElseThrow(() -> new RecursoNoEncontradoException("Solicitud no encontrada: " + idSolicitud));
 
@@ -356,10 +357,12 @@ public class SolicitudService implements ISolicitudService {
     Familia familia = s.getFamiliaBeneficiaria();
     Organizacion org = s.getCuitOrg();
 
+    // 2. Obtenemos integrantes de la organización
     List<Integrante> integrantes = org != null
       ? integranteRepo.findByOrganizacion_Cuit(org.getCuit())
       : List.of();
 
+    // 3. Mapeamos el grupo familiar
     List<ExpedienteDetalleDTO.MiembroFamilia> grupoFamiliar = familia == null ? List.of()
       : familiarRepo.findByFamilia_IdFamilia(familia.getIdFamilia()).stream()
       .map(f -> ExpedienteDetalleDTO.MiembroFamilia.builder()
@@ -370,23 +373,34 @@ public class SolicitudService implements ISolicitudService {
         .build())
       .toList();
 
-    List<ExpedienteDetalleDTO.EtapaConFotos> etapas = etapaObraRepo
-      .findBySolicitud_IdSolicitud(idSolicitud).stream()
+    // 4. OPTIMIZACIÓN N+1: Traemos etapas y TODAS sus fotos en bloque (solo 2 viajes a la BD)
+    List<EtapaObra> etapasObra = etapaObraRepo.findBySolicitud_IdSolicitud(idSolicitud);
+    List<Integer> idsEtapas = etapasObra.stream().map(EtapaObra::getIdEtapaObra).toList();
+
+    List<FotoEtapa> todasLasFotos = idsEtapas.isEmpty() ? List.of() :
+      fotoEtapaRepo.findByEtapa_IdEtapaObraIn(idsEtapas);
+
+    // Agrupamos las fotos por ID de etapa en memoria (eficiencia máxima)
+    Map<Integer, List<FotoEtapa>> fotosPorEtapa = todasLasFotos.stream()
+      .collect(Collectors.groupingBy(f -> f.getEtapa().getIdEtapaObra()));
+
+    // Construimos la lista de etapas con sus respectivas fotos
+    List<ExpedienteDetalleDTO.EtapaConFotos> etapas = etapasObra.stream()
       .map(e -> ExpedienteDetalleDTO.EtapaConFotos.builder()
         .etapa(mapper.toDTO(e))
-        .fotos(fotoEtapaRepo.findByEtapa_IdEtapaObra(e.getIdEtapaObra())
+        .fotos(fotosPorEtapa.getOrDefault(e.getIdEtapaObra(), List.of())
           .stream().map(mapper::toDTO).toList())
         .build())
       .toList();
 
+    // 5. Ensamblaje y retorno del DTO principal con Builder
     return ExpedienteDetalleDTO.builder()
       .id(s.getIdSolicitud())
       .numero(s.getNumExp() != null ? s.getNumExp() : "Sin asignar")
       .estado(s.getEstado().name())
       .beneficiario(ExpedienteDetalleDTO.Beneficiario.builder()
         .nombre(familia != null ? familia.getNombreRepresentante() : "Sin asignar")
-        .dni(familia != null && familia.getDniRepresentante() != null
-          ? familia.getDniRepresentante() : "S/D")
+        .dni(familia != null && familia.getDniRepresentante() != null ? familia.getDniRepresentante() : "S/D")
         .build())
       .ong(org == null ? null : ExpedienteDetalleDTO.Ong.builder()
         .nombre(org.getNombre()).cuit(org.getCuit()).build())
@@ -409,8 +423,7 @@ public class SolicitudService implements ISolicitudService {
         .antiguedadPosesion(familia != null ? familia.getAntiguedadRancho() : null)
         .ubicacion(familia != null ? familia.getCoordenadasRancho() : null)
         .build())
-      .visitas(visitaInicialRepository
-        .findBySolicitud_IdSolicitudOrderByFechaVisitaDesc(idSolicitud)
+      .visitas(visitaInicialRepository.findBySolicitud_IdSolicitudOrderByFechaVisitaDesc(idSolicitud)
         .stream().map(mapper::toDTO).toList())
       .vivienda(viviendaRepo.findBySolicitud_IdSolicitud(idSolicitud)
         .map(mapper::toDTO).orElse(null))
