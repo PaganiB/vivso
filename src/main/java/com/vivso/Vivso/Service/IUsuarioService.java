@@ -1,6 +1,7 @@
 package com.vivso.Vivso.Service;
 
 import com.vivso.Vivso.DTO.PasswordUpdateDTO;
+import com.vivso.Vivso.DTO.TecnicoDTO;
 import com.vivso.Vivso.DTO.UsuarioRegistroDTO;
 import com.vivso.Vivso.DTO.UsuarioRespuestaDTO;
 import com.vivso.Vivso.Model.Usuario;
@@ -32,4 +33,6 @@ public interface  IUsuarioService {
     void actualizarPassword(Integer id, PasswordUpdateDTO dto);
 
     void activar(Integer id);
+
+  List<TecnicoDTO> listarTecnicosDisponibles();
 }

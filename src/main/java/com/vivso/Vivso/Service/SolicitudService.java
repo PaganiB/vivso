@@ -431,6 +431,37 @@ public class SolicitudService implements ISolicitudService {
       .build();
   }
 
+  @Override
+  @Transactional
+  public void asignarTecnico(Integer idSolicitud, Integer idTecnico) {
+
+    // 1. Buscamos la solicitud
+    Solicitud solicitud = solicitudRepo.findById(idSolicitud)
+      .orElseThrow(() -> new RecursoNoEncontradoException("Solicitud no encontrada: " + idSolicitud));
+
+    // 2. Controlar que NO tenga una visita inicial registrada
+    boolean yaTieneVisita = visitaInicialRepository.existsBySolicitud_IdSolicitud(idSolicitud);
+    if (yaTieneVisita) {
+      throw new ReglaDeNegocioException(
+        "No se puede asignar o reasignar un técnico porque este expediente ya cuenta con una visita preliminar registrada.",
+        HttpStatus.CONFLICT
+      );
+    }
+
+    // 3. Buscamos al usuario que queremos asignar
+    Usuario nuevoTecnico = usuarioRepo.findById(idTecnico)
+      .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado: " + idTecnico));
+
+    // 4. Validamos que el usuario tenga el rol de técnico
+    if (!"TECNICO".equals(nuevoTecnico.getRol())) {
+      throw new ReglaDeNegocioException("El usuario seleccionado no tiene el rol de técnico.", HttpStatus.CONFLICT);
+    }
+
+    // 5. Asignamos y guardamos
+    solicitud.setTecnicoAsignado(nuevoTecnico);
+    solicitudRepo.save(solicitud);
+  }
+
   // El técnico solo ve los expedientes que tiene asignados; ADMIN, OPERADOR y ARQUITECTO ven todos
   private void validarAccesoTecnico(Solicitud s) {
     Authentication auth = SecurityContextHolder.getContext().getAuthentication();

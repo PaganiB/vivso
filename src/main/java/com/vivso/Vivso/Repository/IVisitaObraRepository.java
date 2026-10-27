@@ -1,4 +1,4 @@
-package com.vivso.Vivso.Repository;
+/*package com.vivso.Vivso.Repository;
 
 import com.vivso.Vivso.Model.VisitaObra;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,4 +14,4 @@ public interface IVisitaObraRepository extends JpaRepository<VisitaObra, Integer
 
     // Trae todas las inspecciones que hizo un técnico específico
     List<VisitaObra> findByTecnico_Id(Integer idTecnico);
-}
+}*/
