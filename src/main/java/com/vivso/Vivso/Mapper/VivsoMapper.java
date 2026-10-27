@@ -121,7 +121,7 @@ public interface VivsoMapper {
 
   // ======================== VISITA OBRA ========================
 
-  @Mapping(source = "vivienda.idVivienda", target = "idVivienda")
+  /*@Mapping(source = "vivienda.idVivienda", target = "idVivienda")
   @Mapping(source = "tecnico.id", target = "idTecnico")
   VisitaObraDTO toDTO(VisitaObra visitaObra);
 
@@ -133,7 +133,7 @@ public interface VivsoMapper {
   @Mapping(target = "vivienda", ignore = true)
   @Mapping(target = "tecnico", ignore = true)
   @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-  void updateFromDto(VisitaObraDTO dto, @MappingTarget VisitaObra visitaObra);
+  void updateFromDto(VisitaObraDTO dto, @MappingTarget VisitaObra visitaObra);*/
 
   // ======================== VISITA INICIAL ========================
 

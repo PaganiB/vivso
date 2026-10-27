@@ -1,4 +1,4 @@
-package com.vivso.Vivso.Model;
+/*package com.vivso.Vivso.Model;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -36,4 +36,4 @@ public class VisitaObra {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "id_usuario_tecnico", nullable = false)
     private Usuario tecnico;
-}
+}*/

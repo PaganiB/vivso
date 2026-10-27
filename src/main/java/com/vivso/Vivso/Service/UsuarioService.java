@@ -138,7 +138,7 @@ public class UsuarioService implements IUsuarioService {
     return tecnicos.stream()
       .map(t -> TecnicoDTO.builder()
         .id(t.getId())
-        .username(t.getUsername())
+        .username(t.getNombreUsuarioReal())
         .email(t.getEmail())
         .build())
       .toList();
