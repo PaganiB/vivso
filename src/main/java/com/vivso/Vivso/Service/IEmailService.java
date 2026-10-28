@@ -7,6 +7,9 @@ public interface IEmailService {
     // Envía un email con las credenciales y notifica que la solicitud fue aprobada
     void enviarCredencialesYAprobacion(String email, String passwordTemporal, String nombreOrganizacion);
 
+    // Notifica una nueva contraseña temporal (reenvío de credenciales)
+    void enviarReenvioCredenciales(String email, String passwordTemporal);
+
     // Notifica que una solicitud de organización fue rechazada
     void enviarNotificacionSolicitudRechazada(String email, String nombreOrganizacion, String motivo);
 

@@ -6,9 +6,8 @@ import com.vivso.Vivso.DTO.UsuarioRespuestaDTO;
 import com.vivso.Vivso.Model.Usuario;
 
 import java.util.List;
-import java.util.Optional;
 
-public interface  IUsuarioService {
+public interface IUsuarioService {
     List<UsuarioRespuestaDTO> listarTodos();
 
     UsuarioRespuestaDTO buscarPorId(Integer id);
@@ -29,7 +28,12 @@ public interface  IUsuarioService {
 
     UsuarioRespuestaDTO actualizar(Integer id, UsuarioRegistroDTO dto);
 
-    void actualizarPassword(Integer id, PasswordUpdateDTO dto);
+    void actualizarPassword(String email, PasswordUpdateDTO dto);
 
     void activar(Integer id);
+
+    // Contraseña temporal aleatoria (12 caracteres) para cuentas creadas o reactivadas por el sistema
+    String generarPasswordTemporal();
+    // Genera una contraseña temporal nueva, prende la bandera de cambio obligatorio y se la manda por mail
+    void reenviarCredenciales(Integer id);
 }
