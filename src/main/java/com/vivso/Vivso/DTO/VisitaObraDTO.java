@@ -1,4 +1,4 @@
-package com.vivso.Vivso.DTO;
+/*package com.vivso.Vivso.DTO;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.*;
@@ -43,4 +43,4 @@ public class VisitaObraDTO {
 
     @NotNull(message = "El ID del técnico es obligatorio")
     private Integer idTecnico;
-}
+}*/

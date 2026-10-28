@@ -1,4 +1,4 @@
-package com.vivso.Vivso.Service;
+/*package com.vivso.Vivso.Service;
 
 import com.vivso.Vivso.DTO.VisitaObraDTO;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,4 +12,4 @@ public interface IVisitaObraService {
     List<VisitaObraDTO> obtenerHistorialPorVivienda(Integer idVivienda);
 
     void registrarAvanceDeObra(Integer idSolicitud, Integer avanceFisico, String observaciones, List<MultipartFile> fotos);
-}
+}*/

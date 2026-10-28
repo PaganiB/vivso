@@ -4,36 +4,45 @@ import com.vivso.Vivso.DTO.*;
 import com.vivso.Vivso.Model.EstadoSolicitud;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.util.List;
 
 public interface ISolicitudService {
-    List<SolicitudDTO> getSolicitudes();
-    void deleteSolicitud(Integer id);
+  List<SolicitudDTO> getSolicitudes();
 
-    SolicitudDTO findSolicitud(Integer id);
+  void deleteSolicitud(Integer id);
 
-    //Buscar por tecnico
-    List<ExpedienteWebDTO> obtenerDashboardWebTecnico();
-    //Envio de Expedientes para la App
-    List<ExpedienteMovilDTO> getSolicitudesParaMovil();
+  SolicitudDTO findSolicitud(Integer id);
 
-    // Buscar por estado (Pendiente, Aprobada, Rechazada)
-    List<SolicitudDTO> buscarPorEstado(EstadoSolicitud estado);
+  //Buscar por tecnico
+  List<ExpedienteWebDTO> obtenerDashboardWebTecnico();
 
-    // Buscar solicitudes asociadas a una organización específica
-    List<SolicitudDTO> buscarPorOrganizacion(String cuitOrg);
+  //Envio de Expedientes para la App
+  List<ExpedienteMovilDTO> getSolicitudesParaMovil();
 
-    SolicitudDTO asignarNumeroExpediente(Integer idSolicitud, String numExp);
+  // Buscar por estado (Pendiente, Aprobada, Rechazada)
+  List<SolicitudDTO> buscarPorEstado(EstadoSolicitud estado);
 
-    //Enviar obras al Integrante de la ONG en la app movil
-    List<ExpedienteMovilDTO> getObrasAsignadasParaOng();
+  // Buscar solicitudes asociadas a una organización específica
+  List<SolicitudDTO> buscarPorOrganizacion(String cuitOrg);
 
-    // Formulario Familia
-    SolicitudDTO registrarSolicitudFamilia(RegistroFamiliaDTO dto, MultiValueMap<String, MultipartFile> mapaArchivos);
-    SolicitudDTO aprobarSolicitudVivienda(Integer idSolicitud);
-    void rechazarSolicitudVivienda(Integer idSolicitud, String motivo);
-    SolicitudDTO semiAprobarSolicitud(Integer idSolicitud, List<String> camposObservados, String motivo);
-    void confirmarCorreccion(Integer idSolicitud);
+  SolicitudDTO asignarNumeroExpediente(Integer idSolicitud, String numExp);
 
-    ExpedienteDetalleDTO obtenerExpedienteDetalle(Integer idSolicitud);
+  //Enviar obras al Integrante de la ONG en la app movil
+  List<ExpedienteMovilDTO> getObrasAsignadasParaOng();
+
+  // Formulario Familia
+  SolicitudDTO registrarSolicitudFamilia(RegistroFamiliaDTO dto, MultiValueMap<String, MultipartFile> mapaArchivos);
+
+  SolicitudDTO aprobarSolicitudVivienda(Integer idSolicitud);
+
+  void rechazarSolicitudVivienda(Integer idSolicitud, String motivo);
+
+  SolicitudDTO semiAprobarSolicitud(Integer idSolicitud, List<String> camposObservados, String motivo);
+
+  void confirmarCorreccion(Integer idSolicitud);
+
+  ExpedienteDetalleDTO obtenerExpedienteDetalle(Integer idSolicitud);
+
+  void asignarTecnico(Integer idSolicitud, Integer idTecnico);
 }

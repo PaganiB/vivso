@@ -1,6 +1,7 @@
 package com.vivso.Vivso.Service;
 
 import com.vivso.Vivso.DTO.PasswordUpdateDTO;
+import com.vivso.Vivso.DTO.TecnicoDTO;
 import com.vivso.Vivso.DTO.UsuarioRegistroDTO;
 import com.vivso.Vivso.DTO.UsuarioRespuestaDTO;
 import com.vivso.Vivso.Exception.RecursoNoEncontradoException;
@@ -165,4 +166,17 @@ public class UsuarioService implements IUsuarioService {
         emailService.enviarReenvioCredenciales(u.getEmail(), passwordTemporal);
     }
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public List<TecnicoDTO> listarTecnicosDisponibles() {
+        // Usamos el méodo que ya tenías creado en UsuarioRepository
+        List<Usuario> tecnicos = usuarioRepo.findByRol("TECNICO");
+
+        return tecnicos.stream()
+                .map(t -> TecnicoDTO.builder()
+                        .id(t.getId())
+                        .username(t.getNombreUsuarioReal())
+                        .email(t.getEmail())
+                        .build())
+                .toList();
+    }
 }

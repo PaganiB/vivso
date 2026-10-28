@@ -40,10 +40,6 @@ public class Usuario implements UserDetails {
     @Column(name = "debe_cambiar_password", nullable = false)
     private Boolean debeCambiarPassword = false;
 
-    // ====================================================================
-    // MÉTODOS DE LA INTERFAZ UserDetails (El "contrato" de Spring Security)
-    // ====================================================================
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         // Pulsera de visitante: mientras tenga la contraseña temporal, solo puede pasar por recepción
@@ -85,6 +81,10 @@ public class Usuario implements UserDetails {
     @Override
     public boolean isEnabled() {
         return this.activo != null ? this.activo : false;
+    }
+
+    public String getNombreUsuarioReal() {
+        return this.username;
     }
 
 }

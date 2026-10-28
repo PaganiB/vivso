@@ -20,5 +20,4 @@ public interface IVisitaInicialService {
     VisitaInicialDTO FindVisita(Integer idVisita);
 
     List<VisitaInicialDTO> FindVisitaPorTecnico(Integer tecnico);
-
 }

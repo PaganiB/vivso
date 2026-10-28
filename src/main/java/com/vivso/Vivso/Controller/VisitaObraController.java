@@ -1,4 +1,4 @@
-package com.vivso.Vivso.Controller;
+/*package com.vivso.Vivso.Controller;
 
 import com.vivso.Vivso.DTO.VisitaObraDTO;
 import com.vivso.Vivso.Service.IVisitaObraService;
@@ -50,4 +50,4 @@ public class VisitaObraController {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
-}
+}*/

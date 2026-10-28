@@ -1,4 +1,4 @@
-package com.vivso.Vivso.Service;
+/*package com.vivso.Vivso.Service;
 
 import com.vivso.Vivso.DTO.VisitaObraDTO;
 import com.vivso.Vivso.Exception.RecursoNoEncontradoException;
@@ -9,7 +9,6 @@ import com.vivso.Vivso.Repository.ISolicitudRepository;
 import com.vivso.Vivso.Repository.IUsuarioRepository;
 import com.vivso.Vivso.Repository.IVisitaObraRepository;
 import com.vivso.Vivso.Repository.IViviendaRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -24,7 +23,7 @@ import java.util.stream.Collectors;
 @Service
 public class VisitaObraService implements IVisitaObraService {
 
-    @Autowired IVisitaObraRepository visitaObraRepo;
+    //@Autowired IVisitaObraRepository visitaObraRepo;
     @Autowired IViviendaRepository viviendaRepo;
     @Autowired IUsuarioRepository usuarioRepo;
     @Autowired ISolicitudRepository solicitudRepo;
@@ -101,4 +100,4 @@ public class VisitaObraService implements IVisitaObraService {
             }
         }
     }
-}
+}*/

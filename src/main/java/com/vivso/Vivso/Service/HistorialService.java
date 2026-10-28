@@ -3,10 +3,8 @@ package com.vivso.Vivso.Service;
 import com.vivso.Vivso.DTO.VisitaHistorialDTO;
 import com.vivso.Vivso.Model.Usuario;
 import com.vivso.Vivso.Model.VisitaInicial;
-import com.vivso.Vivso.Model.VisitaObra;
 import com.vivso.Vivso.Repository.IUsuarioRepository;
 import com.vivso.Vivso.Repository.IVisitaInicialRepository;
-import com.vivso.Vivso.Repository.IVisitaObraRepository;
 import com.vivso.Vivso.Exception.RecursoNoEncontradoException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,7 +18,7 @@ import java.util.List;
 public class HistorialService {
 
     @Autowired private IVisitaInicialRepository visitaInicialRepo;
-    @Autowired private IVisitaObraRepository visitaObraRepo;
+    //@Autowired private IVisitaObraRepository visitaObraRepo;
     @Autowired private IUsuarioRepository usuarioRepo;
 
     public List<VisitaHistorialDTO> obtenerHistorialGeneral() {
@@ -60,7 +58,7 @@ public class HistorialService {
         historialUnificado.addAll(dtoIniciales);
 
         // 3. Buscamos y mapeamos las Visitas de Obra del técnico
-        List<VisitaObra> obras = visitaObraRepo.findByTecnico_Id(tecnico.getId());
+        /*List<VisitaObra> obras = visitaObraRepo.findByTecnico_Id(tecnico.getId());
 
         List<VisitaHistorialDTO> dtoObras = obras.stream().map(o ->
                 VisitaHistorialDTO.builder()
@@ -75,7 +73,7 @@ public class HistorialService {
                         .build()
         ).toList();
 
-        historialUnificado.addAll(dtoObras);
+        historialUnificado.addAll(dtoObras);*/
 
         // 4. Ordenamos por fecha descendiente (lo más nuevo arriba)
         // Opcional, pero le da un toque muy profesional a la app de Feli.
