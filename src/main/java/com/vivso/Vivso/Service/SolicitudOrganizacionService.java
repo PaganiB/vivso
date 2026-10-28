@@ -16,13 +16,15 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
+import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 
 @Slf4j
@@ -101,6 +103,8 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
 
         if (sol.getEstado() == EstadoSolicitud.Aprobada) throw new ReglaDeNegocioException("Ya está aprobada.", HttpStatus.CONFLICT);
         if (orgRepo.existsById(cuit)) throw new ReglaDeNegocioException("Ya existe una organización activa con el CUIT: " + cuit, HttpStatus.CONFLICT);
+
+        validarCorreosDisponibles(sol);
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Usuario revisor = usuarioRepo.findByEmail(email)
@@ -281,12 +285,7 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
         if (correo != null && correo.contains("@")) {
 
             // Generamos la contraseña temporal (se usa en ambos casos: reactivación o creación)
-            String caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%";
-            StringBuilder password = new StringBuilder();
-            Random random = new Random();
-            for (int i = 0; i < 12; i++) {
-                password.append(caracteres.charAt(random.nextInt(caracteres.length())));
-            }
+            String passwordTemporal = usuarioService.generarPasswordTemporal();
 
             Optional<Usuario> usuarioExistente = usuarioRepo.findByEmail(correo);
 
@@ -294,7 +293,8 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
             if (usuarioExistente.isPresent() && !usuarioExistente.get().getActivo()) {
                 Usuario u = usuarioExistente.get();
                 u.setActivo(true);
-                u.setPassword_hash(passwordEncoder.encode(password.toString()));
+                u.setDebeCambiarPassword(true);
+                u.setPassword_hash(passwordEncoder.encode(passwordTemporal));
                 usuarioCreado = usuarioRepo.save(u);
             } else if (usuarioExistente.isPresent()) {
                 throw new ReglaDeNegocioException("El correo " + correo + " ya está en uso por un usuario activo.", HttpStatus.CONFLICT);
@@ -309,20 +309,56 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
                 UsuarioRegistroDTO nuevoUsuario = UsuarioRegistroDTO.builder()
                         .username(username)
                         .email(correo)
-                        .password(password.toString())
+                        .password(passwordTemporal)
                         .rol("INTEGRANTE")
                         .build();
 
                 usuarioCreado = usuarioService.registrarNuevoUsuario(nuevoUsuario);
             }
 
-            emailService.enviarCredencialesYAprobacion(
-                    correo, password.toString(), nombreOrg
+            enviarDespuesDelCommit(() ->
+                    emailService.enviarCredencialesYAprobacion(correo, passwordTemporal, nombreOrg)
             );
 
             return usuarioCreado;
         }
         return null;
+    }
+
+    private void validarCorreosDisponibles(SolicitudOrganizacion sol) {
+        String correoPresidente = sol.getCorreoPresidente();
+        String correoTesorero = sol.getDniTesorero() != null ? sol.getCorreoTesorero() : null;
+
+        // Si los dos son iguales, el segundo fallaría porque el primero ya crearía el usuario
+        if (correoPresidente != null && correoPresidente.equalsIgnoreCase(correoTesorero))
+            throw new ReglaDeNegocioException("El presidente y el tesorero no pueden tener el mismo correo.", HttpStatus.CONFLICT);
+
+        for (String correo : new String[]{correoPresidente, correoTesorero}) {
+            if (correo != null) {
+                usuarioRepo.findByEmail(correo)
+                        .filter(u -> Boolean.TRUE.equals(u.getActivo()))
+                        .ifPresent(u -> {
+                            throw new ReglaDeNegocioException("El correo " + correo + " ya está en uso por un usuario activo.", HttpStatus.CONFLICT);
+                        });
+            }
+        }
+    }
+
+    private void enviarDespuesDelCommit(Runnable envio) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    try {
+                        envio.run();
+                    } catch (Exception e) {
+                        log.error("No se pudo enviar el mail de credenciales", e);
+                    }
+                }
+            });
+        } else {
+            envio.run();
+        }
     }
 
     @Override

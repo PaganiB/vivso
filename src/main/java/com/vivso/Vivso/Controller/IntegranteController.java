@@ -48,4 +48,9 @@ public class IntegranteController {
         return ResponseEntity.ok(integranteService.buscarActivos());
     }
 
+    @PostMapping("/{idIntegrante}/reenviar-credenciales")
+    public ResponseEntity<String> reenviarCredenciales(@PathVariable Integer idIntegrante) {
+        integranteService.reenviarCredenciales(idIntegrante);
+        return ResponseEntity.ok("Se envió una nueva contraseña temporal al correo del integrante.");
+    }
 }

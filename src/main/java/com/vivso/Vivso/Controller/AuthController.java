@@ -1,13 +1,16 @@
 package com.vivso.Vivso.Controller;
 
+import com.vivso.Vivso.DTO.PasswordUpdateDTO;
 import com.vivso.Vivso.DTO.UsuarioLoginDTO;
 import com.vivso.Vivso.DTO.UsuarioRegistroDTO;
 import com.vivso.Vivso.DTO.UsuarioRespuestaDTO;
 import com.vivso.Vivso.Service.AuthService;
+import com.vivso.Vivso.Service.IUsuarioService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -18,11 +21,12 @@ public class AuthController {
 
     @Autowired
     private AuthService authService;
+    @Autowired
+    private IUsuarioService usuarioService;
 
     @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> login(@Valid @RequestBody UsuarioLoginDTO loginDTO) {
-        // El Controller solo delega la tarea y devuelve un HTTP 200 OK
-        Map<String, String> respuesta = authService.iniciarSesion(loginDTO);
+    public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody UsuarioLoginDTO loginDTO) {
+        Map<String, Object> respuesta = authService.iniciarSesion(loginDTO);
         return ResponseEntity.ok(respuesta);
     }
 
@@ -31,5 +35,11 @@ public class AuthController {
         // Delega la tarea y devuelve un HTTP 201 CREATED
         UsuarioRespuestaDTO respuesta = authService.registrarUsuario(registroDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(respuesta);
+    }
+
+    @PatchMapping("/cambiar-password")
+    public ResponseEntity<String> cambiarPassword(Authentication auth, @Valid @RequestBody PasswordUpdateDTO dto) {
+        usuarioService.actualizarPassword(auth.getName(), dto);
+        return ResponseEntity.ok("Contraseña actualizada con éxito.");
     }
 }

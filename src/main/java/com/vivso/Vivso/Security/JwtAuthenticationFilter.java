@@ -55,7 +55,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
 
             // 6. Validamos matemáticamente que el token no esté vencido ni adulterado
-            if (jwtUtils.validarToken(jwt, userDetails.getUsername())) {
+            if (jwtUtils.validarToken(jwt, userDetails.getUsername()) && userDetails.isEnabled()) {
 
                 // 7. ¡Token válido! Le creamos una credencial oficial de Spring y lo dejamos pasar
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(

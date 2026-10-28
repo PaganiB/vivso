@@ -7,32 +7,37 @@ import com.vivso.Vivso.DTO.UsuarioRespuestaDTO;
 import com.vivso.Vivso.Model.Usuario;
 
 import java.util.List;
-import java.util.Optional;
 
-public interface  IUsuarioService {
-    List<UsuarioRespuestaDTO> listarTodos();
+public interface IUsuarioService {
+  List<UsuarioRespuestaDTO> listarTodos();
 
-    UsuarioRespuestaDTO buscarPorId(Integer id);
+  UsuarioRespuestaDTO buscarPorId(Integer id);
 
-    // Buscar por nombre de usuario para el Login
-    Usuario buscarPorUsername(String username);
+  // Buscar por nombre de usuario para el Login
+  Usuario buscarPorUsername(String username);
 
-    // Filtrar por rol de sistema
-    List<UsuarioRespuestaDTO> buscarPorRol(String rol);
+  // Filtrar por rol de sistema
+  List<UsuarioRespuestaDTO> buscarPorRol(String rol);
 
-    boolean existePorEmail(String email);
+  boolean existePorEmail(String email);
 
-    boolean existePorUsername(String username);
+  boolean existePorUsername(String username);
 
-    Usuario registrarNuevoUsuario(UsuarioRegistroDTO registroDto);
+  Usuario registrarNuevoUsuario(UsuarioRegistroDTO registroDto);
 
-    void desactivar(Integer id);
+  void desactivar(Integer id);
 
-    UsuarioRespuestaDTO actualizar(Integer id, UsuarioRegistroDTO dto);
+  UsuarioRespuestaDTO actualizar(Integer id, UsuarioRegistroDTO dto);
 
-    void actualizarPassword(Integer id, PasswordUpdateDTO dto);
+  void actualizarPassword(String email, PasswordUpdateDTO dto);
 
-    void activar(Integer id);
+  void activar(Integer id);
+
+  // Contraseña temporal aleatoria (12 caracteres) para cuentas creadas o reactivadas por el sistema
+  String generarPasswordTemporal();
+
+  // Genera una contraseña temporal nueva, prende la bandera de cambio obligatorio y se la manda por mail
+  void reenviarCredenciales(Integer id);
 
   List<TecnicoDTO> listarTecnicosDisponibles();
 }

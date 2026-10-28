@@ -16,71 +16,75 @@ import java.util.List;
 @Table(name = "usuario")
 public class Usuario implements UserDetails {
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "id_usuario", nullable = false)
-  private Integer id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_usuario", nullable = false)
+    private Integer id;
 
-  @Column(name = "username", nullable = false, length = 50)
-  private String username;
+    @Column(name = "username", nullable = false, length = 50)
+    private String username;
 
-  @Column(name = "password_hash", nullable = false)
-  private String password_hash;
+    @Column(name = "password_hash", nullable = false)
+    private String password_hash;
 
-  @Lob
-  @Column(name = "rol", nullable = false)
-  private String rol;
+    @Lob
+    @Column(name = "rol", nullable = false)
+    private String rol;
 
-  @Column(name = "email", length = 100)
-  private String email;
+    @Column(name = "email", length = 100)
+    private String email;
 
-  @Column(name = "activo")
-  private Boolean activo;
+    @Column(name = "activo")
+    private Boolean activo;
 
-  // ====================================================================
-  // MÉTODOS DE LA INTERFAZ UserDetails (El "contrato" de Spring Security)
-  // ====================================================================
+    @Column(name = "debe_cambiar_password", nullable = false)
+    private Boolean debeCambiarPassword = false;
 
-  @Override
-  public Collection<? extends GrantedAuthority> getAuthorities() {
-    // Spring Security es estricto: exige que los roles empiecen con el prefijo "ROLE_"
-    // Convertimos el String de tu base de datos (ej: "ADMIN") a "ROLE_ADMIN"
-    return List.of(new SimpleGrantedAuthority("ROLE_" + this.rol.toUpperCase()));
-  }
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        // Pulsera de visitante: mientras tenga la contraseña temporal, solo puede pasar por recepción
+        if (Boolean.TRUE.equals(this.debeCambiarPassword)) {
+            return List.of(new SimpleGrantedAuthority("ROLE_CAMBIO_PASSWORD"));
+        }
 
-  @Override
-  public String getPassword() {
-    // Le avisamos a Spring que el hash de la contraseña vive en esta variable
-    return this.password_hash;
-  }
+        // Spring Security es estricto: exige que los roles empiecen con el prefijo "ROLE_"
+        // Convertimos el String de tu base de datos (ej: "ADMIN") a "ROLE_ADMIN"
+        return List.of(new SimpleGrantedAuthority("ROLE_" + this.rol.toUpperCase()));
+    }
 
-  @Override
-  public String getUsername() {
-    return this.email;
-  }
+    @Override
+    public String getPassword() {
+        // Le avisamos a Spring que el hash de la contraseña vive en esta variable
+        return this.password_hash;
+    }
 
-  @Override
-  public boolean isAccountNonExpired() {
-    return true; // La cuenta nunca expira
-  }
+    @Override
+    public String getUsername() {
+        return this.email;
+    }
 
-  @Override
-  public boolean isAccountNonLocked() {
-    return true; // La cuenta no se bloquea por intentos fallidos (por ahora)
-  }
+    @Override
+    public boolean isAccountNonExpired() {
+        return true; // La cuenta nunca expira
+    }
 
-  @Override
-  public boolean isCredentialsNonExpired() {
-    return true; // Las contraseñas no vencen cada X meses
-  }
+    @Override
+    public boolean isAccountNonLocked() {
+        return true; // La cuenta no se bloquea por intentos fallidos (por ahora)
+    }
 
-  @Override
-  public boolean isEnabled() {
-    return this.activo != null ? this.activo : false;
-  }
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true; // Las contraseñas no vencen cada X meses
+    }
 
-  public String getNombreUsuarioReal() {
-    return this.username;
-  }
+    @Override
+    public boolean isEnabled() {
+        return this.activo != null ? this.activo : false;
+    }
+
+    public String getNombreUsuarioReal() {
+        return this.username;
+    }
 
 }
