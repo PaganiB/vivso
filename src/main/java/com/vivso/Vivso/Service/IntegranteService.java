@@ -25,6 +25,7 @@ public class IntegranteService implements IIntegranteService {
     @Autowired private IOrganizacionRepository orgRepo;
     @Autowired private IUsuarioRepository usuarioRepo;
     @Autowired private VivsoMapper mapper;
+    @Autowired private IUsuarioService usuarioService;
 
     @Override
     public List<IntegranteDTO> getIntegrantes() {
@@ -124,4 +125,16 @@ public class IntegranteService implements IIntegranteService {
                     " ya es integrante activo de otra organización registrada.", HttpStatus.CONFLICT);
         }
     }
+
+    @Override
+    public void reenviarCredenciales(Integer id) {
+        Integrante i = integranteRepo.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Integrante no encontrado: " + id));
+
+        if (i.getUsuario() == null)
+            throw new ReglaDeNegocioException("El integrante no tiene un usuario asociado.", HttpStatus.CONFLICT);
+
+        usuarioService.reenviarCredenciales(i.getUsuario().getId());
+    }
+
 }

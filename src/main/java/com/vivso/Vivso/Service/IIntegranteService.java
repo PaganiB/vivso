@@ -23,4 +23,6 @@ public interface IIntegranteService {
     List<IntegranteDTO> buscarActivos();
 
     void validarVigenciaOng(Organizacion ong);
+
+    void reenviarCredenciales(Integer id);
 }

@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -52,14 +53,14 @@ public class UsuarioController {
         return ResponseEntity.ok("Usuario activado");
     }
 
-    @PatchMapping("/{id}/cambiar-password")
-    public ResponseEntity<String> cambiarPassword(@PathVariable Integer id, @Valid @RequestBody PasswordUpdateDTO dto) {
-        usuarioService.actualizarPassword(id, dto);
-        return ResponseEntity.ok("Contraseña actualizada con éxito en el sistema.");
-    }
-
     @PutMapping("/{id}")
     public ResponseEntity<UsuarioRespuestaDTO> actualizar(@PathVariable Integer id, @Valid @RequestBody UsuarioRegistroDTO dto) {
         return ResponseEntity.ok(usuarioService.actualizar(id, dto));
+    }
+
+    @PostMapping("/{id}/reenviar-credenciales")
+    public ResponseEntity<String> reenviarCredenciales(@PathVariable Integer id) {
+        usuarioService.reenviarCredenciales(id);
+        return ResponseEntity.ok("Se envió una nueva contraseña temporal al correo del usuario.");
     }
 }

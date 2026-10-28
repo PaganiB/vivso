@@ -32,7 +32,7 @@ public class AuthService {
     private IIntegranteRepository integranteRepository;
 
     @Transactional(readOnly = true)
-    public Map<String, String> iniciarSesion(UsuarioLoginDTO loginDTO) {
+    public Map<String, Object> iniciarSesion(UsuarioLoginDTO loginDTO) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword())
         );
@@ -43,11 +43,12 @@ public class AuthService {
 
         String tokenGenerado = jwtUtils.generarToken(usuario.getEmail());
 
-        Map<String, String> respuesta = new HashMap<>();
+        Map<String, Object> respuesta = new HashMap<>();
         respuesta.put("token", tokenGenerado);
         respuesta.put("mensaje", "Login exitoso");
         respuesta.put("rol", usuario.getRol());
         respuesta.put("id", String.valueOf(usuario.getId()));
+        respuesta.put("debeCambiarPassword", usuario.getDebeCambiarPassword());
 
         // Solo los integrantes pertenecen a una organización; el resto no recibe esta clave
         integranteRepository.findByUsuario_Email(usuario.getEmail())

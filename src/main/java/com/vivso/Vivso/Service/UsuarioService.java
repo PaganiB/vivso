@@ -8,11 +8,13 @@ import com.vivso.Vivso.Exception.ReglaDeNegocioException;
 import com.vivso.Vivso.Mapper.VivsoMapper;
 import com.vivso.Vivso.Model.Usuario;
 import com.vivso.Vivso.Repository.IUsuarioRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.util.List;
 
 @Service
@@ -21,6 +23,11 @@ public class UsuarioService implements IUsuarioService {
     @Autowired private IUsuarioRepository usuarioRepo;
     @Autowired private VivsoMapper mapper;
     @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private IEmailService emailService;
+
+    private static final String CARACTERES_PASSWORD =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%";
+    private final SecureRandom random = new SecureRandom();
 
     @Override
     public List<UsuarioRespuestaDTO> listarTodos() {
@@ -75,6 +82,7 @@ public class UsuarioService implements IUsuarioService {
         usuario.setEmail(dto.getEmail());
         usuario.setRol(dto.getRol());
         usuario.setActivo(true);
+        usuario.setDebeCambiarPassword(true);
 
         // Encriptar contraseña
         usuario.setPassword_hash(passwordEncoder.encode(dto.getPassword()));
@@ -113,14 +121,48 @@ public class UsuarioService implements IUsuarioService {
     }
 
     @Override
-    public void actualizarPassword(Integer id, PasswordUpdateDTO dto) {
+    public void actualizarPassword(String email, PasswordUpdateDTO dto) {
+        Usuario u = usuarioRepo.findByEmail(email)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
+
+        if (!passwordEncoder.matches(dto.getPasswordActual(), u.getPassword_hash()))
+            throw new ReglaDeNegocioException("La contraseña actual es incorrecta", HttpStatus.BAD_REQUEST);
+
+        if (passwordEncoder.matches(dto.getPasswordNueva(), u.getPassword_hash()))
+            throw new ReglaDeNegocioException("La contraseña nueva no puede ser igual a la actual", HttpStatus.BAD_REQUEST);
+
+        u.setPassword_hash(passwordEncoder.encode(dto.getPasswordNueva()));
+        u.setDebeCambiarPassword(false);
+        usuarioRepo.save(u);
+    }
+
+    @Override
+    public String generarPasswordTemporal() {
+        StringBuilder password = new StringBuilder();
+        for (int i = 0; i < 12; i++) {
+            password.append(CARACTERES_PASSWORD.charAt(random.nextInt(CARACTERES_PASSWORD.length())));
+        }
+        return password.toString();
+    }
+
+    @Override
+    @Transactional
+    public void reenviarCredenciales(Integer id) {
         Usuario u = usuarioRepo.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado: " + id));
 
-        if (!passwordEncoder.matches(dto.getPasswordActual(), u.getPassword_hash()))
-            throw new ReglaDeNegocioException("La contraseña actual es incorrecta", HttpStatus.UNAUTHORIZED);
+        if (!Boolean.TRUE.equals(u.getActivo()))
+            throw new ReglaDeNegocioException("El usuario está desactivado. Activalo antes de reenviarle las credenciales.", HttpStatus.CONFLICT);
 
-        u.setPassword_hash(passwordEncoder.encode(dto.getPasswordNueva()));
+        if (u.getEmail() == null || u.getEmail().isBlank())
+            throw new ReglaDeNegocioException("El usuario no tiene un correo registrado.", HttpStatus.BAD_REQUEST);
+
+        String passwordTemporal = generarPasswordTemporal();
+        u.setPassword_hash(passwordEncoder.encode(passwordTemporal));
+        u.setDebeCambiarPassword(true);
         usuarioRepo.save(u);
+
+        emailService.enviarReenvioCredenciales(u.getEmail(), passwordTemporal);
     }
+
 }

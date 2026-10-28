@@ -37,12 +37,20 @@ public class Usuario implements UserDetails {
     @Column(name = "activo")
     private Boolean activo;
 
+    @Column(name = "debe_cambiar_password", nullable = false)
+    private Boolean debeCambiarPassword = false;
+
     // ====================================================================
     // MÉTODOS DE LA INTERFAZ UserDetails (El "contrato" de Spring Security)
     // ====================================================================
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
+        // Pulsera de visitante: mientras tenga la contraseña temporal, solo puede pasar por recepción
+        if (Boolean.TRUE.equals(this.debeCambiarPassword)) {
+            return List.of(new SimpleGrantedAuthority("ROLE_CAMBIO_PASSWORD"));
+        }
+
         // Spring Security es estricto: exige que los roles empiecen con el prefijo "ROLE_"
         // Convertimos el String de tu base de datos (ej: "ADMIN") a "ROLE_ADMIN"
         return List.of(new SimpleGrantedAuthority("ROLE_" + this.rol.toUpperCase()));

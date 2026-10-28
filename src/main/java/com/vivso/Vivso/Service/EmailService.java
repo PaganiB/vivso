@@ -183,6 +183,154 @@ public class EmailService implements  IEmailService {
     }
 
     @Override
+    public void enviarReenvioCredenciales(String email, String passwordTemporal) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(mailFrom);
+            helper.setTo(email);
+            helper.setSubject("VIVSO - Tus nuevas credenciales de acceso");
+            helper.setText(construirHtmlReenvioCredenciales(passwordTemporal), true);
+
+            mailSender.send(message);
+            log.info("Email de reenvío de credenciales enviado a: {}", email);
+
+        } catch (MessagingException e) {
+            log.error("Error al enviar email a {}: {}", email, e.getMessage(), e);
+            throw new RuntimeException("No se pudo enviar el email", e);
+        }
+    }
+
+    private String construirHtmlReenvioCredenciales(String password) {
+        return """
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body {
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                }
+                .container {
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 20px;
+                    background-color: #f5f5f5;
+                }
+                .header {
+                    background-color: #2980b9;
+                    color: white;
+                    padding: 30px;
+                    text-align: center;
+                    border-radius: 5px 5px 0 0;
+                }
+                .content {
+                    background-color: white;
+                    padding: 30px;
+                    border-radius: 0 0 5px 5px;
+                }
+                .info-box {
+                    background-color: #eaf3fb;
+                    padding: 15px;
+                    border-left: 4px solid #2980b9;
+                    margin: 20px 0;
+                    border-radius: 3px;
+                }
+                .credentials-box {
+                    background-color: #ecf0f1;
+                    padding: 20px;
+                    border-left: 4px solid #3498db;
+                    margin: 20px 0;
+                    border-radius: 3px;
+                }
+                .label {
+                    font-weight: bold;
+                    color: #2c3e50;
+                    margin-top: 10px;
+                }
+                .value {
+                    background-color: #fff;
+                    padding: 8px 12px;
+                    margin-top: 5px;
+                    border-radius: 3px;
+                    font-family: monospace;
+                    border: 1px solid #bdc3c7;
+                }
+                .warning {
+                    background-color: #fff3cd;
+                    padding: 15px;
+                    border-left: 4px solid #ffc107;
+                    margin: 20px 0;
+                    border-radius: 3px;
+                    color: #856404;
+                }
+                .button {
+                    display: inline-block;
+                    background-color: #2980b9;
+                    color: white;
+                    padding: 12px 30px;
+                    text-decoration: none;
+                    border-radius: 5px;
+                    margin-top: 20px;
+                }
+                .footer {
+                    font-size: 12px;
+                    color: #7f8c8d;
+                    margin-top: 20px;
+                    padding-top: 20px;
+                    border-top: 1px solid #ecf0f1;
+                    text-align: center;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Nuevas credenciales de acceso</h1>
+                    <p>Se generó una nueva contraseña para tu cuenta de VIVSO</p>
+                </div>
+                <div class="content">
+
+                    <div class="info-box">
+                        <p>Se generó una <strong>contraseña temporal nueva</strong> para tu cuenta. Tu contraseña anterior ya no es válida. Ya podés acceder a VIVSO con la contraseña de abajo.</p>
+                    </div>
+
+                    <div class="credentials-box">
+                        <div class="label">Contraseña temporal:</div>
+                        <div class="value">%1$s</div>
+                    </div>
+
+                    <div class="warning">
+                        <strong>⚠️ Importante:</strong> Esta es una contraseña temporal. <strong>Deberás cambiarla en tu primer acceso</strong> por razones de seguridad.
+                    </div>
+
+                    <p><strong>Pasos para acceder:</strong></p>
+                    <ol>
+                        <li>Ingresá a <a href="%2$s" target="_blank">%2$s</a></li>
+                        <li>Usá este correo electrónico (a donde llegó este mail) junto con la contraseña temporal de arriba</li>
+                        <li>Cambiá tu contraseña cuando accedas</li>
+                    </ol>
+
+                    <center>
+                        <a href="%2$s" class="button">Acceder a VIVSO</a>
+                    </center>
+
+                    <div class="footer">
+                        <p>Si no esperabas este mensaje o tenés problemas para acceder, contactá al administrador.</p>
+                        <p>&copy; 2026 VIVSO - Todos los derechos reservados</p>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        """.formatted(password, appUrl);
+    }
+
+    @Override
     public void enviarNotificacionSolicitudRechazada(String email, String nombreOrganizacion, String motivo) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
