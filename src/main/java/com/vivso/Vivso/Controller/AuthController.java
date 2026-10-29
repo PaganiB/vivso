@@ -1,9 +1,6 @@
 package com.vivso.Vivso.Controller;
 
-import com.vivso.Vivso.DTO.PasswordUpdateDTO;
-import com.vivso.Vivso.DTO.UsuarioLoginDTO;
-import com.vivso.Vivso.DTO.UsuarioRegistroDTO;
-import com.vivso.Vivso.DTO.UsuarioRespuestaDTO;
+import com.vivso.Vivso.DTO.*;
 import com.vivso.Vivso.Service.AuthService;
 import com.vivso.Vivso.Service.IUsuarioService;
 import jakarta.validation.Valid;
@@ -41,5 +38,10 @@ public class AuthController {
     public ResponseEntity<String> cambiarPassword(Authentication auth, @Valid @RequestBody PasswordUpdateDTO dto) {
         usuarioService.actualizarPassword(auth.getName(), dto);
         return ResponseEntity.ok("Contraseña actualizada con éxito.");
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<PerfilDTO> miPerfil(Authentication auth) {
+        return ResponseEntity.ok(authService.obtenerPerfil(auth.getName()));
     }
 }
