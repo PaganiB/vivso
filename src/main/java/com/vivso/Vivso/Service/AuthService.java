@@ -82,7 +82,7 @@ public class AuthService {
                 .activo(usuarioGuardado.getActivo())
                 .build();
     }
-
+    // nuevoi
     @Transactional(readOnly = true)
     public PerfilDTO obtenerPerfil(String email) {
         Usuario usuario = usuarioRepository.findByEmail(email)

@@ -119,8 +119,8 @@ public class UsuarioService implements IUsuarioService {
         u.setUsername(dto.getUsername());
         u.setEmail(dto.getEmail());
         u.setRol(dto.getRol());
-        if (dto.getNombre() != null) u.setNombre(dto.getNombre());
-        if (dto.getApellido() != null) u.setApellido(dto.getApellido());
+        if (dto.getNombre() != null) u.setNombre(dto.getNombre()); //nuevo
+        if (dto.getApellido() != null) u.setApellido(dto.getApellido()); //nuevo
 
         return mapper.toRespuestaDTO(usuarioRepo.save(u));
     }

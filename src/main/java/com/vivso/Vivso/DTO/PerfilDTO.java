@@ -10,8 +10,8 @@ public class PerfilDTO {
     private String username;
     private String email;
     private String rol;
-    private String nombre;       // solo integrantes
-    private String apellido;     // solo integrantes
-    private String cargo;        // PRESIDENTE / TESORERO, solo integrantes
-    private OrganizacionResumenDTO organizacion;   // solo integrantes
+    private String nombre;
+    private String apellido;
+    private String cargo;
+    private OrganizacionResumenDTO organizacion;
 }

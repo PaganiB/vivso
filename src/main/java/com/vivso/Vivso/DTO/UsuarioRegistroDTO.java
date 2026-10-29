@@ -26,7 +26,7 @@ public class UsuarioRegistroDTO {
 
     @NotBlank(message = "El rol es obligatorio")
     private String rol;
-
+    // nuevo
     @Size(max = 100)
     private String nombre;
 

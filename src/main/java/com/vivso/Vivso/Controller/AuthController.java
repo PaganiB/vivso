@@ -39,7 +39,7 @@ public class AuthController {
         usuarioService.actualizarPassword(auth.getName(), dto);
         return ResponseEntity.ok("Contraseña actualizada con éxito.");
     }
-
+    // Banner front
     @GetMapping("/me")
     public ResponseEntity<PerfilDTO> miPerfil(Authentication auth) {
         return ResponseEntity.ok(authService.obtenerPerfil(auth.getName()));
