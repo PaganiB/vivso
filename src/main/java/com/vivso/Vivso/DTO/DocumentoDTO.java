@@ -9,40 +9,41 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
-@Getter @Setter
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class DocumentoDTO {
 
-    private Integer idDocumento; // Para cuando consultamos
+  private Integer idDocumento; // Para cuando consultamos
 
-    @NotBlank(message = "El nombre del documento es obligatorio")
-    private String nombre;
+  @NotBlank(message = "El nombre del documento es obligatorio")
+  private String nombre;
 
-    private String url; // La ruta que devuelve el servidor
+  private String url; // La ruta que devuelve el servidor
 
-    @NotNull(message = "El tipo de documento es obligatorio")
-    private TipoDocumento tipo;
+  @NotNull(message = "El tipo de documento es obligatorio")
+  private TipoDocumento tipo;
 
-    private EstadoDocumento estado;
+  private EstadoDocumento estado;
 
-    private String motivoObservacion;
+  private String motivoObservacion;
 
-    @JsonFormat(pattern = "dd-MM-yyyy HH:mm")
-    private LocalDateTime fechaSubida;
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  private LocalDateTime fechaSubida;
 
-    @JsonFormat(pattern = "dd-MM-yyyy HH:mm")
-    private LocalDateTime fechaRevision;
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  private LocalDateTime fechaRevision;
 
-    // --- Referencias por ID ---
-    // Usamos IDs para que el JSON sea liviano
+  // --- Referencias por ID ---
+  // Usamos IDs para que el JSON sea liviano
 
-    private Integer idFamilia;
+  private Integer idFamilia;
 
-    private String cuitOrg;
+  private String cuitOrg;
 
-    private Integer idUsuarioRevisor;
+  private Integer idUsuarioRevisor;
 
-    private String nombreRevisor; // Opcional: para mostrar quién lo revisó sin buscar el ID
+  private String nombreRevisor; // Opcional: para mostrar quién lo revisó sin buscar el ID
 }

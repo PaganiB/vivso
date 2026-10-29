@@ -64,7 +64,6 @@ public class SecurityConfig implements WebMvcConfigurer {
               .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
               .requestMatchers(HttpMethod.POST, "/auth/registro").hasRole("ADMIN")
               .requestMatchers(HttpMethod.PATCH, "/auth/cambiar-password").authenticated()
-              .requestMatchers("/usuario/**").hasRole("ADMIN")
 
         // ── 2. SOLICITUD DE ORGANIZACIÓN (Registro e Ingreso) ────────────────
         .requestMatchers(HttpMethod.POST, "/solicitud-organizacion").permitAll()
@@ -119,6 +118,8 @@ public class SecurityConfig implements WebMvcConfigurer {
 
         // ── 9. REGLAS GLOBALES Y CIERRE ──────────────────────────────────────
         .requestMatchers(HttpMethod.DELETE, "/**").hasRole("ADMIN")
+        .requestMatchers("/notificaciones/**").authenticated()
+        .requestMatchers(HttpMethod.POST, "/usuario/push-token").authenticated()
         .anyRequest().hasRole("ADMIN")
       )
       .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)

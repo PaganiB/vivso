@@ -166,7 +166,7 @@ public class UsuarioService implements IUsuarioService {
         emailService.enviarReenvioCredenciales(u.getEmail(), passwordTemporal);
     }
 
-    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    @Transactional
     public List<TecnicoDTO> listarTecnicosDisponibles() {
         // Usamos el méodo que ya tenías creado en UsuarioRepository
         List<Usuario> tecnicos = usuarioRepo.findByRol("TECNICO");
@@ -179,4 +179,15 @@ public class UsuarioService implements IUsuarioService {
                         .build())
                 .toList();
     }
+
+  @Transactional
+  public void actualizarPushToken(String email, String pushToken) {
+    // Usamos el email que viene del JWT/Principal para localizar al usuario
+    Usuario usuario = usuarioRepo.findByEmail(email)
+      .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado con email: " + email));
+
+    // Actualizamos el token y guardamos
+    usuario.setPushToken(pushToken);
+    usuarioRepo.save(usuario);
+  }
 }

@@ -107,7 +107,6 @@ public class SolicitudController {
     return ResponseEntity.noContent().build();
   }
 
-
   @GetMapping("/{id}")
   public ResponseEntity<SolicitudDTO> findSolicitud(@PathVariable Integer id) {
     return ResponseEntity.ok(solicitudService.findSolicitud(id));

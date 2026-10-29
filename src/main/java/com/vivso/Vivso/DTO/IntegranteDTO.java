@@ -38,7 +38,7 @@ public class IntegranteDTO {
     private TipoCargo cargo;
 
     @NotNull(message = "La fecha de alta del cargo es obligatoria")
-    @JsonFormat(pattern = "dd-MM-yyyy")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate fechaAltaCargo;
 
     @NotBlank(message = "El domicilio es obligatorio")
