@@ -4,6 +4,8 @@ import com.vivso.Vivso.DTO.*;
 import com.vivso.Vivso.Model.*;
 import org.mapstruct.*;
 
+import java.util.List;
+
 @Mapper(
   componentModel = "spring",
   unmappedSourcePolicy = ReportingPolicy.IGNORE,
@@ -179,4 +181,11 @@ public interface VivsoMapper {
   @Mapping(source = "subidaPor.id", target = "idUsuarioSubida")
   @Mapping(source = "subidaPor.username", target = "nombreUsuarioSubida", defaultValue = "Desconocido")
   FotoEtapaDTO toDTO(FotoEtapa foto);
+
+  // ======================== NOTIFICACION ========================
+  // idNotificacion, titulo, mensaje, fecha, leida, tipo e idReferencia coinciden exactamente → sin @Mapping necesario
+
+  NotificacionDTO toDTO(Notificacion notificacion);
+
+  List<NotificacionDTO> toDTOList(List<Notificacion> notificaciones);
 }

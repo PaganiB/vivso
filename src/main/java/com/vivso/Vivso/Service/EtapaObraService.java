@@ -37,6 +37,8 @@ public class EtapaObraService implements IEtapaObraService {
   private VivsoMapper mapper;
   @Autowired
   private IFotoEtapaRepository fotoRepo;
+  @Autowired
+  private NotificacionService notificacionService;
 
   // ======================== INICIAR OBRA (técnico asignado) ========================
 
@@ -63,6 +65,14 @@ public class EtapaObraService implements IEtapaObraService {
     }
     habilitar(etapas.get(0));
     etapaRepo.saveAll(etapas);
+    // NOTIFICAR A LA ONG QUE LA OBRA INICIÓ Y LA ETAPA ESTÁ HABILITADA
+    notificacionService.notificarOng(
+      solicitud.getCuitOrg().getCuit(),
+      "Obra Iniciada",
+      "Se habilitó la primera etapa del expediente " + solicitud.getNumExp() + ". ¡Ya pueden registrar avances!",
+      "ETAPA_HABILITADA",
+      solicitud.getIdSolicitud()
+    );
     return aDTOs(etapas);
   }
 
@@ -143,6 +153,19 @@ public class EtapaObraService implements IEtapaObraService {
     etapa.setFechaEnvio(LocalDateTime.now(ZONA));
     etapa.setEnviadoPor(buscarUsuario(email));
     etapa.setObservacionOrganizacion(dto != null ? dto.getObservacionOrganizacion() : null);
+
+    // Notificación Persistente + Push individual al Técnico
+    Usuario tecnico = etapa.getSolicitud().getTecnicoAsignado();
+    if (tecnico != null) {
+      notificacionService.notificarUsuario(
+        tecnico,
+        "Etapa Recibida",
+        "La ONG envió una etapa a revisión en el expediente " + etapa.getSolicitud().getNumExp() + ".",
+        "ETAPA_ENVIADA",
+        etapa.getSolicitud().getIdSolicitud()
+      );
+    }
+
     return mapper.toDTO(etapaRepo.save(etapa));
   }
 
@@ -167,6 +190,14 @@ public class EtapaObraService implements IEtapaObraService {
       habilitar(proxima);
       etapaRepo.save(proxima);
     }
+    // Notificación Persistente + Push a toda la ONG
+    notificacionService.notificarOng(
+      etapa.getSolicitud().getCuitOrg().getCuit(),
+      "Etapa Aprobada",
+      "El técnico aprobó una etapa del expediente " + etapa.getSolicitud().getNumExp() + ".",
+      "ETAPA_APROBADA",
+      etapa.getSolicitud().getIdSolicitud()
+    );
     return mapper.toDTO(etapaRepo.save(etapa));
   }
 
@@ -182,6 +213,16 @@ public class EtapaObraService implements IEtapaObraService {
     etapa.setObservacionTecnico(dto.getObservacionTecnico());
     etapa.setRevisadoPor(buscarUsuario(email));
     etapa.setFechaRevision(LocalDateTime.now(ZONA));
+
+    // Notificación Persistente + Push
+    notificacionService.notificarOng(
+      etapa.getSolicitud().getCuitOrg().getCuit(),
+      "Etapa Observada",
+      "El técnico dejó observaciones en el expediente " + etapa.getSolicitud().getNumExp() + ".",
+      "ETAPA_OBSERVADA",
+      etapa.getSolicitud().getIdSolicitud()
+    );
+
     return mapper.toDTO(etapaRepo.save(etapa));
   }
 
@@ -215,6 +256,15 @@ public class EtapaObraService implements IEtapaObraService {
     etapa.setMotivoProrroga(dto.getMotivoProrroga());
     etapa.setEstado(EstadoEtapa.PRORROGADA);
 
+    // Notificación Persistente + Push
+    notificacionService.notificarOng(
+      etapa.getSolicitud().getCuitOrg().getCuit(),
+      "Prórroga Otorgada",
+      "Se extendió la fecha límite del expediente " + etapa.getSolicitud().getNumExp() + " hasta el " + nueva + ".",
+      "ETAPA_PRORROGADA",
+      etapa.getSolicitud().getIdSolicitud()
+    );
+
     return mapper.toDTO(etapaRepo.save(etapa));
   }
 
@@ -232,6 +282,15 @@ public class EtapaObraService implements IEtapaObraService {
 
     etapa.setRevisadoPor(buscarUsuario(email));
     etapa.setFechaRevision(LocalDateTime.now(ZONA));
+
+    // Notificación Persistente + Push
+    notificacionService.notificarOng(
+      etapa.getSolicitud().getCuitOrg().getCuit(),
+      "Etapa Rechazada",
+      "El técnico rechazó la etapa enviada en el expediente " + etapa.getSolicitud().getNumExp() + ".",
+      "ETAPA_RECHAZADA",
+      etapa.getSolicitud().getIdSolicitud()
+    );
 
     return mapper.toDTO(etapaRepo.save(etapa));
   }
@@ -349,5 +408,18 @@ public class EtapaObraService implements IEtapaObraService {
         return dto;
       })
       .collect(Collectors.toList());
+  }
+
+  //Metodo para enviar notificaciones
+  private List<String> obtenerTokensOng(Solicitud solicitud) {
+    String cuit = solicitud.getCuitOrg().getCuit();
+    List<Integrante> integrantes = integranteRepo.findByOrganizacion_Cuit(cuit);
+
+    return integrantes.stream()
+      .filter(i -> Boolean.TRUE.equals(i.getActivo()))
+      .map(Integrante::getUsuario)
+      .filter(u -> u != null && u.getPushToken() != null && !u.getPushToken().isBlank())
+      .map(Usuario::getPushToken)
+      .toList();
   }
 }
