@@ -64,6 +64,11 @@ public class SecurityConfig implements WebMvcConfigurer {
               .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
               .requestMatchers(HttpMethod.POST, "/auth/registro").hasRole("ADMIN")
               .requestMatchers(HttpMethod.PATCH, "/auth/cambiar-password").authenticated()
+<<<<<<< HEAD
+              .requestMatchers(HttpMethod.GET, "/auth/me").authenticated()
+              .requestMatchers("/usuario/**").hasRole("ADMIN")
+=======
+>>>>>>> origin/develop
 
         // ── 2. SOLICITUD DE ORGANIZACIÓN (Registro e Ingreso) ────────────────
         .requestMatchers(HttpMethod.POST, "/solicitud-organizacion").permitAll()
