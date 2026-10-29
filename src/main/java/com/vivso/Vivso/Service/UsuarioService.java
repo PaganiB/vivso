@@ -84,6 +84,8 @@ public class UsuarioService implements IUsuarioService {
         usuario.setRol(dto.getRol());
         usuario.setActivo(true);
         usuario.setDebeCambiarPassword(true);
+        usuario.setNombre(dto.getNombre());
+        usuario.setApellido(dto.getApellido());
 
         // Encriptar contraseña
         usuario.setPassword_hash(passwordEncoder.encode(dto.getPassword()));
@@ -117,6 +119,8 @@ public class UsuarioService implements IUsuarioService {
         u.setUsername(dto.getUsername());
         u.setEmail(dto.getEmail());
         u.setRol(dto.getRol());
+        if (dto.getNombre() != null) u.setNombre(dto.getNombre()); //nuevo
+        if (dto.getApellido() != null) u.setApellido(dto.getApellido()); //nuevo
 
         return mapper.toRespuestaDTO(usuarioRepo.save(u));
     }
