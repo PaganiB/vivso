@@ -42,7 +42,6 @@ public class Usuario implements UserDetails {
   @Column(name = "push_token")
   private String pushToken;
 
-<<<<<<< HEAD
     @Column(name = "nombre", length = 100)
     private String nombre;
 
@@ -51,27 +50,15 @@ public class Usuario implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Pulsera de visitante: mientras tenga la contraseña temporal, solo puede pasar por recepción
-        if (Boolean.TRUE.equals(this.debeCambiarPassword)) {
-            return List.of(new SimpleGrantedAuthority("ROLE_CAMBIO_PASSWORD"));
-        }
+      // Pulsera de visitante: mientras tenga la contraseña temporal, solo puede pasar por recepción
+      if (Boolean.TRUE.equals(this.debeCambiarPassword)) {
+        return List.of(new SimpleGrantedAuthority("ROLE_CAMBIO_PASSWORD"));
+      }
 
-        // Spring Security es estricto: exige que los roles empiecen con el prefijo "ROLE_"
-        // Convertimos el String de tu base de datos (ej: "ADMIN") a "ROLE_ADMIN"
-        return List.of(new SimpleGrantedAuthority("ROLE_" + this.rol.toUpperCase()));
-=======
-  @Override
-  public Collection<? extends GrantedAuthority> getAuthorities() {
-    // Pulsera de visitante: mientras tenga la contraseña temporal, solo puede pasar por recepción
-    if (Boolean.TRUE.equals(this.debeCambiarPassword)) {
-      return List.of(new SimpleGrantedAuthority("ROLE_CAMBIO_PASSWORD"));
->>>>>>> origin/develop
+      // Spring Security es estricto: exige que los roles empiecen con el prefijo "ROLE_"
+      // Convertimos el String de tu base de datos (ej: "ADMIN") a "ROLE_ADMIN"
+      return List.of(new SimpleGrantedAuthority("ROLE_" + this.rol.toUpperCase()));
     }
-
-    // Spring Security es estricto: exige que los roles empiecen con el prefijo "ROLE_"
-    // Convertimos el String de tu base de datos (ej: "ADMIN") a "ROLE_ADMIN"
-    return List.of(new SimpleGrantedAuthority("ROLE_" + this.rol.toUpperCase()));
-  }
 
   @Override
   public String getPassword() {
