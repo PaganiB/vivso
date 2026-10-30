@@ -121,21 +121,6 @@ public interface VivsoMapper {
   @Mapping(source = "rol", target = "rol", defaultValue = "SIN_ROL")
   UsuarioRegistroDTO toRegistroDTO(Usuario usuario);
 
-  // ======================== VISITA OBRA ========================
-
-  /*@Mapping(source = "vivienda.idVivienda", target = "idVivienda")
-  @Mapping(source = "tecnico.id", target = "idTecnico")
-  VisitaObraDTO toDTO(VisitaObra visitaObra);
-
-  @Mapping(target = "vivienda", ignore = true)
-  @Mapping(target = "tecnico", ignore = true)
-  VisitaObra toEntity(VisitaObraDTO dto);
-
-  @Mapping(target = "idVisitaObra", ignore = true) // PK intocable
-  @Mapping(target = "vivienda", ignore = true)
-  @Mapping(target = "tecnico", ignore = true)
-  @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-  void updateFromDto(VisitaObraDTO dto, @MappingTarget VisitaObra visitaObra);*/
 
   // ======================== VISITA INICIAL ========================
 

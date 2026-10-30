@@ -18,7 +18,6 @@ import java.util.List;
 public class HistorialService {
 
     @Autowired private IVisitaInicialRepository visitaInicialRepo;
-    //@Autowired private IVisitaObraRepository visitaObraRepo;
     @Autowired private IUsuarioRepository usuarioRepo;
 
     public List<VisitaHistorialDTO> obtenerHistorialGeneral() {
@@ -56,27 +55,6 @@ public class HistorialService {
         ).toList();
 
         historialUnificado.addAll(dtoIniciales);
-
-        // 3. Buscamos y mapeamos las Visitas de Obra del técnico
-        /*List<VisitaObra> obras = visitaObraRepo.findByTecnico_Id(tecnico.getId());
-
-        List<VisitaHistorialDTO> dtoObras = obras.stream().map(o ->
-                VisitaHistorialDTO.builder()
-                        .id("obra_" + o.getIdVisitaObra())
-                        .tipo("OBRA")
-                        .expediente(o.getVivienda() != null ? "Vivienda #" + o.getVivienda().getIdVivienda() : "S/N")
-                        .localidad(o.getVivienda() != null ? o.getVivienda().getLocalidad() : "-")
-                        .departamento(o.getVivienda() != null ? o.getVivienda().getDepartamento() : "-")
-                        .fecha(o.getFecha() != null ? o.getFecha().format(formatter) : "")
-                        .clasificacion("-")
-                        .estado("sincronizada")
-                        .build()
-        ).toList();
-
-        historialUnificado.addAll(dtoObras);*/
-
-        // 4. Ordenamos por fecha descendiente (lo más nuevo arriba)
-        // Opcional, pero le da un toque muy profesional a la app de Feli.
 
         return historialUnificado;
     }

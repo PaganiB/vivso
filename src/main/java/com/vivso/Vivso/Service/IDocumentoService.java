@@ -21,7 +21,6 @@ public interface IDocumentoService {
 
     // Hacen lo mismo que el subir documento pero en 2 partes, porque en solicitud organizacion es asi
     String guardarArchivoFisico(MultipartFile archivo);
-    DocumentoDTO crearDesdeRutaExistente(String url, TipoDocumento tipo, Integer idFamilia, String cuitOrg);
     void borrarArchivoFisico(String url);
 
     // Metodos que se usan para el formulario de organizacion

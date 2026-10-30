@@ -1,11 +1,10 @@
 package com.vivso.Vivso.DTO;
 
 import com.vivso.Vivso.Model.EstadoSolicitud;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import java.time.LocalDate;
+import java.util.List;
 
 @Getter @Setter
 @AllArgsConstructor
@@ -37,4 +36,6 @@ public class SolicitudDTO {
     private String nombreOrganizacion;
 
     private Integer idTecnico;
+
+    private List<FamiliarDTO> familia;
 }
