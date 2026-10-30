@@ -1,0 +1,25 @@
+package com.vivso.Vivso.Service;
+
+import com.vivso.Vivso.DTO.ViviendaDTO;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface IViviendaService {
+
+    List<ViviendaDTO> listarTodas();
+
+    Optional<ViviendaDTO> buscarPorFamilia(Integer idFamilia);
+
+    ViviendaDTO actualizar(Integer idVivienda, ViviendaDTO viviendaDTO);
+
+    void eliminar(Integer idVivienda);
+
+    ViviendaDTO buscarPorId(Integer idVivienda);
+
+    List<ViviendaDTO> filtrarPorLocalidad(String localidad);
+
+    List<ViviendaDTO> filtrarPorAnioFin(int anio);
+
+    List<ViviendaDTO> filtrarPorAnioInicio(int anio);
+}
