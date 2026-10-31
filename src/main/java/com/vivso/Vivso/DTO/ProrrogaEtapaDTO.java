@@ -13,7 +13,7 @@ public class ProrrogaEtapaDTO {
     @NotBlank(message = "Debe especificar un motivo para justificar la prórroga")
     private String motivoProrroga;
 
-    @NotBlank(message = "Debe especificar la nueva fecha limite")
+    @NotNull(message = "Debe especificar la nueva fecha limite")
     @Future(message = "La nueva fecha límite debe ser mayor a la fecha actual")
     private LocalDate nuevaFechaLimite;
 }
