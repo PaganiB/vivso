@@ -32,7 +32,7 @@ public interface ISolicitudService {
   List<ExpedienteMovilDTO> getObrasAsignadasParaOng();
 
   // Formulario Familia
-  SolicitudDTO registrarSolicitudFamilia(RegistroFamiliaDTO dto, MultiValueMap<String, MultipartFile> mapaArchivos);
+  SolicitudDTO registrarSolicitudFamilia(RegistroSolicitudDTO dto, MultiValueMap<String, MultipartFile> mapaArchivos);
 
   SolicitudDTO aprobarSolicitudVivienda(Integer idSolicitud);
 

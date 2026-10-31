@@ -41,6 +41,8 @@ public class DocumentoDTO {
 
   private Integer idFamilia;
 
+  private Integer idFamiliar;
+
   private String cuitOrg;
 
   private Integer idUsuarioRevisor;

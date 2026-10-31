@@ -37,22 +37,92 @@ public class DocumentoService implements IDocumentoService {
   private ISolicitudOrganizacionRepository solicitudOrgRepo;
   @Autowired
   private CloudinaryService cloudinaryService;
+  @Autowired
+  private IFamiliarRepository familiarRepo;
 
   @Override
   @Transactional
-  public DocumentoDTO subirDocumento(MultipartFile archivo, TipoDocumento tipo, Integer idFamilia, String cuitOrg) {
-    validarArchivo(archivo, archivo.getOriginalFilename());
+  public DocumentoDTO subirDocumento(
+          MultipartFile archivo,
+          TipoDocumento tipo,
+          Integer idFamilia,
+          String cuitOrg) {
 
-    String urlSegura = cloudinaryService.subirArchivo(archivo, "vivso_documentos");
+    return subirDocumento(
+            archivo,
+            tipo,
+            idFamilia,
+            cuitOrg,
+            null
+    );
+  }
+
+  @Override
+  @Transactional
+  public DocumentoDTO subirDocumento(
+          MultipartFile archivo,
+          TipoDocumento tipo,
+          Integer idFamilia,
+          String cuitOrg,
+          Integer idFamiliar) {
+
+    validarArchivo(archivo, archivo.getOriginalFilename());
 
     Documento doc = new Documento();
     doc.setNombre(archivo.getOriginalFilename());
-    doc.setUrl(urlSegura);
     doc.setTipo(tipo);
     doc.setEstado(EstadoDocumento.PENDIENTE);
 
-    if (idFamilia != null) doc.setFamilia(familiaRepo.findById(idFamilia).orElse(null));
-    if (cuitOrg != null) doc.setOrganizacion(orgRepo.findById(cuitOrg).orElse(null));
+    // Asociar familia
+    if (idFamilia != null) {
+      Familia familia = familiaRepo.findById(idFamilia)
+              .orElseThrow(() -> new ReglaDeNegocioException(
+                      "La familia indicada no existe",
+                      HttpStatus.NOT_FOUND
+              ));
+
+      doc.setFamilia(familia);
+    }
+
+    // Asociar familiar específico
+    if (idFamiliar != null) {
+      Familiar familiar = familiarRepo.findById(idFamiliar)
+              .orElseThrow(() -> new ReglaDeNegocioException(
+                      "El familiar indicado no existe",
+                      HttpStatus.NOT_FOUND
+              ));
+
+      // Verificar que pertenezca a la familia indicada
+      if (idFamilia == null ||
+              !familiar.getFamilia().getIdFamilia().equals(idFamilia)) {
+
+        throw new ReglaDeNegocioException(
+                "El familiar no pertenece a la familia indicada",
+                HttpStatus.BAD_REQUEST
+        );
+      }
+
+      doc.setFamiliar(familiar);
+    }
+
+    // Asociar organización
+    if (cuitOrg != null) {
+      Organizacion organizacion = orgRepo.findById(cuitOrg)
+              .orElseThrow(() -> new ReglaDeNegocioException(
+                      "La organización indicada no existe",
+                      HttpStatus.NOT_FOUND
+              ));
+
+      doc.setOrganizacion(organizacion);
+    }
+
+    // Subir archivo a Cloudinary
+    String urlSegura = cloudinaryService.subirArchivo(
+            archivo,
+            "vivso_documentos"
+    );
+
+    doc.setUrl(urlSegura);
 
     return mapper.toDTO(docRepo.save(doc));
   }
@@ -175,22 +245,6 @@ public class DocumentoService implements IDocumentoService {
     // Se mantiene este método público por si la interfaz lo requiere, pero delega la acción
     return cloudinaryService.subirArchivo(archivo, "vivso_documentos");
   }
-
-  @Override
-  @Transactional
-  public DocumentoDTO crearDesdeRutaExistente(String url, TipoDocumento tipo, Integer idFamilia, String cuitOrg) {
-    Documento doc = new Documento();
-    doc.setNombre(Paths.get(url).getFileName().toString());
-    doc.setUrl(url);
-    doc.setTipo(tipo);
-    doc.setEstado(EstadoDocumento.PENDIENTE);
-
-    if (idFamilia != null) doc.setFamilia(familiaRepo.findById(idFamilia).orElse(null));
-    if (cuitOrg != null) doc.setOrganizacion(orgRepo.findById(cuitOrg).orElse(null));
-
-    return mapper.toDTO(docRepo.save(doc));
-  }
-
 
   // Méttodo auxiliar para borrar archivos en Cloudinary
   private String extraerPublicId(String url) {

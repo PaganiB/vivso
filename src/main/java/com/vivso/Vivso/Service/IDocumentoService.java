@@ -1,7 +1,6 @@
 package com.vivso.Vivso.Service;
 
 import com.vivso.Vivso.DTO.DocumentoDTO;
-import com.vivso.Vivso.Model.EstadoDocumento;
 import com.vivso.Vivso.Model.Organizacion;
 import com.vivso.Vivso.Model.TipoDocumento;
 import com.vivso.Vivso.Model.Usuario;
@@ -12,6 +11,7 @@ import java.util.List;
 public interface IDocumentoService {
 
     DocumentoDTO subirDocumento(MultipartFile archivo, TipoDocumento tipo, Integer idFamilia, String cuitOrg);
+    DocumentoDTO subirDocumento(MultipartFile archivo, TipoDocumento tipo, Integer idFamilia, String cuitOrg, Integer idFamiliar);
     DocumentoDTO marcarParaCorregir(Integer idDoc, String motivo);
     DocumentoDTO reemplazar(Integer idDoc, MultipartFile archivo);
     List<DocumentoDTO> listarPorFamilia(Integer idFamilia);
@@ -21,7 +21,6 @@ public interface IDocumentoService {
 
     // Hacen lo mismo que el subir documento pero en 2 partes, porque en solicitud organizacion es asi
     String guardarArchivoFisico(MultipartFile archivo);
-    DocumentoDTO crearDesdeRutaExistente(String url, TipoDocumento tipo, Integer idFamilia, String cuitOrg);
     void borrarArchivoFisico(String url);
 
     // Metodos que se usan para el formulario de organizacion
