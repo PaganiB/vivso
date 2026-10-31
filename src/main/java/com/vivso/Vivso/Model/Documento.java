@@ -53,6 +53,10 @@ public class Documento {
     private Familia familia;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_familiar")
+    private Familiar familiar;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_organizacion")
     private Organizacion organizacion;
 

@@ -1,41 +1,39 @@
 package com.vivso.Vivso.DTO;
 
 import com.vivso.Vivso.Model.EstadoSolicitud;
-import jakarta.validation.constraints.Size;
 import lombok.*;
 import java.time.LocalDate;
 import java.util.List;
 
-@Getter @Setter
-@AllArgsConstructor
-@NoArgsConstructor
+@Getter
+@Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class SolicitudDTO {
 
+    // Información general
     private Integer idSolicitud;
-
     private LocalDate fechaSolicitud;
-
-    private String cuitOrg;
-
     private String numExp;
-
     private EstadoSolicitud estado;
 
-    @Size(max = 200, message = "Los caracteres máximos son 200")
-    private String observacion;
-
-    private String camposObservados;
-
-    private Integer idFamilia;
-
-    private String nombreRepresentanteFamilia;
-
-    private String dniRepresentanteFamilia;
-
+    // Organización
+    private String cuitOrg;
     private String nombreOrganizacion;
 
-    private Integer idTecnico;
+    // Revisión administrativa
+    private String observacion;
+    private String camposObservados;
 
-    private List<FamiliarDTO> familia;
+    // Información de la familia
+    private Integer idFamilia;
+    private FamiliaDTO familia;
+    private List<FamiliarDTO> familiares;
+
+    // Documentación presentada
+    private List<DocumentoDTO> documentos;
+
+    // Asignación
+    private Integer idTecnico;
 }

@@ -82,13 +82,19 @@ public class ExpedienteDetalleDTO {
   @NoArgsConstructor
   @AllArgsConstructor
   public static class SolicitudDatos {
+
     private String representanteNombre;
     private String representanteTelefono;
     private LocalDate fechaSolicitud;
     private String observaciones;
+
     private List<MiembroFamilia> grupoFamiliar;
+
     private Integer antiguedadPosesion;
-    private String ubicacion;
+
+    private String referenciaUbicacion;
+    private Double latitud;
+    private Double longitud;
   }
 
   @Getter

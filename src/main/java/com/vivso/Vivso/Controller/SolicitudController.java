@@ -4,6 +4,7 @@ import com.vivso.Vivso.DTO.*;
 import com.vivso.Vivso.Model.EstadoSolicitud;
 import com.vivso.Vivso.Service.ISolicitudService;
 import com.vivso.Vivso.Service.IUsuarioService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -25,10 +26,14 @@ public class SolicitudController {
 
   @PostMapping(value = "/familia", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<SolicitudDTO> registrarSolicitudFamilia(
-    @RequestPart("datos") RegistroFamiliaDTO dto,
-    MultipartHttpServletRequest request) {
+          @Valid @RequestPart("datos") RegistroSolicitudDTO dto,
+          MultipartHttpServletRequest request) {
+
     return ResponseEntity.status(HttpStatus.CREATED)
-      .body(solicitudService.registrarSolicitudFamilia(dto, request.getMultiFileMap()));
+            .body(solicitudService.registrarSolicitudFamilia(
+                    dto,
+                    request.getMultiFileMap()
+            ));
   }
 
   @PatchMapping("/{idSolicitud}/expediente")
