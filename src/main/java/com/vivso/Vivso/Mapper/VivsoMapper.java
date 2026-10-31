@@ -14,26 +14,39 @@ import java.util.List;
 public interface VivsoMapper {
 
   // ======================== FAMILIA ========================
-  // idFamilia coincide en entidad y DTO → sin @Mapping necesario
 
+  // DTO de respuesta
   FamiliaDTO toDTO(Familia familia);
 
+  // DTO de registro
+  Familia toEntity(FamiliaRegistroDTO dto);
+
+  // Se mantienen los métodos existentes
   Familia toEntity(FamiliaDTO dto);
 
-  @Mapping(target = "idFamilia", ignore = true)   // PK nunca se sobreescribe
+  @Mapping(target = "idFamilia", ignore = true)
   @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
   void updateFromDto(FamiliaDTO dto, @MappingTarget Familia familia);
 
-  // ======================== FAMILIAR ========================
 
+// ======================== FAMILIAR ========================
+
+  // DTO de respuesta
   @Mapping(source = "familia.idFamilia", target = "familia")
   FamiliarDTO toDTO(Familiar familiar);
 
+  // DTO de registro
+  @Mapping(target = "id_familiar", ignore = true)
+  @Mapping(target = "familia", ignore = true)
+  @Mapping(target = "condicion_especial", defaultValue = "No posee discapacidad")
+  Familiar toEntity(FamiliarRegistroDTO dto);
+
+  // Se mantienen los métodos existentes
   @Mapping(target = "familia", ignore = true)
   @Mapping(target = "condicion_especial", defaultValue = "No posee discapacidad")
   Familiar toEntity(FamiliarDTO dto);
 
-  @Mapping(target = "id_familiar", ignore = true)    // PK
+  @Mapping(target = "id_familiar", ignore = true)
   @Mapping(target = "familia", ignore = true)
   @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
   void updateFromDto(FamiliarDTO dto, @MappingTarget Familiar familiar);
@@ -91,14 +104,16 @@ public interface VivsoMapper {
 
   @Mapping(source = "cuitOrg.cuit", target = "cuitOrg")
   @Mapping(source = "cuitOrg.nombre", target = "nombreOrganizacion")
+  @Mapping(source = "familiaBeneficiaria", target = "familia")
   @Mapping(source = "familiaBeneficiaria.idFamilia", target = "idFamilia")
-  @Mapping(source = "familiaBeneficiaria.nombreRepresentante", target = "nombreRepresentanteFamilia")
-  @Mapping(source = "familiaBeneficiaria.dniRepresentante", target = "dniRepresentanteFamilia")
+  @Mapping(source = "tecnicoAsignado.id", target = "idTecnico")
   SolicitudDTO toDTO(Solicitud solicitud);
 
   @Mapping(target = "cuitOrg", ignore = true)
   @Mapping(target = "familiaBeneficiaria", ignore = true)
   @Mapping(target = "fechaActivacion", ignore = true)
+  @Mapping(target = "revisor", ignore = true)
+  @Mapping(target = "tecnicoAsignado", ignore = true)
   Solicitud toEntity(SolicitudDTO dto);
 
 
@@ -106,6 +121,7 @@ public interface VivsoMapper {
   // idDocumento, nombre y url coinciden en entidad y DTO → sin @Mapping para esos campos
 
   @Mapping(source = "familia.idFamilia", target = "idFamilia")
+  @Mapping(source = "familiar.id_familiar", target = "idFamiliar")
   @Mapping(source = "organizacion.cuit", target = "cuitOrg")
   @Mapping(source = "revisor.id", target = "idUsuarioRevisor")
   @Mapping(source = "revisor.username", target = "nombreRevisor", defaultValue = "Sin asignar")
@@ -120,6 +136,7 @@ public interface VivsoMapper {
   @Mapping(source = "password_hash", target = "password")
   @Mapping(source = "rol", target = "rol", defaultValue = "SIN_ROL")
   UsuarioRegistroDTO toRegistroDTO(Usuario usuario);
+
 
   // ======================== VISITA INICIAL ========================
 

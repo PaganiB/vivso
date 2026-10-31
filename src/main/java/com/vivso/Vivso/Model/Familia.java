@@ -1,10 +1,8 @@
+
 package com.vivso.Vivso.Model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
 import lombok.*;
-
-import java.util.List;
 
 @Getter
 @Setter
@@ -14,6 +12,7 @@ import java.util.List;
 @Entity
 @Table(name = "familia")
 public class Familia {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_familia", nullable = false)
@@ -28,10 +27,15 @@ public class Familia {
     @Column(name = "contacto", length = 100)
     private String contacto;
 
-    @Column(name = "antiguedadRancho", columnDefinition = "int CHECK (antiguedadRancho >= 5)")
+    @Column(name = "antiguedadRancho")
     private Integer antiguedadRancho;
 
-    @Column(name = "coordenadasRancho", length = 150)
-    private String coordenadasRancho;
+    @Column(name = "referencia_ubicacion", length = 255)
+    private String referenciaUbicacion;
 
+    @Column(name = "latitud")
+    private Double latitud;
+
+    @Column(name = "longitud")
+    private Double longitud;
 }
