@@ -2,8 +2,10 @@ package com.vivso.Vivso.Service;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import com.vivso.Vivso.Exception.ReglaDeNegocioException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
@@ -21,6 +23,9 @@ public class CloudinaryService {
   }
 
   public String subirArchivo(MultipartFile archivo, String nombreCarpeta) {
+    if (archivo == null || archivo.isEmpty()) {
+      throw new ReglaDeNegocioException("El archivo recibido está vacío o es nulo.", HttpStatus.BAD_REQUEST);
+    }
     try {
       Map resultado = cloudinary.uploader().upload(
         archivo.getBytes(),
@@ -28,23 +33,19 @@ public class CloudinaryService {
       );
       return resultado.get("secure_url").toString();
     } catch (IOException e) {
-      throw new RuntimeException("Error al subir archivo a Cloudinary", e);
+      log.error("Error al procesar el archivo local antes de enviarlo a Cloudinary: {}", e.getMessage());
+      throw new ReglaDeNegocioException("Error al procesar el archivo.", HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
   public void borrarArchivo(String urlSegura) {
-    if (urlSegura == null || !urlSegura.contains("cloudinary")) {
-      return;
-    }
+    if (urlSegura == null || !urlSegura.contains("cloudinary")) return;
     try {
-      // Extrae el Public ID de Cloudinary desde la URL para poder borrarlo
-      String[] parts = urlSegura.split("/");
-      String lastPart = parts[parts.length - 1]; // nombre_archivo.jpg
-      String folder = parts[parts.length - 2];   // nombre_carpeta
-      String nombreSinExtension = lastPart.substring(0, lastPart.lastIndexOf("."));
-      String publicId = folder + "/" + nombreSinExtension;
+      // CORRECCIÓN: Uso de Regex seguro para extraer el public_id independientemente de la versión
+      String publicId = urlSegura.replaceAll("^.*/v\\d+/(.*)\\.[a-zA-Z0-9]+$", "$1");
 
-      cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+      // CORRECCIÓN: invalidar en CDN para que desaparezca inmediatamente
+      cloudinary.uploader().destroy(publicId, ObjectUtils.asMap("invalidate", true));
     } catch (Exception e) {
       log.error("No se pudo borrar el archivo en Cloudinary: {}", urlSegura, e);
     }
