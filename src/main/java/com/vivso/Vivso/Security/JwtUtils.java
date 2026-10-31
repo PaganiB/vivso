@@ -15,8 +15,7 @@ import java.util.function.Function;
 @Component
 public class JwtUtils {
 
-    // 1. La Clave Secreta: Generamos una llave matemática súper segura de 256 bits.
-    // (Solo el backend sabe leer esta llave, por lo que nadie puede falsificar tus tokens).
+    // 1. La Clave Secreta: Generamos una llave matemática
     @Value("${jwt.secret}")
     private String secretString;
 
@@ -25,7 +24,6 @@ public class JwtUtils {
     @Value("${jwt.expiration}")
     private long tiempoExpiracion;
 
-    // =======================================================================
     // MÉTODOS PRINCIPALES
     // =======================================================================
 
@@ -50,8 +48,7 @@ public class JwtUtils {
         return (usernameToken.equals(usernameBD) && !isTokenExpirado(token));
     }
 
-    // =======================================================================
-    // MÉTODOS AUXILIARES INTERNOS (Magia de la librería JJWT)
+    // MÉTODOS AUXILIARES INTERNOS
     // =======================================================================
     private boolean isTokenExpirado(String token) {
         return extraerClaim(token, Claims::getExpiration).before(new Date());

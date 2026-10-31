@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
@@ -11,10 +12,12 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -32,8 +35,10 @@ public class SecurityConfig implements WebMvcConfigurer {
   @Value("${cors.origins}")
   private List<String> allowedOrigins;
 
-  @Autowired private UserDetailsService userDetailsService;
-  @Autowired private JwtAuthenticationFilter jwtAuthFilter;
+  @Autowired
+  private UserDetailsService userDetailsService;
+  @Autowired
+  private JwtAuthenticationFilter jwtAuthFilter;
 
   @Bean
   public PasswordEncoder passwordEncoder() {
@@ -58,14 +63,18 @@ public class SecurityConfig implements WebMvcConfigurer {
       .authenticationManager(new ProviderManager(authenticationProvider()))
       .cors(cors -> cors.configurationSource(corsConfigurationSource()))
       .csrf(csrf -> csrf.disable())
+      .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+      .exceptionHandling(e -> e.authenticationEntryPoint(
+        new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
       .authorizeHttpRequests(auth -> auth
 
         // ── 1. AUTENTICACIÓN & GESTIÓN DE USUARIOS ───────────────────────────
-              .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
-              .requestMatchers(HttpMethod.POST, "/auth/registro").hasRole("ADMIN")
-              .requestMatchers(HttpMethod.PATCH, "/auth/cambiar-password").authenticated()
-              .requestMatchers(HttpMethod.GET, "/auth/me").authenticated()
-              .requestMatchers("/usuario/**").hasRole("ADMIN")
+        .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
+        .requestMatchers(HttpMethod.POST, "/auth/registro").hasRole("ADMIN")
+        .requestMatchers(HttpMethod.PATCH, "/auth/cambiar-password").authenticated()
+        .requestMatchers(HttpMethod.GET, "/auth/me").authenticated()
+        .requestMatchers(HttpMethod.POST, "/usuario/push-token").authenticated()
+        .requestMatchers("/usuario/**").hasRole("ADMIN")
 
         // ── 2. SOLICITUD DE ORGANIZACIÓN (Registro e Ingreso) ────────────────
         .requestMatchers(HttpMethod.POST, "/solicitud-organizacion").permitAll()
@@ -74,8 +83,8 @@ public class SecurityConfig implements WebMvcConfigurer {
         .requestMatchers(HttpMethod.GET, "/solicitud-organizacion/pendientes", "/solicitud-organizacion").hasAnyRole("ADMIN", "OPERADOR")
         .requestMatchers(HttpMethod.POST, "/solicitud-organizacion/**").hasAnyRole("ADMIN", "OPERADOR")
         .requestMatchers(HttpMethod.PUT, "/solicitud-organizacion/**").hasAnyRole("ADMIN", "OPERADOR")
-        .requestMatchers(HttpMethod.GET, "/solicitud/tecnicos-disponibles").hasAnyRole("ADMIN","ARQUITECTO")
-        .requestMatchers(HttpMethod.PUT, "/solicitud/*/asignar-tecnico/*").hasAnyRole("ADMIN","ARQUITECTO")
+        .requestMatchers(HttpMethod.GET, "/solicitud/tecnicos-disponibles").hasAnyRole("ADMIN", "ARQUITECTO")
+        .requestMatchers(HttpMethod.PUT, "/solicitud/*/asignar-tecnico/*").hasAnyRole("ADMIN", "ARQUITECTO")
 
         // ── 3. SOLICITUDES (Expedientes y Obras) ─────────────────────────────
         .requestMatchers(HttpMethod.POST, "/solicitud/familia").hasAnyRole("ADMIN", "INTEGRANTE")
@@ -83,7 +92,9 @@ public class SecurityConfig implements WebMvcConfigurer {
         .requestMatchers(HttpMethod.GET, "/solicitud/organizacion/**").hasAnyRole("ADMIN", "OPERADOR", "INTEGRANTE")
         .requestMatchers(HttpMethod.PUT, "/solicitud/*/confirmar-correccion").hasAnyRole("ADMIN", "INTEGRANTE")
         .requestMatchers(HttpMethod.PUT, "/solicitud/*/aprobar").hasAnyRole("ADMIN", "OPERADOR")
-        .requestMatchers(HttpMethod.DELETE, "/solicitud/*/rechazar").hasAnyRole("ADMIN", "OPERADOR")
+        .requestMatchers(HttpMethod.PUT, "/solicitud/*/rechazar").hasAnyRole("ADMIN", "OPERADOR")
+        .requestMatchers(HttpMethod.PUT,  "/solicitud/*/semiAprobar").hasAnyRole("ADMIN", "OPERADOR")
+        .requestMatchers(HttpMethod.PATCH, "/solicitud/*/expediente").hasAnyRole("ADMIN", "OPERADOR")
         .requestMatchers(HttpMethod.POST, "/solicitud", "/solicitud/**").hasAnyRole("ADMIN", "OPERADOR")
         .requestMatchers(HttpMethod.GET, "/solicitud/**").hasAnyRole("ADMIN", "OPERADOR", "ARQUITECTO", "TECNICO")
 
@@ -104,9 +115,7 @@ public class SecurityConfig implements WebMvcConfigurer {
         // ── 6. VISITAS EN TERRENO Y ARCHIVOS MULTIMEDIA ──────────────────────
         .requestMatchers(HttpMethod.POST, "/visita-inicial/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO")
         .requestMatchers(HttpMethod.PUT, "/visita-inicial/**", "/visita-obra/**").hasAnyRole("ADMIN", "TECNICO")
-        .requestMatchers(HttpMethod.GET, "/visita-inicial/**", "/visita-obra/**", "/historial-visitas").hasAnyRole("ADMIN", "TECNICO", "ARQUITECTO")
-        .requestMatchers(HttpMethod.GET, "/archivos/documentos/**").hasAnyRole("ADMIN", "OPERADOR", "TECNICO", "ARQUITECTO", "INTEGRANTE")
-        .requestMatchers(HttpMethod.GET, "/archivos/**", "/uploads/**").hasAnyRole("ADMIN", "OPERADOR", "TECNICO", "ARQUITECTO")
+        .requestMatchers(HttpMethod.GET, "/visita-inicial/**", "/visita-obra/**", "/visita-inicial/historial-visitas").hasAnyRole("ADMIN", "TECNICO", "ARQUITECTO")
 
         // ── 7. VIVIENDAS ─────────────────────────────────────────────────────
         .requestMatchers(HttpMethod.PUT, "/vivienda/**").hasAnyRole("ADMIN", "ARQUITECTO")
@@ -121,9 +130,9 @@ public class SecurityConfig implements WebMvcConfigurer {
         // ── 9. REGLAS GLOBALES Y CIERRE ──────────────────────────────────────
         .requestMatchers(HttpMethod.DELETE, "/**").hasRole("ADMIN")
         .requestMatchers("/notificaciones/**").authenticated()
-        .requestMatchers(HttpMethod.POST, "/usuario/push-token").authenticated()
         .anyRequest().hasRole("ADMIN")
       )
+
       .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
       .build();
   }

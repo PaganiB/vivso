@@ -10,7 +10,7 @@ public interface IFotoEtapaRepository extends JpaRepository<FotoEtapa, Long> {
 
   List<FotoEtapa> findByEtapa_IdEtapaObraIn(List<Integer> idsEtapas);
 
-  // 2. Devuelve List (muchas fotos) y busca por idEtapaObra
+  // Devuelve List (muchas fotos) y busca por idEtapaObra
   List<FotoEtapa> findByEtapa_IdEtapaObra(Integer idEtapaObra);
 
 }

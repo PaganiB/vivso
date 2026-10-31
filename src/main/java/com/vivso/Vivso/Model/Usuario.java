@@ -48,12 +48,6 @@ public class Usuario implements UserDetails {
     @Column(name = "apellido", length = 100)
     private String apellido;
 
-    @Column(name = "nombre", length = 100)
-    private String nombre;
-
-    @Column(name = "apellido", length = 100)
-    private String apellido;
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
       // Pulsera de visitante: mientras tenga la contraseña temporal, solo puede pasar por recepción

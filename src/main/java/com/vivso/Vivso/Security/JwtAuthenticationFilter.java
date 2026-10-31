@@ -1,5 +1,6 @@
 package com.vivso.Vivso.Security;
 
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -9,6 +10,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -18,57 +20,47 @@ import java.io.IOException;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    @Autowired
-    private JwtUtils jwtUtils;
+  @Autowired
+  private JwtUtils jwtUtils;
 
-    @Autowired
-    private UserDetailsService userDetailsService;
+  @Autowired
+  private UserDetailsService userDetailsService;
 
-    @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-            throws ServletException, IOException {
+  @Override
+  protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    throws ServletException, IOException {
 
-        // 1. Buscamos el token en la mochila de la petición (el header 'Authorization')
-        final String authHeader = request.getHeader("Authorization");
-        String jwt = null;
-        final String username;
+    // 1. El token solo se acepta por el header Authorization: Bearer <token>
+    final String authHeader = request.getHeader("Authorization");
 
-        // 2. Extraemos el JWT ya sea del Header o del parámetro de la URL
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            // Le sacamos la palabra "Bearer " (que tiene 7 caracteres) para quedarnos con el token puro
-            jwt = authHeader.substring(7);
-        }
-
-        // 3. Si no encontramos el token por ningún lado, lo dejamos pasar sin autenticar.
-        if (jwt == null) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        // 4. Extraemos el nombre de usuario de adentro del token
-        username = jwtUtils.extraerUsername(jwt);
-
-        // 5. Si hay un usuario, y todavía no está logueado en este flujo actual:
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-
-            // Buscamos los datos reales del usuario en la base de datos
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
-
-            // 6. Validamos matemáticamente que el token no esté vencido ni adulterado
-            if (jwtUtils.validarToken(jwt, userDetails.getUsername()) && userDetails.isEnabled()) {
-
-                // 7. ¡Token válido! Le creamos una credencial oficial de Spring y lo dejamos pasar
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
-
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                // Guardamos la autorización en el contexto
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-            }
-        }
-
-        // 8. Pase el que sigue
-        filterChain.doFilter(request, response);
+    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+      filterChain.doFilter(request, response);   // sin token: sigue como anónimo
+      return;
     }
+
+    final String jwt = authHeader.substring(7);
+
+    try {
+      // 2. Usuario que dice el token (lanza excepción si está vencido o adulterado)
+      final String username = jwtUtils.extraerUsername(jwt);
+
+      // 3. Si hay usuario y todavía no hay autenticación en este pedido
+      if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+        UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+
+        // 4. Token coherente con el usuario real y cuenta activa
+        if (jwtUtils.validarToken(jwt, userDetails.getUsername()) && userDetails.isEnabled()) {
+          UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+            userDetails, null, userDetails.getAuthorities());
+          authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+          SecurityContextHolder.getContext().setAuthentication(authToken);
+        }
+      }
+    } catch (JwtException | IllegalArgumentException | UsernameNotFoundException e) {
+      // Token vencido, mal formado, con firma incorrecta o de un usuario inexistente: no se autentica. El 401 lo devuelve el entry point de SecurityConfig.
+      SecurityContextHolder.clearContext();
+    }
+
+    filterChain.doFilter(request, response);
+  }
 }

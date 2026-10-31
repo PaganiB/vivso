@@ -9,9 +9,6 @@ import lombok.Setter;
 @Setter
 public class UsuarioLoginDTO {
 
-    /*@NotBlank(message = "El username es obligatorio")
-    private String username;*/
-
     @NotBlank(message = "El email es obligatorio")
     @Email(message = "El formato del email debe ser válido")
     private String email;

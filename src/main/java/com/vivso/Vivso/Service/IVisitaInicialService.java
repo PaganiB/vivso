@@ -1,5 +1,6 @@
 package com.vivso.Vivso.Service;
 
+import com.vivso.Vivso.DTO.VisitaHistorialDTO;
 import com.vivso.Vivso.DTO.VisitaInicialDTO;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,4 +21,6 @@ public interface IVisitaInicialService {
     VisitaInicialDTO FindVisita(Integer idVisita);
 
     List<VisitaInicialDTO> FindVisitaPorTecnico(Integer tecnico);
+
+    List<VisitaHistorialDTO> obtenerHistorialGeneral();
 }
