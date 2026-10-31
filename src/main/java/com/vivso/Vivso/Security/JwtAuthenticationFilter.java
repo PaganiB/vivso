@@ -30,6 +30,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
     throws ServletException, IOException {
 
+    // 0. IGNORAR PETICIONES DE CORS (PREFLIGHT OPTIONS) Y EL LOGIN
+    if ("OPTIONS".equalsIgnoreCase(request.getMethod()) || request.getServletPath().contains("/auth/login")) {
+      filterChain.doFilter(request, response);
+      return;
+    }
+
     // 1. El token solo se acepta por el header Authorization: Bearer <token>
     final String authHeader = request.getHeader("Authorization");
 

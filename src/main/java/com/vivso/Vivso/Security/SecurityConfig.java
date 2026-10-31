@@ -32,7 +32,7 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig implements WebMvcConfigurer {
 
-  @Value("${cors.origins}")
+  @Value("${corsorigins}")
   private List<String> allowedOrigins;
 
   @Autowired
