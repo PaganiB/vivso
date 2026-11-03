@@ -1,6 +1,7 @@
 package com.vivso.Vivso.Service;
 
 import com.vivso.Vivso.DTO.IntegranteDTO;
+import com.vivso.Vivso.DTO.IntegranteRegistroDTO;
 import com.vivso.Vivso.Exception.RecursoNoEncontradoException;
 import com.vivso.Vivso.Exception.ReglaDeNegocioException;
 import com.vivso.Vivso.Mapper.VivsoMapper;
@@ -32,25 +33,6 @@ public class IntegranteService implements IIntegranteService {
         return integranteRepo.findAll().stream()
                 .map(mapper::toDTO)
                 .toList();
-    }
-
-    @Override
-    public IntegranteDTO saveIntegrantes(IntegranteDTO dto) {
-        Organizacion org = orgRepo.findById(dto.getCuitOrg())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Organización no encontrada: " + dto.getCuitOrg()));
-
-        validarVigenciaOng(org);
-        validarExclusividadMiembro(dto.getDni(), dto.getCuitOrg());
-
-        Usuario user = dto.getUsuario() != null
-                ? usuarioRepo.findByUsername(dto.getUsuario()).orElse(null)
-                : null;
-
-        Integrante integrante = mapper.toEntity(dto);
-        integrante.setOrganizacion(org);
-        integrante.setUsuario(user);
-
-        return mapper.toDTO(integranteRepo.save(integrante));
     }
 
     @Override

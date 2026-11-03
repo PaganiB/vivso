@@ -1,6 +1,7 @@
 package com.vivso.Vivso.Service;
 
 import com.vivso.Vivso.DTO.ViviendaDTO;
+import com.vivso.Vivso.DTO.ViviendaRegistroDTO;
 
 import java.util.List;
 import java.util.Optional;
@@ -11,7 +12,7 @@ public interface IViviendaService {
 
     Optional<ViviendaDTO> buscarPorFamilia(Integer idFamilia);
 
-    ViviendaDTO actualizar(Integer idVivienda, ViviendaDTO viviendaDTO);
+    ViviendaDTO actualizar(Integer idVivienda, ViviendaRegistroDTO dto);
 
     void eliminar(Integer idVivienda);
 

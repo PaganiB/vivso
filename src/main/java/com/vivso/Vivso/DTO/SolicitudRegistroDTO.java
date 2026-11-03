@@ -12,7 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RegistroSolicitudDTO {
+public class SolicitudRegistroDTO {
 
     @NotNull(message = "Los datos de la familia son obligatorios")
     @Valid

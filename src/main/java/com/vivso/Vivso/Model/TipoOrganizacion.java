@@ -3,7 +3,7 @@ package com.vivso.Vivso.Model;
 import lombok.Getter;
 
 @Getter
-public enum TipoONG {
+public enum TipoOrganizacion {
   ASOCIACION_CIVIL("Asociación Civil"),
   FUNDACION("Fundación"),
   COOPERATIVA("Cooperativa"),
@@ -15,7 +15,7 @@ public enum TipoONG {
 
   private final String descripcion;
 
-  TipoONG(String descripcion) {
+  TipoOrganizacion(String descripcion) {
     this.descripcion = descripcion;
   }
 }

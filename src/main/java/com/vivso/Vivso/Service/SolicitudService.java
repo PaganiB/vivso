@@ -52,7 +52,7 @@ public class SolicitudService implements ISolicitudService {
   @Override
   @Transactional
   public SolicitudDTO registrarSolicitudFamilia(
-          RegistroSolicitudDTO dto,
+          SolicitudRegistroDTO dto,
           MultiValueMap<String, MultipartFile> mapaArchivos) {
 
     // La organización sale del usuario autenticado

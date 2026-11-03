@@ -1,6 +1,7 @@
 package com.vivso.Vivso.Service;
 
 import com.vivso.Vivso.DTO.OrganizacionDTO;
+import com.vivso.Vivso.DTO.OrganizacionDesarrolloSocialDTO;
 
 import java.util.List;
 
@@ -8,8 +9,6 @@ public interface IOrganizacionService {
 
     // CRUD/ABML
     List<OrganizacionDTO> getOrganizacion();
-
-    OrganizacionDTO saveOrganizacion(OrganizacionDTO organizacionDto);
 
     OrganizacionDTO updateOrganizacion(String cuit, OrganizacionDTO organizacionDto);
 
@@ -25,4 +24,6 @@ public interface IOrganizacionService {
 
     // Busca organizaciones que coincidan con un nombre o parte de él
     List<OrganizacionDTO> buscarPorNombre(String nombre);
+
+    List<OrganizacionDesarrolloSocialDTO> obtenerVistaDesarrolloSocial();
 }
