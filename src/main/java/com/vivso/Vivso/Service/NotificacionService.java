@@ -1,6 +1,5 @@
 package com.vivso.Vivso.Service;
 
-import com.google.firebase.messaging.*;
 import com.vivso.Vivso.DTO.NotificacionDTO;
 import com.vivso.Vivso.Mapper.VivsoMapper;
 import com.vivso.Vivso.Model.Integrante;
@@ -8,6 +7,7 @@ import com.vivso.Vivso.Model.Notificacion;
 import com.vivso.Vivso.Model.Usuario;
 import com.vivso.Vivso.Repository.IIntegranteRepository;
 import com.vivso.Vivso.Repository.INotificacionRepository;
+import com.vivso.Vivso.Repository.IUsuarioRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -29,28 +29,31 @@ public class NotificacionService {
   private INotificacionRepository notificacionRepo;
   @Autowired
   private VivsoMapper vivsoMapper;
-
+  @Autowired
+  private ExpoPushClient expoPushClient;
+  @Autowired
+  private IUsuarioRepository usuarioRepo;
 
   @Async
   public void enviarPushMasivo(List<String> tokens, String titulo, String cuerpo, Map<String, String> datosExtra) {
+    enviarPush(tokens, titulo, cuerpo, datosExtra);
+  }
+
+  private void enviarPushMulticast(List<String> tokens, String titulo, String cuerpo, String tipo, Integer idReferencia) {
+    Map<String, String> data = Map.of(
+      "tipo", tipo != null ? tipo : "",
+      "idReferencia", idReferencia != null ? idReferencia.toString() : "");
+    enviarPush(tokens, titulo, cuerpo, data);
+  }
+
+  private void enviarPush(List<String> tokens, String titulo, String cuerpo, Map<String, String> data) {
     if (tokens == null || tokens.isEmpty()) return;
-
     try {
-      MulticastMessage message = MulticastMessage.builder()
-        .addAllTokens(tokens) // Le pasás la lista entera de celulares
-        .setNotification(Notification.builder()
-          .setTitle(titulo)
-          .setBody(cuerpo)
-          .build())
-        .putAllData(datosExtra)
-        .build();
-
-      // Mandamos 1 sola petición HTTP a Firebase para todos los usuarios
-      BatchResponse response = FirebaseMessaging.getInstance().sendMulticast(message);
-      log.info("Notificaciones enviadas: {} exitosas, {} fallidas", response.getSuccessCount(), response.getFailureCount());
-
+      List<String> invalidos = expoPushClient.enviar(tokens, titulo, cuerpo, data);
+      invalidos.forEach(usuarioRepo::limpiarPushToken);
+      log.info("Push Expo: {} tokens procesados, {} dados de baja", tokens.size(), invalidos.size());
     } catch (Exception e) {
-      log.error("Error enviando notificación masiva: ", e);
+      log.error("Error enviando push por Expo: ", e);
     }
   }
 
@@ -120,27 +123,6 @@ public class NotificacionService {
     }
   }
 
-  // Méttodo auxiliar privado de envío a FCM
-  private void enviarPushMulticast(List<String> tokens, String titulo, String cuerpo, String tipo, Integer idReferencia) {
-    if (tokens == null || tokens.isEmpty()) return;
-
-    try {
-      MulticastMessage message = MulticastMessage.builder()
-        .addAllTokens(tokens)
-        .setNotification(Notification.builder()
-          .setTitle(titulo)
-          .setBody(cuerpo)
-          .build())
-        .putData("tipo", tipo != null ? tipo : "")
-        .putData("idReferencia", idReferencia != null ? idReferencia.toString() : "")
-        .build();
-
-      FirebaseMessaging.getInstance().sendMulticast(message);
-      log.info("Push FCM enviada con éxito a {} dispositivos.", tokens.size());
-    } catch (Exception e) {
-      log.error("Error al enviar notificación mediante Firebase FCM: ", e);
-    }
-  }
 
   // 3. MÉTODOS DE CONSULTA Y GESTIÓN PARA LA APP MÓVIL
   @Transactional(readOnly = true)

@@ -124,4 +124,9 @@ public class AuthService {
                 .map(i -> i.getNombre() + " " + i.getApellido())
                 .orElse(null);
     }
+
+  @Transactional
+  public void cerrarSesion(String email) {
+    usuarioRepository.findByEmail(email).ifPresent(u -> u.setPushToken(null));
+  }
 }

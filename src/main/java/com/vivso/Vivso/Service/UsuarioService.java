@@ -186,12 +186,17 @@ public class UsuarioService implements IUsuarioService {
 
   @Transactional
   public void actualizarPushToken(String email, String pushToken) {
-    // Usamos el email que viene del JWT/Principal para localizar al usuario
+    String token = (pushToken == null || pushToken.isBlank()) ? null : pushToken;
+    if (token != null && !ExpoPushClient.esTokenValido(token)) {
+      throw new ReglaDeNegocioException("Formato de push token inválido.", HttpStatus.BAD_REQUEST);
+    }
+    // 1) PRIMERO limpiar el token en cualquier usuario que lo tenga (dispositivo compartido)
+    if (token != null) usuarioRepo.limpiarPushToken(token);
+
+    // 2) RECIÉN AHORA cargar al usuario y asignarle el token
     Usuario usuario = usuarioRepo.findByEmail(email)
       .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado con email: " + email));
-
-    // Actualizamos el token y guardamos
-    usuario.setPushToken(pushToken);
+    usuario.setPushToken(token);
     usuarioRepo.save(usuario);
   }
 }
