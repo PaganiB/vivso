@@ -73,6 +73,7 @@ public class SecurityConfig implements WebMvcConfigurer {
         .requestMatchers(HttpMethod.POST, "/auth/registro").hasRole("ADMIN")
         .requestMatchers(HttpMethod.PATCH, "/auth/cambiar-password").authenticated()
         .requestMatchers(HttpMethod.GET, "/auth/me").authenticated()
+        .requestMatchers(HttpMethod.POST, "/auth/logout").authenticated()
         .requestMatchers(HttpMethod.POST, "/usuario/push-token").authenticated()
         .requestMatchers("/usuario/**").hasRole("ADMIN")
 

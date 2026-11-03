@@ -44,4 +44,10 @@ public class AuthController {
     public ResponseEntity<PerfilDTO> miPerfil(Authentication auth) {
         return ResponseEntity.ok(authService.obtenerPerfil(auth.getName()));
     }
+
+  @PostMapping("/logout")
+  public ResponseEntity<Void> logout(Authentication auth) {
+    authService.cerrarSesion(auth.getName());
+    return ResponseEntity.noContent().build();
+  }
 }
