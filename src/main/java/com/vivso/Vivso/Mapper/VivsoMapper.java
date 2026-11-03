@@ -65,17 +65,26 @@ public interface VivsoMapper {
 
 
   // ======================== INTEGRANTE ========================
-  // idIntegrante coincide en entidad y DTO → sin @Mapping para la PK
 
+  // DTO de respuesta
   @Mapping(source = "organizacion.cuit", target = "cuitOrg")
   @Mapping(source = "usuario.username", target = "usuario", defaultValue = "Sin usuario")
   IntegranteDTO toDTO(Integrante integrante);
 
+  // DTO de registro
+  @Mapping(target = "idIntegrante", ignore = true)
+  @Mapping(target = "organizacion", ignore = true)
+  @Mapping(target = "usuario", ignore = true)
+  @Mapping(target = "activo", ignore = true)
+  @Mapping(target = "cargo", ignore = true)
+  Integrante toEntity(IntegranteRegistroDTO dto);
+
+  // DTO anterior (lo mantenemos por ahora)
   @Mapping(target = "organizacion", ignore = true)
   @Mapping(target = "usuario", ignore = true)
   Integrante toEntity(IntegranteDTO dto);
 
-  @Mapping(target = "idIntegrante", ignore = true)    // PK
+  @Mapping(target = "idIntegrante", ignore = true)
   @Mapping(target = "organizacion", ignore = true)
   @Mapping(target = "usuario", ignore = true)
   @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
@@ -89,16 +98,16 @@ public interface VivsoMapper {
   @Mapping(source = "familia.nombreRepresentante", target = "representante", defaultValue = "Sin asignar")
   ViviendaDTO toDTO(Vivienda vivienda);
 
+  @Mapping(target = "idVivienda", ignore = true)
   @Mapping(target = "familia", ignore = true)
   @Mapping(target = "solicitud", ignore = true)
-  Vivienda toEntity(ViviendaDTO dto);
+  Vivienda toEntity(ViviendaRegistroDTO dto);
 
-  @Mapping(target = "idVivienda", ignore = true)  // PK
+  @Mapping(target = "idVivienda", ignore = true)
   @Mapping(target = "familia", ignore = true)
   @Mapping(target = "solicitud", ignore = true)
   @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-  void updateFromDto(ViviendaDTO dto, @MappingTarget Vivienda vivienda);
-
+  void updateFromDto(ViviendaRegistroDTO dto, @MappingTarget Vivienda vivienda);
 
   // ======================== SOLICITUD ========================
 
@@ -156,7 +165,6 @@ public interface VivsoMapper {
   void updateFromDto(VisitaInicialDTO dto, @MappingTarget VisitaInicial visitaInicial);
 
   // ======================== SOLICITUD ORGANIZACION ========================
-  // Todos los campos coinciden → sin @Mapping necesario para el toDTO
 
   SolicitudOrganizacionDTO toDTO(SolicitudOrganizacion solicitudOrganizacion);
 

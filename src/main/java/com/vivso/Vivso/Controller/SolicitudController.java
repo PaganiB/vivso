@@ -26,7 +26,7 @@ public class SolicitudController {
 
   @PostMapping(value = "/familia", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<SolicitudDTO> registrarSolicitudFamilia(
-          @Valid @RequestPart("datos") RegistroSolicitudDTO dto,
+          @Valid @RequestPart("datos") SolicitudRegistroDTO dto,
           MultipartHttpServletRequest request) {
 
     return ResponseEntity.status(HttpStatus.CREATED)

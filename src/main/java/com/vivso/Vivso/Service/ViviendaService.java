@@ -1,6 +1,7 @@
 package com.vivso.Vivso.Service;
 
 import com.vivso.Vivso.DTO.ViviendaDTO;
+import com.vivso.Vivso.DTO.ViviendaRegistroDTO;
 import com.vivso.Vivso.Exception.RecursoNoEncontradoException;
 import com.vivso.Vivso.Mapper.VivsoMapper;
 import com.vivso.Vivso.Model.Familia;
@@ -44,7 +45,7 @@ public class ViviendaService implements IViviendaService {
 
     @Override
     @Transactional
-    public ViviendaDTO actualizar(Integer idVivienda, ViviendaDTO dto) {
+    public ViviendaDTO actualizar(Integer idVivienda, ViviendaRegistroDTO dto) {
         Vivienda v = viviendaRepo.findById(idVivienda)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Vivienda no encontrada: " + idVivienda));
 

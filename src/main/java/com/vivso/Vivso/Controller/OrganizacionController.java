@@ -1,6 +1,7 @@
 package com.vivso.Vivso.Controller;
 
 import com.vivso.Vivso.DTO.OrganizacionDTO;
+import com.vivso.Vivso.DTO.OrganizacionDesarrolloSocialDTO;
 import com.vivso.Vivso.Service.IOrganizacionService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,12 +21,6 @@ public class OrganizacionController {
     @GetMapping
     public ResponseEntity<List<OrganizacionDTO>> listar(){
         return ResponseEntity.ok(orgService.getOrganizacion());
-    }
-
-    @PostMapping
-    public ResponseEntity<OrganizacionDTO> crear(@Valid @RequestBody OrganizacionDTO dto){
-        OrganizacionDTO created = orgService.saveOrganizacion(dto);
-        return ResponseEntity.created(URI.create("/organizacion/" + created.getCuit())).body(created);
     }
 
     @PutMapping("/{cuit}")
@@ -56,6 +51,11 @@ public class OrganizacionController {
     public ResponseEntity<List<OrganizacionDTO>> buscarNombre(@PathVariable String nombre){
         List<OrganizacionDTO> dtos = orgService.buscarPorNombre(nombre);
         return new  ResponseEntity<>(dtos, HttpStatus.OK);
+    }
+
+    @GetMapping("/desarrollo-social")
+    public ResponseEntity<List<OrganizacionDesarrolloSocialDTO>> obtenerVistaDesarrolloSocial() {
+        return ResponseEntity.ok(orgService.obtenerVistaDesarrolloSocial());
     }
 
 }

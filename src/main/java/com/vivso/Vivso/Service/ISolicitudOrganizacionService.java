@@ -7,7 +7,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 public interface ISolicitudOrganizacionService {
-    void registrarOrganizacion(RegistroOrganizacionDTO dto, MultiValueMap<String, MultipartFile> mapaArchivos);
+    void registrarOrganizacion(SolicitudOrganizacionRegistroDTO dto, MultiValueMap<String, MultipartFile> mapaArchivos);
     void aprobarOrganizacion(String cuit);
     void rechazarOrganizacion(String cuit, String motivo);
     void marcarObservaciones(Integer idSolicitud, List<String> camposObservados, String motivo);

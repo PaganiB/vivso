@@ -8,6 +8,6 @@ import lombok.Getter;
 public class OrganizacionResumenDTO {
     private String cuit;
     private String nombre;
-    private String presidente; //si
+    private String presidente;
     private String tesorero;
 }

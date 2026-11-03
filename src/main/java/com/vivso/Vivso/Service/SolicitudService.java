@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -53,42 +52,42 @@ public class SolicitudService implements ISolicitudService {
   @Override
   @Transactional
   public SolicitudDTO registrarSolicitudFamilia(
-    RegistroSolicitudDTO dto,
-    MultiValueMap<String, MultipartFile> mapaArchivos) {
+          SolicitudRegistroDTO dto,
+          MultiValueMap<String, MultipartFile> mapaArchivos) {
 
     // La organización sale del usuario autenticado
     String email = SecurityContextHolder.getContext()
-      .getAuthentication().getName();
+            .getAuthentication().getName();
 
     Integrante integrante = integranteRepo.findByUsuario_Email(email)
-      .orElseThrow(() -> new ReglaDeNegocioException(
-        "El usuario autenticado no está asociado a ninguna organización",
-        HttpStatus.FORBIDDEN
-      ));
+            .orElseThrow(() -> new ReglaDeNegocioException(
+                    "El usuario autenticado no está asociado a ninguna organización",
+                    HttpStatus.FORBIDDEN
+            ));
 
     Organizacion org = integrante.getOrganizacion();
 
     // Validar que el DNI del representante esté entre los familiares
     boolean representanteExiste = dto.getFamiliares().stream()
-      .anyMatch(f -> f.getDni().equals(dto.getFamilia().getDniRepresentante()));
+            .anyMatch(f -> f.getDni().equals(dto.getFamilia().getDniRepresentante()));
 
     if (!representanteExiste) {
       throw new ReglaDeNegocioException(
-        "El representante debe estar incluido entre los integrantes de la familia",
-        HttpStatus.BAD_REQUEST
+              "El representante debe estar incluido entre los integrantes de la familia",
+              HttpStatus.BAD_REQUEST
       );
     }
 
     // Validar que no haya DNI duplicados en el formulario
     long cantidadDni = dto.getFamiliares().stream()
-      .map(FamiliarRegistroDTO::getDni)
-      .distinct()
-      .count();
+            .map(FamiliarRegistroDTO::getDni)
+            .distinct()
+            .count();
 
     if (cantidadDni != dto.getFamiliares().size()) {
       throw new ReglaDeNegocioException(
-        "No puede haber integrantes con DNI duplicados",
-        HttpStatus.BAD_REQUEST
+              "No puede haber integrantes con DNI duplicados",
+              HttpStatus.BAD_REQUEST
       );
     }
 
@@ -96,13 +95,13 @@ public class SolicitudService implements ISolicitudService {
     for (FamiliarRegistroDTO familiarDTO : dto.getFamiliares()) {
 
       boolean dniExiste = familiarRepo.findByDni(familiarDTO.getDni())
-        .isPresent();
+              .isPresent();
 
       if (dniExiste) {
         throw new ReglaDeNegocioException(
-          "El DNI " + familiarDTO.getDni()
-            + " ya está registrado en otra familia",
-          HttpStatus.BAD_REQUEST
+                "El DNI " + familiarDTO.getDni()
+                        + " ya está registrado en otra familia",
+                HttpStatus.BAD_REQUEST
         );
       }
     }
@@ -177,36 +176,36 @@ public class SolicitudService implements ISolicitudService {
         if (indiceFamiliar != null) {
 
           if (tipoDoc != TipoDocumento.DNI_FAMILIARES &&
-            tipoDoc != TipoDocumento.CERTIFICADO_DISCAPACIDAD) {
+                  tipoDoc != TipoDocumento.CERTIFICADO_DISCAPACIDAD) {
 
             throw new ReglaDeNegocioException(
-              "El tipo de documento " + tipoDoc
-                + " no admite asociarse a un familiar individual",
-              HttpStatus.BAD_REQUEST
+                    "El tipo de documento " + tipoDoc
+                            + " no admite asociarse a un familiar individual",
+                    HttpStatus.BAD_REQUEST
             );
           }
 
           if (indiceFamiliar < 0 ||
-            indiceFamiliar >= familiaresGuardados.size()) {
+                  indiceFamiliar >= familiaresGuardados.size()) {
 
             throw new ReglaDeNegocioException(
-              "El índice de familiar indicado en el documento "
-                + clave + " no es válido",
-              HttpStatus.BAD_REQUEST
+                    "El índice de familiar indicado en el documento "
+                            + clave + " no es válido",
+                    HttpStatus.BAD_REQUEST
             );
           }
 
           Familiar familiarDestino =
-            familiaresGuardados.get(indiceFamiliar);
+                  familiaresGuardados.get(indiceFamiliar);
 
           for (MultipartFile archivo : archivos) {
 
             documentoService.subirDocumento(
-              archivo,
-              tipoDoc,
-              idFamilia,
-              null,
-              familiarDestino.getId_familiar()
+                    archivo,
+                    tipoDoc,
+                    idFamilia,
+                    null,
+                    familiarDestino.getId_familiar()
             );
           }
 
@@ -216,10 +215,10 @@ public class SolicitudService implements ISolicitudService {
           for (MultipartFile archivo : archivos) {
 
             documentoService.subirDocumento(
-              archivo,
-              tipoDoc,
-              idFamilia,
-              null
+                    archivo,
+                    tipoDoc,
+                    idFamilia,
+                    null
             );
           }
         }
@@ -232,17 +231,17 @@ public class SolicitudService implements ISolicitudService {
     respuesta.setFamilia(mapper.toDTO(familia));
 
     respuesta.setFamiliares(
-      familiarRepo.findByFamilia_IdFamilia(idFamilia)
-        .stream()
-        .map(mapper::toDTO)
-        .toList()
+            familiarRepo.findByFamilia_IdFamilia(idFamilia)
+                    .stream()
+                    .map(mapper::toDTO)
+                    .toList()
     );
 
     respuesta.setDocumentos(
-      documentoRepo.findByFamilia_IdFamilia(idFamilia)
-        .stream()
-        .map(mapper::toDTO)
-        .toList()
+            documentoRepo.findByFamilia_IdFamilia(idFamilia)
+                    .stream()
+                    .map(mapper::toDTO)
+                    .toList()
     );
 
     return respuesta;
@@ -257,15 +256,6 @@ public class SolicitudService implements ISolicitudService {
 
     if (numExp == null || numExp.isBlank())
       throw new ReglaDeNegocioException("El número de expediente no puede estar vacío", HttpStatus.BAD_REQUEST);
-
-    // 1. Obtenemos la identidad del usuario autenticado (Administrador u Operador)
-    String email = SecurityContextHolder.getContext().getAuthentication().getName();
-    Usuario revisor = usuarioRepo.findByEmail(email)
-      .orElseThrow(() -> new RecursoNoEncontradoException("Usuario autenticado no encontrado"));
-
-    // 2. Asignamos el número de expediente y el revisor correspondiente
-    s.setNumExp(numExp);
-    s.setRevisor(revisor);
 
     s.setNumExp(numExp);
     return mapper.toDTO(solicitudRepo.save(s));
@@ -383,45 +373,45 @@ public class SolicitudService implements ISolicitudService {
   public List<SolicitudDTO> getSolicitudes() {
 
     return solicitudRepo.findAll().stream()
-      .map(solicitud -> {
+            .map(solicitud -> {
 
-        // Convertir la solicitud
-        SolicitudDTO respuesta = mapper.toDTO(solicitud);
+              // Convertir la solicitud
+              SolicitudDTO respuesta = mapper.toDTO(solicitud);
 
-        // Obtener la familia asociada
-        Familia familia = solicitud.getFamiliaBeneficiaria();
+              // Obtener la familia asociada
+              Familia familia = solicitud.getFamiliaBeneficiaria();
 
-        if (familia != null) {
+              if (familia != null) {
 
-          Integer idFamilia = familia.getIdFamilia();
+                Integer idFamilia = familia.getIdFamilia();
 
-          // Completar información de la familia
-          respuesta.setIdFamilia(idFamilia);
+                // Completar información de la familia
+                respuesta.setIdFamilia(idFamilia);
 
-          // Obtener todos los familiares
-          respuesta.setFamiliares(
-            familiarRepo.findByFamilia_IdFamilia(idFamilia)
-              .stream()
-              .map(mapper::toDTO)
-              .toList()
-          );
+                // Obtener todos los familiares
+                respuesta.setFamiliares(
+                        familiarRepo.findByFamilia_IdFamilia(idFamilia)
+                                .stream()
+                                .map(mapper::toDTO)
+                                .toList()
+                );
 
-          // Obtener documentos de la familia
-          respuesta.setDocumentos(
-            documentoRepo.findByFamilia_IdFamilia(idFamilia)
-              .stream()
-              .map(mapper::toDTO)
-              .toList()
-          );
+                // Obtener documentos de la familia
+                respuesta.setDocumentos(
+                        documentoRepo.findByFamilia_IdFamilia(idFamilia)
+                                .stream()
+                                .map(mapper::toDTO)
+                                .toList()
+                );
 
-        } else {
-          respuesta.setFamiliares(List.of());
-          respuesta.setDocumentos(List.of());
-        }
+              } else {
+                respuesta.setFamiliares(List.of());
+                respuesta.setDocumentos(List.of());
+              }
 
-        return respuesta;
-      })
-      .toList();
+              return respuesta;
+            })
+            .toList();
   }
 
   @Override

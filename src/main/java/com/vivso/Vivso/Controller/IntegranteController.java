@@ -22,12 +22,6 @@ public class IntegranteController {
         return ResponseEntity.ok(integranteService.getIntegrantes());
     }
 
-    @PostMapping
-    public ResponseEntity<IntegranteDTO> crearIntegrante(@Valid @RequestBody IntegranteDTO integrante){
-        IntegranteDTO created = integranteService.saveIntegrantes(integrante);
-        return ResponseEntity.created(URI.create("/integrante/" + integrante.getIdIntegrante())).body(created);
-    }
-
     @PutMapping ("/{idIntegrante}")
     public ResponseEntity<IntegranteDTO> editarIntegrante(@PathVariable Integer idIntegrante, @Valid @RequestBody IntegranteDTO integrante){
         return ResponseEntity.ok(integranteService.updateIntegrantes(idIntegrante, integrante));
