@@ -21,7 +21,7 @@ public class SolicitudOrganizacionController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> registrarOrganizacion(
-            @RequestPart("datos") RegistroOrganizacionDTO dto,
+            @Valid @RequestPart("datos") SolicitudOrganizacionRegistroDTO dto,
             MultipartHttpServletRequest request) {
         solicitudOrgService.registrarOrganizacion(dto, request.getMultiFileMap());
         return ResponseEntity.status(HttpStatus.CREATED).build();

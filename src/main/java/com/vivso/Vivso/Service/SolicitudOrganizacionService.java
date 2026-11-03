@@ -20,7 +20,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
-import java.security.SecureRandom;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +44,7 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
   @Override
   // 1. ELIMINAMOS el @Transactional de aquí arriba.
   // Esto es vital: la conexión a la base de datos ya no estará secuestrada durante la subida.
-  public void registrarOrganizacion(RegistroOrganizacionDTO dto, MultiValueMap<String, MultipartFile> mapaArchivos) {
+  public void registrarOrganizacion(SolicitudOrganizacionRegistroDTO dto, MultiValueMap<String, MultipartFile> mapaArchivos) {
     String cuit = dto.getOrganizacion().getCuit();
 
     // Validaciones iniciales
@@ -99,68 +99,116 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
     @Transactional
     public void aprobarOrganizacion(String cuit) {
         SolicitudOrganizacion sol = solicitudOrgRepo.findByCuit(cuit)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Solicitud no encontrada para el CUIT: " + cuit));
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Solicitud no encontrada para el CUIT: " + cuit));
 
-        if (sol.getEstado() == EstadoSolicitud.Aprobada) throw new ReglaDeNegocioException("Ya está aprobada.", HttpStatus.CONFLICT);
-        if (orgRepo.existsById(cuit)) throw new ReglaDeNegocioException("Ya existe una organización activa con el CUIT: " + cuit, HttpStatus.CONFLICT);
+        if (sol.getEstado() == EstadoSolicitud.Aprobada) {
+            throw new ReglaDeNegocioException("Ya está aprobada.", HttpStatus.CONFLICT);
+        }
+
+        if (orgRepo.existsById(cuit)) {
+            throw new ReglaDeNegocioException(
+                    "Ya existe una organización activa con el CUIT: " + cuit,
+                    HttpStatus.CONFLICT);
+        }
 
         validarCorreosDisponibles(sol);
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        Usuario revisor = usuarioRepo.findByEmail(email)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario autenticado no encontrado"));
 
+        Usuario revisor = usuarioRepo.findByEmail(email)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Usuario autenticado no encontrado"));
+
+        // Crear organización
         Organizacion org = Organizacion.builder()
-                .cuit(sol.getCuit()).nombre(sol.getNombre()).tipo(sol.getTipo())
-                .dom_legal(sol.getDomLegal()).cpe(sol.getCpe())
+                .cuit(sol.getCuit())
+                .nombre(sol.getNombre())
+                .tipo(sol.getTipo())
+                .dom_legal(sol.getDomLegal())
+                .cpe(sol.getCpe())
                 .fechaVencimientoVigencia(sol.getFechaVencimientoVigencia())
                 .fechaUltimaAsamblea(sol.getFechaUltimaAsamblea())
                 .build();
+
         orgRepo.save(org);
 
-        Integrante presidente = Integrante.builder()
-                .dni(sol.getDniPresidente()).nombre(sol.getNombrePresidente())
-                .apellido(sol.getApellidoPresidente()).correo(sol.getCorreoPresidente())
-                .telefono(sol.getTelefonoPresidente()).domicilio(sol.getDomicilioPresidente())
+        // Crear presidente
+        IntegranteRegistroDTO presidenteDTO = IntegranteRegistroDTO.builder()
+                .dni(sol.getDniPresidente())
+                .nombre(sol.getNombrePresidente())
+                .apellido(sol.getApellidoPresidente())
+                .correo(sol.getCorreoPresidente())
+                .telefono(sol.getTelefonoPresidente())
+                .domicilio(sol.getDomicilioPresidente())
                 .fechaAltaCargo(sol.getFechaAltaCargoPresidente())
-                .cargo(TipoCargo.PRESIDENTE).activo(true).organizacion(org)
                 .build();
+
+        Integrante presidente = mapper.toEntity(presidenteDTO);
+
+        presidente.setCargo(TipoCargo.PRESIDENTE);
+        presidente.setActivo(true);
+        presidente.setOrganizacion(org);
+
         integranteRepo.save(presidente);
 
-        Integrante tesorero = null;
-        if (sol.getDniTesorero() != null) {
-            tesorero = Integrante.builder()
-                    .dni(sol.getDniTesorero()).nombre(sol.getNombreTesorero())
-                    .apellido(sol.getApellidoTesorero()).correo(sol.getCorreoTesorero())
-                    .telefono(sol.getTelefonoTesorero()).domicilio(sol.getDomicilioTesorero())
-                    .fechaAltaCargo(sol.getFechaAltaCargoTesorero())
-                    .cargo(TipoCargo.TESORERO).activo(true).organizacion(org)
-                    .build();
-            integranteRepo.save(tesorero);
-        }
+        // Crear tesorero
+        IntegranteRegistroDTO tesoreroDTO = IntegranteRegistroDTO.builder()
+                .dni(sol.getDniTesorero())
+                .nombre(sol.getNombreTesorero())
+                .apellido(sol.getApellidoTesorero())
+                .correo(sol.getCorreoTesorero())
+                .telefono(sol.getTelefonoTesorero())
+                .domicilio(sol.getDomicilioTesorero())
+                .fechaAltaCargo(sol.getFechaAltaCargoTesorero())
+                .build();
 
-        List<DocumentoDTO> docs = documentoService.listarPorSolicitudOrg(sol.getIdSolicitudOrg());
+        Integrante tesorero = mapper.toEntity(tesoreroDTO);
+
+        tesorero.setCargo(TipoCargo.TESORERO);
+        tesorero.setActivo(true);
+        tesorero.setOrganizacion(org);
+
+        integranteRepo.save(tesorero);
+
+        // Aprobar documentos
+        List<DocumentoDTO> docs =
+                documentoService.listarPorSolicitudOrg(sol.getIdSolicitudOrg());
+
         for (DocumentoDTO d : docs) {
-            documentoService.aprobarConOrganizacion(d.getIdDocumento(), org, revisor);
+            documentoService.aprobarConOrganizacion(
+                    d.getIdDocumento(), org, revisor);
         }
 
+        // Actualizar solicitud
         sol.setEstado(EstadoSolicitud.Aprobada);
         sol.setFechaAprobacion(LocalDate.now());
         sol.setRevisor(revisor);
+
         solicitudOrgRepo.save(sol);
 
-        Usuario usuarioPresidente = generarUsuarioYEnviarMail(sol.getNombrePresidente(), sol.getApellidoPresidente(), sol.getCorreoPresidente(), org.getNombre());
+        // Generar usuario del presidente
+        Usuario usuarioPresidente = generarUsuarioYEnviarMail(
+                sol.getNombrePresidente(),
+                sol.getApellidoPresidente(),
+                sol.getCorreoPresidente(),
+                org.getNombre());
+
         if (usuarioPresidente != null) {
             presidente.setUsuario(usuarioPresidente);
             integranteRepo.save(presidente);
         }
 
-        if (sol.getDniTesorero() != null) {
-            Usuario usuarioTesorero = generarUsuarioYEnviarMail(sol.getNombreTesorero(), sol.getApellidoTesorero(), sol.getCorreoTesorero(), org.getNombre());
-            if (usuarioTesorero != null) {
-                tesorero.setUsuario(usuarioTesorero);
-                integranteRepo.save(tesorero);
-            }
+        // Generar usuario del tesorero
+        Usuario usuarioTesorero = generarUsuarioYEnviarMail(
+                sol.getNombreTesorero(),
+                sol.getApellidoTesorero(),
+                sol.getCorreoTesorero(),
+                org.getNombre());
+
+        if (usuarioTesorero != null) {
+            tesorero.setUsuario(usuarioTesorero);
+            integranteRepo.save(tesorero);
         }
     }
 
@@ -327,7 +375,7 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
 
     private void validarCorreosDisponibles(SolicitudOrganizacion sol) {
         String correoPresidente = sol.getCorreoPresidente();
-        String correoTesorero = sol.getDniTesorero() != null ? sol.getCorreoTesorero() : null;
+        String correoTesorero = sol.getCorreoTesorero();
 
         // Si los dos son iguales, el segundo fallaría porque el primero ya crearía el usuario
         if (correoPresidente != null && correoPresidente.equalsIgnoreCase(correoTesorero))
@@ -400,26 +448,33 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
 
   // === MÉTODO DE APOYO ===
   // Lo sacamos a un método privado para que el código principal quede limpio y fácil de leer
-  private SolicitudOrganizacion construirEntidad(RegistroOrganizacionDTO dto, String cuit) {
-    SolicitudOrganizacion sol = SolicitudOrganizacion.builder()
-      .cuit(cuit)
-      .nombre(dto.getOrganizacion().getNombre())
-      .tipo(dto.getOrganizacion().getTipo())
-      .domLegal(dto.getOrganizacion().getDom_legal())
-      .cpe(dto.getOrganizacion().getCpe())
-      .fechaVencimientoVigencia(dto.getOrganizacion().getFechaVencimientoVigencia())
-      .fechaUltimaAsamblea(dto.getOrganizacion().getFechaUltimaAsamblea())
-      .dniPresidente(dto.getPresidente().getDni())
-      .nombrePresidente(dto.getPresidente().getNombre())
-      .apellidoPresidente(dto.getPresidente().getApellido())
-      .correoPresidente(dto.getPresidente().getCorreo())
-      .telefonoPresidente(dto.getPresidente().getTelefono())
-      .fechaAltaCargoPresidente(dto.getPresidente().getFechaAltaCargo())
-      .domicilioPresidente(dto.getPresidente().getDomicilio())
-      .estado(EstadoSolicitud.Pendiente)
-      .build();
+  private SolicitudOrganizacion construirEntidad(
+          SolicitudOrganizacionRegistroDTO dto,
+          String cuit) {
 
-    if (dto.getTesorero() != null) {
+      SolicitudOrganizacion sol = SolicitudOrganizacion.builder()
+              .cuit(cuit)
+              .nombre(dto.getOrganizacion().getNombre())
+              .tipo(dto.getOrganizacion().getTipo())
+              .domLegal(dto.getOrganizacion().getDom_legal())
+              .cpe(dto.getOrganizacion().getCpe())
+              .fechaVencimientoVigencia(
+                      dto.getOrganizacion().getFechaVencimientoVigencia())
+              .fechaUltimaAsamblea(
+                      dto.getOrganizacion().getFechaUltimaAsamblea())
+
+              .dniPresidente(dto.getPresidente().getDni())
+              .nombrePresidente(dto.getPresidente().getNombre())
+              .apellidoPresidente(dto.getPresidente().getApellido())
+              .correoPresidente(dto.getPresidente().getCorreo())
+              .telefonoPresidente(dto.getPresidente().getTelefono())
+              .fechaAltaCargoPresidente(
+                      dto.getPresidente().getFechaAltaCargo())
+              .domicilioPresidente(dto.getPresidente().getDomicilio())
+
+              .estado(EstadoSolicitud.Pendiente)
+              .build();
+
       sol.setDniTesorero(dto.getTesorero().getDni());
       sol.setNombreTesorero(dto.getTesorero().getNombre());
       sol.setApellidoTesorero(dto.getTesorero().getApellido());
@@ -427,9 +482,8 @@ public class SolicitudOrganizacionService implements ISolicitudOrganizacionServi
       sol.setTelefonoTesorero(dto.getTesorero().getTelefono());
       sol.setFechaAltaCargoTesorero(dto.getTesorero().getFechaAltaCargo());
       sol.setDomicilioTesorero(dto.getTesorero().getDomicilio());
-    }
 
-    return sol;
+      return sol;
   }
 
 }
